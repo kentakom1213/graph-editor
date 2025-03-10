@@ -16,7 +16,10 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
                 .inner_margin(egui::Margin::same(10))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        if ui.button(egui::RichText::new("Copy").size(20.0)).clicked() {
+                        if ui
+                            .button(egui::RichText::new("Copy").size(app.config.menu_font_size))
+                            .clicked()
+                        {
                             ctx.copy_text(graph_encoded.clone());
                         }
                         ui.label(" ");
@@ -25,18 +28,22 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
                         ui.radio_value(
                             &mut app.zero_indexed,
                             true,
-                            egui::RichText::new("0-indexed").size(20.0),
+                            egui::RichText::new("0-indexed").size(app.config.menu_font_size),
                         );
                         ui.radio_value(
                             &mut app.zero_indexed,
                             false,
-                            egui::RichText::new("1-indexed").size(20.0),
+                            egui::RichText::new("1-indexed").size(app.config.menu_font_size),
                         );
                     });
                     ui.separator();
 
                     // コード形式で表示
-                    ui.label(egui::RichText::new(graph_encoded).monospace().size(20.0));
+                    ui.label(
+                        egui::RichText::new(graph_encoded)
+                            .monospace()
+                            .size(app.config.graph_input_font_size),
+                    );
                 });
         });
 }

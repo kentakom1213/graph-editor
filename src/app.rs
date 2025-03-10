@@ -1,6 +1,7 @@
 use eframe::egui;
 
 use crate::components::{draw_central_panel, draw_edit_menu, draw_footer, draw_graph_input};
+use crate::config::AppConfig;
 use crate::graph::Graph;
 use crate::mode::EditMode;
 
@@ -9,6 +10,7 @@ pub struct GraphEditorApp {
     pub(crate) next_z_index: u32,
     pub(crate) edit_mode: EditMode,
     pub(crate) zero_indexed: bool,
+    pub(crate) config: AppConfig,
 }
 
 impl GraphEditorApp {
@@ -24,6 +26,7 @@ impl Default for GraphEditorApp {
             next_z_index: 2,
             edit_mode: EditMode::default_normal(),
             zero_indexed: false,
+            config: AppConfig::default(),
         }
     }
 }

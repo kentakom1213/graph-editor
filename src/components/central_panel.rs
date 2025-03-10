@@ -5,14 +5,10 @@ use crate::{graph::Graph, mode::EditMode, GraphEditorApp};
 
 /// メイン領域を描画
 pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
-    let bg_color = egui::Color32::from_rgb(230, 230, 230);
-
     egui::CentralPanel::default()
-        .frame(egui::Frame::new().fill(bg_color))
+        .frame(egui::Frame::new().fill(app.config.bg_color))
         .show(ctx, |ui| {
             let painter = ui.painter();
-            let radius = 50.0;
-
             // モード切替を行う
             if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
                 app.edit_mode = EditMode::default_normal();
@@ -95,16 +91,16 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
                     }
 
                     let color = if edge.is_deleted {
-                        bg_color
+                        app.config.bg_color
                     } else if edge.is_pressed {
-                        egui::Color32::from_rgb(200, 100, 100)
+                        app.config.edge_color_hover
                     } else {
-                        egui::Color32::from_rgb(100, 100, 100)
+                        app.config.edge_color_normal
                     };
 
                     painter.line_segment(
                         [from_vertex.position, to_vertex.position],
-                        egui::Stroke::new(6.0, color),
+                        egui::Stroke::new(app.config.edge_stroke, color),
                     );
                 }
             }
@@ -113,7 +109,10 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
             for vertex in vertices_mut.iter_mut().sorted_by_key(|v| v.z_index) {
                 let rect = egui::Rect::from_center_size(
                     vertex.position,
-                    egui::vec2(radius * 2.0, radius * 2.0),
+                    egui::vec2(
+                        app.config.vertex_radius * 2.0,
+                        app.config.vertex_radius * 2.0,
+                    ),
                 );
                 let response = ui.interact(
                     rect,
@@ -188,7 +187,10 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
                             if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
                                 painter.line_segment(
                                     [vertex.position, mouse_pos],
-                                    egui::Stroke::new(6.0, egui::Color32::from_rgb(100, 100, 100)),
+                                    egui::Stroke::new(
+                                        app.config.edge_stroke,
+                                        app.config.edge_color_normal,
+                                    ),
                                 );
                             }
                         }
@@ -207,12 +209,13 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
                     _ => {}
                 }
 
+                // 頂点の色
                 let color = if vertex.is_pressed {
-                    egui::Color32::from_rgb(200, 100, 100) // ドラッグ中は赤色
+                    app.config.vertex_color_dragged
                 } else if vertex.is_selected {
-                    egui::Color32::from_rgb(100, 200, 100) // 選択状態は緑色
+                    app.config.vertex_color_selected
                 } else {
-                    egui::Color32::WHITE // 通常時は白色
+                    app.config.vertex_color_normal
                 };
 
                 // 0-indexed / 1-indexed の選択によってIDを変更
@@ -223,18 +226,18 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
                 }
                 .to_string();
 
-                painter.circle_filled(vertex.position, radius, color);
+                painter.circle_filled(vertex.position, app.config.vertex_radius, color);
                 painter.circle_stroke(
                     vertex.position,
-                    radius,
-                    egui::Stroke::new(3.0, egui::Color32::from_rgb(150, 150, 150)),
+                    app.config.vertex_radius,
+                    egui::Stroke::new(app.config.vertex_stroke, app.config.vertex_color_outline),
                 );
                 painter.text(
                     vertex.position,
                     egui::Align2::CENTER_CENTER,
                     vertex_show_id,
-                    egui::FontId::proportional(50.0),
-                    egui::Color32::BLACK,
+                    egui::FontId::proportional(app.config.vertex_font_size),
+                    app.config.vertex_font_color,
                 );
             }
         });
