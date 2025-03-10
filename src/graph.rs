@@ -1,6 +1,4 @@
-#![warn(dead_code)]
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Vertex {
     pub id: usize,
     pub position: egui::Pos2,
@@ -10,13 +8,23 @@ pub struct Vertex {
     pub z_index: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Edge {
-    pub id: usize,
     pub from: usize,
     pub to: usize,
     pub is_pressed: bool,
-    pub is_selected: bool,
+    pub is_deleted: bool,
+}
+
+impl Edge {
+    pub fn new(from: usize, to: usize) -> Self {
+        Self {
+            from,
+            to,
+            is_pressed: false,
+            is_deleted: false,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -57,16 +65,6 @@ impl Graph {
         });
     }
 
-    pub fn add_edge(&mut self, from_vertex_id: usize, to_vertex_id: usize) {
-        self.edges.push(Edge {
-            id: self.edges.len(),
-            from: from_vertex_id,
-            to: to_vertex_id,
-            is_pressed: false,
-            is_selected: false,
-        });
-    }
-
     pub fn clear(&mut self) {
         self.vertices.clear();
         self.edges.clear();
@@ -95,11 +93,10 @@ impl Default for Graph {
                 },
             ],
             edges: vec![Edge {
-                id: 0,
                 from: 0,
                 to: 1,
                 is_pressed: false,
-                is_selected: false,
+                is_deleted: false,
             }],
         }
     }
