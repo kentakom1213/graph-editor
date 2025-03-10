@@ -4,8 +4,8 @@
 pub struct Vertex {
     pub id: usize,
     pub position: egui::Pos2,
-    pub is_pressed: bool,
     pub drag_offset: egui::Vec2,
+    pub is_pressed: bool,
     pub is_selected: bool,
     pub z_index: u32,
 }
@@ -15,6 +15,7 @@ pub struct Edge {
     pub id: usize,
     pub from: usize,
     pub to: usize,
+    pub is_pressed: bool,
     pub is_selected: bool,
 }
 
@@ -61,6 +62,7 @@ impl Graph {
             id: self.edges.len(),
             from: from_vertex_id,
             to: to_vertex_id,
+            is_pressed: false,
             is_selected: false,
         });
     }
@@ -96,6 +98,7 @@ impl Default for Graph {
                 id: 0,
                 from: 0,
                 to: 1,
+                is_pressed: false,
                 is_selected: false,
             }],
         }

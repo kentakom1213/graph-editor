@@ -59,13 +59,6 @@ impl eframe::App for GraphEditorApp {
                     };
                 }
 
-                // 直前のモードがSelectの場合，選択状態を解除
-                if prev_mode == EditMode::Select && self.edit_mode != EditMode::Select {
-                    for vertex in self.graph.vertices_mut() {
-                        vertex.is_selected = false;
-                    }
-                }
-
                 if let EditMode::AddEdge {
                     from_vertex: ref mut from_vertex @ Some(from_vertex_id),
                     ..
@@ -144,40 +137,37 @@ impl eframe::App for GraphEditorApp {
 
                     // 選択時
                     if response.clicked() && !response.dragged() {
-                        match self.edit_mode {
-                            EditMode::Select => {
-                                // クリックで選択状態をトグル
-                                vertex.is_selected = !vertex.is_selected;
+                        // 最前面に配置
+                        vertex.z_index = self.next_z_index;
+                        self.next_z_index += 1;
+
+                        if let EditMode::AddEdge {
+                            ref mut from_vertex,
+                            ref mut confirmed,
+                        } = self.edit_mode
+                        {
+                            if let Some(from_vertex_inner) = from_vertex {
+                                if *from_vertex_inner == vertex.id {
+                                    // 自分だった場合，選択を解除
+                                    vertex.is_selected = false;
+                                    *from_vertex = None;
+                                } else {
+                                    // クリックした頂点をto_vertexに設定
+                                    edges_mut.push(Edge {
+                                        id: edges_mut.len(),
+                                        from: *from_vertex_inner,
+                                        to: vertex.id,
+                                        is_pressed: false,
+                                        is_selected: false,
+                                    });
+                                    *confirmed = true;
+                                }
+                            } else {
+                                vertex.is_selected = true;
                                 vertex.z_index = self.next_z_index;
                                 self.next_z_index += 1;
-                            }
-                            EditMode::AddVertex => {}
-                            EditMode::AddEdge {
-                                ref mut from_vertex,
-                                ref mut confirmed,
-                            } => {
-                                if let Some(from_vertex_inner) = from_vertex {
-                                    if *from_vertex_inner == vertex.id {
-                                        // 自分だった場合，選択を解除
-                                        vertex.is_selected = false;
-                                        *from_vertex = None;
-                                    } else {
-                                        // クリックした頂点をto_vertexに設定
-                                        edges_mut.push(Edge {
-                                            id: edges_mut.len(),
-                                            from: *from_vertex_inner,
-                                            to: vertex.id,
-                                            is_selected: false,
-                                        });
-                                        *confirmed = true;
-                                    }
-                                } else {
-                                    vertex.is_selected = true;
-                                    vertex.z_index = self.next_z_index;
-                                    self.next_z_index += 1;
-                                    // クリックした頂点をfrom_vertexに設定
-                                    *from_vertex = Some(vertex.id);
-                                }
+                                // クリックした頂点をfrom_vertexに設定
+                                *from_vertex = Some(vertex.id);
                             }
                         }
                     }
