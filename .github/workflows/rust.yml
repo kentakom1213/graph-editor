@@ -151,20 +151,20 @@ jobs:
           cross build --verbose --release --target=${{ matrix.TARGET }}
 
       - name: Rename
-        run: cp target/${{ matrix.TARGET }}/release/graph_editor${{ matrix.EXTENSION }} graph_editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
+        run: cp target/${{ matrix.TARGET }}/release/graph-editor${{ matrix.EXTENSION }} graph-editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
 
       - uses: actions/upload-artifact@master
         with:
-          name: graph_editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
-          path: graph_editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
+          name: graph-editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
+          path: graph-editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
 
       - uses: svenstaro/upload-release-action@v2
         name: Upload binaries to release
         if: ${{ github.event_name == 'push' }}
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: graph_editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
-          asset_name: graph_editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
+          file: graph-editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
+          asset_name: graph-editor-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
           tag: ${{ github.ref }}
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           overwrite: true
