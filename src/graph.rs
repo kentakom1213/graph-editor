@@ -54,7 +54,7 @@ impl Graph {
     }
 
     /// 無向グラフとみなしたとき，すでに辺が存在するか
-    fn has_same_edge_undirected(edges: &Vec<Edge>, from: usize, to: usize) -> bool {
+    fn has_same_edge_undirected(edges: &[Edge], from: usize, to: usize) -> bool {
         edges
             .iter()
             .any(|edge| (edge.from, edge.to) == (from, to) || (edge.from, edge.to) == (to, from))
