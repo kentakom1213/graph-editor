@@ -8,6 +8,7 @@ pub struct GraphEditorApp {
     graph: Graph,
     next_z_index: u32,
     edit_mode: EditMode,
+    zero_indexed: bool,
 }
 
 impl GraphEditorApp {
@@ -22,6 +23,7 @@ impl Default for GraphEditorApp {
             graph: Graph::default(),
             next_z_index: 2,
             edit_mode: EditMode::default_normal(),
+            zero_indexed: false,
         }
     }
 }
@@ -184,7 +186,11 @@ impl eframe::App for GraphEditorApp {
                                     *from_vertex = None;
                                 } else {
                                     // クリックした頂点をto_vertexに設定
-                                    edges_mut.push(Edge::new(*from_vertex_inner, vertex.id));
+                                    // from-toをソート
+                                    let from = std::cmp::min(*from_vertex_inner, vertex.id);
+                                    let to = std::cmp::max(*from_vertex_inner, vertex.id);
+
+                                    edges_mut.push(Edge::new(from, to));
                                     *confirmed = true;
                                 }
                             } else {
@@ -237,6 +243,14 @@ impl eframe::App for GraphEditorApp {
                         egui::Color32::WHITE // 通常時は白色
                     };
 
+                    // 0-indexed / 1-indexed の選択によってIDを変更
+                    let vertex_show_id = if self.zero_indexed {
+                        vertex.id
+                    } else {
+                        vertex.id + 1
+                    }
+                    .to_string();
+
                     painter.circle_filled(vertex.position, radius, color);
                     painter.circle_stroke(
                         vertex.position,
@@ -246,14 +260,14 @@ impl eframe::App for GraphEditorApp {
                     painter.text(
                         vertex.position,
                         egui::Align2::CENTER_CENTER,
-                        vertex.id.to_string(),
+                        vertex_show_id,
                         egui::FontId::proportional(50.0),
                         egui::Color32::BLACK,
                     );
                 }
             });
 
-        egui::Window::new("Edit Mode")
+        egui::Window::new("Edit")
             .fixed_pos(egui::pos2(10.0, 10.0))
             .fixed_size(egui::vec2(200.0, 150.0))
             .collapsible(false)
@@ -262,6 +276,7 @@ impl eframe::App for GraphEditorApp {
                     .inner_margin(egui::Margin::same(10))
                     .show(ui, |ui| {
                         ui.vertical(|ui| {
+                            ui.label(egui::RichText::new("Edit Mode").size(20.0));
                             ui.radio_value(
                                 &mut self.edit_mode,
                                 EditMode::default_normal(),
@@ -282,25 +297,58 @@ impl eframe::App for GraphEditorApp {
                                 EditMode::default_delete_edge(),
                                 egui::RichText::new("Delete Edge [D]").size(20.0),
                             );
+
+                            ui.separator();
+
+                            // グラフのクリア
+                            if ui
+                                .button(egui::RichText::new("Clear All").size(20.0))
+                                .clicked()
+                            {
+                                self.graph.clear();
+                                self.next_z_index = 0;
+                            }
                         });
                     });
             });
 
-        egui::Window::new("Action")
-            .fixed_pos(egui::pos2(220.0, 10.0))
-            .fixed_size(egui::vec2(150.0, 100.0))
-            .collapsible(false)
+        // テキストの表示
+        egui::Window::new("Graph Input")
+            .collapsible(true)
+            .title_bar(true)
             .show(ctx, |ui| {
-                egui::Frame::new()
+                // グラフのコード形式
+                let graph_encoded = self.graph.encode(self.zero_indexed);
+
+                egui::Frame::default()
                     .inner_margin(egui::Margin::same(10))
                     .show(ui, |ui| {
-                        if ui
-                            .button(egui::RichText::new("Clear All").size(20.0))
-                            .clicked()
-                        {
-                            self.graph.clear();
-                            self.next_z_index = 0;
-                        }
+                        ui.horizontal(|ui| {
+                            if ui.button(egui::RichText::new("Copy").size(20.0)).clicked() {
+                                ctx.copy_text(graph_encoded.clone());
+                            }
+                            ui.label(" ");
+
+                            // 0-indexed / 1-indexed の選択
+                            ui.radio_value(
+                                &mut self.zero_indexed,
+                                true,
+                                egui::RichText::new("0-indexed").size(20.0),
+                            );
+                            ui.radio_value(
+                                &mut self.zero_indexed,
+                                false,
+                                egui::RichText::new("1-indexed").size(20.0),
+                            );
+                        });
+                        ui.separator();
+
+                        // コード形式で表示
+                        ui.label(
+                            egui::RichText::new(format!("{}", graph_encoded))
+                                .monospace()
+                                .size(20.0),
+                        );
                     });
             });
     }

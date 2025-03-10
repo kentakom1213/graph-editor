@@ -34,20 +34,8 @@ pub struct Graph {
 }
 
 impl Graph {
-    pub fn vertices(&self) -> &[Vertex] {
-        &self.vertices
-    }
-
     pub fn vertices_mut(&mut self) -> &mut Vec<Vertex> {
         &mut self.vertices
-    }
-
-    pub fn edges(&self) -> &[Edge] {
-        &self.edges
-    }
-
-    pub fn edges_mut(&mut self) -> &mut Vec<Edge> {
-        &mut self.edges
     }
 
     pub fn vertices_edges_mut(&mut self) -> (&mut Vec<Vertex>, &mut Vec<Edge>) {
@@ -68,6 +56,26 @@ impl Graph {
     pub fn clear(&mut self) {
         self.vertices.clear();
         self.edges.clear();
+    }
+
+    pub fn encode(&mut self, zero_indexed: bool) -> String {
+        self.edges.retain(|edge| !edge.is_deleted);
+
+        let mut res = format!("{} {}", self.vertices.len(), self.edges.len());
+
+        for edges in &self.edges {
+            res.push_str(&format!(
+                "\n{} {}",
+                if zero_indexed {
+                    edges.from
+                } else {
+                    edges.from + 1
+                },
+                if zero_indexed { edges.to } else { edges.to + 1 }
+            ));
+        }
+
+        res
     }
 }
 
