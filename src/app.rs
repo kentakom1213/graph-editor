@@ -1,25 +1,9 @@
 use eframe::egui;
 use itertools::Itertools;
 
-#[derive(Debug)]
-struct Vertex {
-    id: usize,
-    position: egui::Pos2,
-    is_pressed: bool,
-    drag_offset: egui::Vec2,
-    is_selected: bool,
-    z_index: u32,
-}
+use crate::graph::{Edge, Graph};
 
-#[derive(Debug)]
-struct Edge {
-    id: usize,
-    from: usize,
-    to: usize,
-    is_selected: bool,
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum EditMode {
     Select,
     AddVertex,
@@ -30,8 +14,7 @@ enum EditMode {
 }
 
 pub struct GraphEditorApp {
-    vertices: Vec<Vertex>,
-    edges: Vec<Edge>,
+    graph: Graph,
     next_z_index: u32,
     edit_mode: EditMode,
 }
@@ -45,30 +28,7 @@ impl GraphEditorApp {
 impl Default for GraphEditorApp {
     fn default() -> Self {
         Self {
-            vertices: vec![
-                Vertex {
-                    id: 0,
-                    position: egui::pos2(200.0, 400.0),
-                    is_pressed: false,
-                    drag_offset: egui::Vec2::ZERO,
-                    is_selected: false,
-                    z_index: 0,
-                },
-                Vertex {
-                    id: 1,
-                    position: egui::pos2(400.0, 400.0),
-                    is_pressed: false,
-                    drag_offset: egui::Vec2::ZERO,
-                    is_selected: false,
-                    z_index: 1,
-                },
-            ],
-            edges: vec![Edge {
-                id: 0,
-                from: 0,
-                to: 1,
-                is_selected: false,
-            }],
+            graph: Graph::default(),
             next_z_index: 2,
             edit_mode: EditMode::Select,
         }
@@ -82,6 +42,8 @@ impl eframe::App for GraphEditorApp {
             .show(ctx, |ui| {
                 let painter = ui.painter();
                 let radius = 50.0;
+
+                let prev_mode = self.edit_mode;
 
                 // モード切替を行う
                 if ui.input(|i| i.key_pressed(egui::Key::S)) {
@@ -97,26 +59,45 @@ impl eframe::App for GraphEditorApp {
                     };
                 }
 
+                // 直前のモードがSelectの場合，選択状態を解除
+                if prev_mode == EditMode::Select && self.edit_mode != EditMode::Select {
+                    for vertex in self.graph.vertices_mut() {
+                        vertex.is_selected = false;
+                    }
+                }
+
+                if let EditMode::AddEdge {
+                    from_vertex: ref mut from_vertex @ Some(from_vertex_id),
+                    ..
+                } = self.edit_mode
+                {
+                    // Escapeキーで選択頂点を解除
+                    if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                        if let Some(from_vertex) = self
+                            .graph
+                            .vertices_mut()
+                            .iter_mut()
+                            .find(|v| v.id == from_vertex_id)
+                        {
+                            from_vertex.is_selected = false;
+                        }
+                        *from_vertex = None;
+                    }
+                }
+
                 // クリックした位置に頂点を追加する
                 if self.edit_mode == EditMode::AddVertex && ui.input(|i| i.pointer.any_click()) {
                     if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-                        self.vertices.push(Vertex {
-                            id: self.vertices.len(),
-                            position: mouse_pos,
-                            is_pressed: false,
-                            drag_offset: egui::Vec2::ZERO,
-                            is_selected: false,
-                            z_index: self.next_z_index,
-                        });
+                        self.graph.add_vertex(mouse_pos, self.next_z_index);
                         self.next_z_index += 1;
                     }
                 }
 
                 // 辺の描画
-                for edge in &self.edges {
+                for edge in self.graph.edges() {
                     if let (Some(from_vertex), Some(to_vertex)) = (
-                        self.vertices.iter().find(|v| v.id == edge.from),
-                        self.vertices.iter().find(|v| v.id == edge.to),
+                        self.graph.vertices().iter().find(|v| v.id == edge.from),
+                        self.graph.vertices().iter().find(|v| v.id == edge.to),
                     ) {
                         painter.line_segment(
                             [from_vertex.position, to_vertex.position],
@@ -126,7 +107,9 @@ impl eframe::App for GraphEditorApp {
                 }
 
                 // 頂点の描画
-                for vertex in self.vertices.iter_mut().sorted_by_key(|v| v.z_index) {
+                let (vertices_mut, edges_mut) = self.graph.vertices_edges_mut();
+
+                for vertex in vertices_mut.iter_mut().sorted_by_key(|v| v.z_index) {
                     let rect = egui::Rect::from_center_size(
                         vertex.position,
                         egui::vec2(radius * 2.0, radius * 2.0),
@@ -180,8 +163,8 @@ impl eframe::App for GraphEditorApp {
                                         *from_vertex = None;
                                     } else {
                                         // クリックした頂点をto_vertexに設定
-                                        self.edges.push(Edge {
-                                            id: self.edges.len(),
+                                        edges_mut.push(Edge {
+                                            id: edges_mut.len(),
                                             from: *from_vertex_inner,
                                             to: vertex.id,
                                             is_selected: false,
@@ -262,7 +245,6 @@ impl eframe::App for GraphEditorApp {
             .show(ctx, |ui| {
                 egui::Frame::new()
                     .inner_margin(egui::Margin::same(10))
-                    .corner_radius(5)
                     .show(ui, |ui| {
                         ui.vertical(|ui| {
                             ui.radio_value(
@@ -287,19 +269,22 @@ impl eframe::App for GraphEditorApp {
                     });
             });
 
-        egui::Window::new("Actions")
-            .fixed_pos(egui::pos2(220.0, 10.0))
+        egui::Window::new("Action")
+            .fixed_pos(egui::pos2(200.0, 10.0))
             .fixed_size(egui::vec2(150.0, 100.0))
             .collapsible(false)
             .show(ctx, |ui| {
-                if ui
-                    .button(egui::RichText::new("Clear All").size(20.0))
-                    .clicked()
-                {
-                    self.vertices.clear();
-                    self.edges.clear();
-                    self.next_z_index = 0;
-                }
+                egui::Frame::new()
+                    .inner_margin(egui::Margin::same(10))
+                    .show(ui, |ui| {
+                        if ui
+                            .button(egui::RichText::new("Clear All").size(20.0))
+                            .clicked()
+                        {
+                            self.graph.clear();
+                            self.next_z_index = 0;
+                        }
+                    });
             });
     }
 }
