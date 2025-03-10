@@ -2,5 +2,6 @@
 
 mod app;
 mod graph;
+mod mode;
 
 pub use app::GraphEditorApp;

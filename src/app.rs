@@ -2,16 +2,7 @@ use eframe::egui;
 use itertools::Itertools;
 
 use crate::graph::{Edge, Graph};
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-enum EditMode {
-    Select,
-    AddVertex,
-    AddEdge {
-        from_vertex: Option<usize>,
-        confirmed: bool,
-    },
-}
+use crate::mode::EditMode;
 
 pub struct GraphEditorApp {
     graph: Graph,
@@ -30,7 +21,7 @@ impl Default for GraphEditorApp {
         Self {
             graph: Graph::default(),
             next_z_index: 2,
-            edit_mode: EditMode::Select,
+            edit_mode: EditMode::default_select(),
         }
     }
 }
@@ -43,20 +34,15 @@ impl eframe::App for GraphEditorApp {
                 let painter = ui.painter();
                 let radius = 50.0;
 
-                let prev_mode = self.edit_mode;
-
                 // モード切替を行う
                 if ui.input(|i| i.key_pressed(egui::Key::S)) {
-                    self.edit_mode = EditMode::Select;
+                    self.edit_mode = EditMode::default_select();
                 }
                 if ui.input(|i| i.key_pressed(egui::Key::V)) {
-                    self.edit_mode = EditMode::AddVertex;
+                    self.edit_mode = EditMode::default_add_vertex();
                 }
                 if ui.input(|i| i.key_pressed(egui::Key::E)) {
-                    self.edit_mode = EditMode::AddEdge {
-                        from_vertex: None,
-                        confirmed: false,
-                    };
+                    self.edit_mode = EditMode::default_add_edge();
                 }
 
                 if let EditMode::AddEdge {
@@ -239,20 +225,17 @@ impl eframe::App for GraphEditorApp {
                         ui.vertical(|ui| {
                             ui.radio_value(
                                 &mut self.edit_mode,
-                                EditMode::Select,
+                                EditMode::default_select(),
                                 egui::RichText::new("Select [S]").size(20.0),
                             );
                             ui.radio_value(
                                 &mut self.edit_mode,
-                                EditMode::AddVertex,
+                                EditMode::default_add_vertex(),
                                 egui::RichText::new("Add Vertex [V]").size(20.0),
                             );
                             ui.radio_value(
                                 &mut self.edit_mode,
-                                EditMode::AddEdge {
-                                    from_vertex: None,
-                                    confirmed: false,
-                                },
+                                EditMode::default_add_edge(),
                                 egui::RichText::new("Add Edge [E]").size(20.0),
                             );
                         });
