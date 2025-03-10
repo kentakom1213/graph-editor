@@ -8,6 +8,9 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
         .fixed_size(egui::vec2(200.0, 150.0))
         .collapsible(false)
         .show(ctx, |ui| {
+            // カーソルがあるか判定
+            app.hovered_on_other_window = ui.rect_contains_pointer(ui.max_rect());
+
             egui::Frame::new()
                 .inner_margin(egui::Margin::same(10))
                 .show(ui, |ui| {

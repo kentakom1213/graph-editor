@@ -9,9 +9,27 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
         .frame(egui::Frame::new().fill(app.config.bg_color))
         .show(ctx, |ui| {
             let painter = ui.painter();
+
             // モード切替を行う
             if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-                app.edit_mode = EditMode::default_normal();
+                // AddEdgeモードで，片方の頂点が選択済みの場合，選択状態を解除
+                if let EditMode::AddEdge {
+                    from_vertex: ref mut from_vertex @ Some(from_vertex_id),
+                    ..
+                } = app.edit_mode
+                {
+                    if let Some(from_vertex) = app
+                        .graph
+                        .vertices_mut()
+                        .iter_mut()
+                        .find(|v| v.id == from_vertex_id)
+                    {
+                        from_vertex.is_selected = false;
+                    }
+                    *from_vertex = None;
+                } else {
+                    app.edit_mode = EditMode::default_normal();
+                }
             }
             if ui.input(|i| i.key_pressed(egui::Key::V)) {
                 app.edit_mode = EditMode::default_add_vertex();
@@ -23,27 +41,11 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
                 app.edit_mode = EditMode::default_delete_edge();
             }
 
-            if let EditMode::AddEdge {
-                from_vertex: ref mut from_vertex @ Some(from_vertex_id),
-                ..
-            } = app.edit_mode
-            {
-                // Escapeキーで選択頂点を解除
-                if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-                    if let Some(from_vertex) = app
-                        .graph
-                        .vertices_mut()
-                        .iter_mut()
-                        .find(|v| v.id == from_vertex_id)
-                    {
-                        from_vertex.is_selected = false;
-                    }
-                    *from_vertex = None;
-                }
-            }
-
             // クリックした位置に頂点を追加する
-            if app.edit_mode.is_add_vertex() && ui.input(|i| i.pointer.any_click()) {
+            if app.edit_mode.is_add_vertex()
+                && ui.input(|i| i.pointer.any_click())
+                && !app.hovered_on_other_window
+            {
                 if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
                     app.graph.add_vertex(mouse_pos, app.next_z_index);
                     app.next_z_index += 1;
