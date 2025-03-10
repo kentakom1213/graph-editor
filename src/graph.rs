@@ -30,7 +30,7 @@ impl Edge {
 #[derive(Debug)]
 pub struct Graph {
     vertices: Vec<Vertex>,
-    edges: Vec<Edge>,
+    pub edges: Vec<Edge>,
 }
 
 impl Graph {
@@ -51,6 +51,23 @@ impl Graph {
             is_selected: false,
             z_index,
         });
+    }
+
+    /// 無向グラフとみなしたとき，すでに辺が存在するか
+    fn has_same_edge_undirected(edges: &Vec<Edge>, from: usize, to: usize) -> bool {
+        edges
+            .iter()
+            .any(|edge| (edge.from, edge.to) == (from, to) || (edge.from, edge.to) == (to, from))
+    }
+
+    /// ユニークな無向辺を追加する．正常に追加された場合`true`を返す．
+    pub fn add_unique_edge_undirected(edges: &mut Vec<Edge>, from: usize, to: usize) -> bool {
+        if Self::has_same_edge_undirected(edges, from, to) {
+            false
+        } else {
+            edges.push(Edge::new(from, to));
+            true
+        }
     }
 
     pub fn clear(&mut self) {

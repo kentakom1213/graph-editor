@@ -1,7 +1,7 @@
 use eframe::egui;
 use itertools::Itertools;
 
-use crate::graph::{Edge, Graph};
+use crate::graph::Graph;
 use crate::mode::EditMode;
 
 pub struct GraphEditorApp {
@@ -164,7 +164,7 @@ impl eframe::App for GraphEditorApp {
                     }
 
                     // ホバー時
-                    if matches!(self.edit_mode, EditMode::AddEdge { .. }) {
+                    if self.edit_mode.is_add_edge() {
                         vertex.is_pressed = response.hovered();
                     }
 
@@ -185,12 +185,12 @@ impl eframe::App for GraphEditorApp {
                                     vertex.is_selected = false;
                                     *from_vertex = None;
                                 } else {
-                                    // クリックした頂点をto_vertexに設定
-                                    // from-toをソート
-                                    let from = std::cmp::min(*from_vertex_inner, vertex.id);
-                                    let to = std::cmp::max(*from_vertex_inner, vertex.id);
-
-                                    edges_mut.push(Edge::new(from, to));
+                                    // クリックした頂点をto_vertexに設定（すでに追加されている場合は無視）
+                                    Graph::add_unique_edge_undirected(
+                                        edges_mut,
+                                        *from_vertex_inner,
+                                        vertex.id,
+                                    );
                                     *confirmed = true;
                                 }
                             } else {
@@ -267,8 +267,7 @@ impl eframe::App for GraphEditorApp {
                 }
             });
 
-        egui::Window::new("Edit")
-            .fixed_pos(egui::pos2(10.0, 10.0))
+        egui::Window::new("Edit Mode")
             .fixed_size(egui::vec2(200.0, 150.0))
             .collapsible(false)
             .show(ctx, |ui| {
@@ -276,7 +275,6 @@ impl eframe::App for GraphEditorApp {
                     .inner_margin(egui::Margin::same(10))
                     .show(ui, |ui| {
                         ui.vertical(|ui| {
-                            ui.label(egui::RichText::new("Edit Mode").size(20.0));
                             ui.radio_value(
                                 &mut self.edit_mode,
                                 EditMode::default_normal(),

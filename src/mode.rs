@@ -33,6 +33,10 @@ impl EditMode {
         matches!(self, Self::AddVertex)
     }
 
+    pub fn is_add_edge(&self) -> bool {
+        matches!(self, Self::AddEdge { .. })
+    }
+
     pub fn is_delete_edge(&self) -> bool {
         matches!(self, Self::DeleteEdge { .. })
     }

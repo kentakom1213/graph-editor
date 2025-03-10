@@ -18,7 +18,7 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
     eframe::run_native(
-        "eframe template",
+        "Graph Editor",
         native_options,
         Box::new(|_cc| Ok(Box::new(graph_editor::GraphEditorApp::default()))),
     )
