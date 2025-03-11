@@ -164,7 +164,7 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
         }
 
         // ホバー時
-        if app.edit_mode.is_add_edge() {
+        if app.edit_mode.is_add_edge() || app.edit_mode.is_delete() {
             vertex.is_pressed = response.hovered();
         }
 
