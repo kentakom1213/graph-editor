@@ -32,8 +32,8 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         );
                         ui.radio_value(
                             &mut app.edit_mode,
-                            EditMode::default_delete_edge(),
-                            egui::RichText::new("Delete Edge [D]").size(app.config.menu_font_size),
+                            EditMode::default_delete(),
+                            egui::RichText::new("Delete [D]").size(app.config.menu_font_size),
                         );
 
                         ui.separator();

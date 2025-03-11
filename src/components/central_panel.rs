@@ -38,7 +38,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
                 app.edit_mode = EditMode::default_add_edge();
             }
             if ui.input(|i| i.key_pressed(egui::Key::D)) {
-                app.edit_mode = EditMode::default_delete_edge();
+                app.edit_mode = EditMode::default_delete();
             }
 
             // クリックした位置に頂点を追加する
@@ -74,7 +74,7 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
             vertices_mut.iter().find(|v| v.id == edge.to),
         ) {
             // ノーマルモードの場合，エッジの選択判定を行う
-            if app.edit_mode.is_delete_edge() {
+            if app.edit_mode.is_delete() {
                 let mouse_pos = ui.input(|i| i.pointer.hover_pos()).unwrap_or_default();
                 let edge_vector = to_vertex.position - from_vertex.position;
                 let mouse_vector = mouse_pos - from_vertex.position;

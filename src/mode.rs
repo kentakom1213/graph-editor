@@ -6,7 +6,7 @@ pub enum EditMode {
         from_vertex: Option<usize>,
         confirmed: bool,
     },
-    DeleteEdge,
+    Delete,
 }
 
 impl EditMode {
@@ -25,8 +25,8 @@ impl EditMode {
         }
     }
 
-    pub fn default_delete_edge() -> Self {
-        Self::DeleteEdge
+    pub fn default_delete() -> Self {
+        Self::Delete
     }
 
     pub fn is_add_vertex(&self) -> bool {
@@ -37,7 +37,7 @@ impl EditMode {
         matches!(self, Self::AddEdge { .. })
     }
 
-    pub fn is_delete_edge(&self) -> bool {
-        matches!(self, Self::DeleteEdge { .. })
+    pub fn is_delete(&self) -> bool {
+        matches!(self, Self::Delete)
     }
 }
