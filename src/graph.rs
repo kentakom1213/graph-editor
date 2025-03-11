@@ -6,6 +6,7 @@ pub struct Vertex {
     pub is_pressed: bool,
     pub is_selected: bool,
     pub z_index: u32,
+    pub is_deleted: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +51,7 @@ impl Graph {
             drag_offset: egui::Vec2::ZERO,
             is_selected: false,
             z_index,
+            is_deleted: false,
         });
     }
 
@@ -107,6 +109,7 @@ impl Default for Graph {
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,
                     z_index: 0,
+                    is_deleted: false,
                 },
                 Vertex {
                     id: 1,
@@ -115,6 +118,7 @@ impl Default for Graph {
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,
                     z_index: 1,
+                    is_deleted: false,
                 },
             ],
             edges: vec![Edge {
