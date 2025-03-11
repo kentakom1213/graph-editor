@@ -229,10 +229,10 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
         }
 
         // 頂点の色
-        let color = if vertex.is_pressed {
-            app.config.vertex_color_dragged
-        } else if vertex.is_selected {
+        let color = if vertex.is_selected {
             app.config.vertex_color_selected
+        } else if vertex.is_pressed {
+            app.config.vertex_color_dragged
         } else {
             app.config.vertex_color_normal
         };
