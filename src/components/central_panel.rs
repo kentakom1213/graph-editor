@@ -44,7 +44,8 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
             // クリックした位置に頂点を追加する
             if app.edit_mode.is_add_vertex()
                 && ui.input(|i| i.pointer.any_click())
-                && !app.hovered_on_other_window
+                && !app.hovered_on_menu_window
+                && !app.hovered_on_input_window
             {
                 if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
                     app.graph.add_vertex(mouse_pos, app.next_z_index);

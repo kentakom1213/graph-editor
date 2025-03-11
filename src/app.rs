@@ -10,7 +10,8 @@ pub struct GraphEditorApp {
     pub next_z_index: u32,
     pub edit_mode: EditMode,
     pub zero_indexed: bool,
-    pub hovered_on_other_window: bool,
+    pub hovered_on_menu_window: bool,
+    pub hovered_on_input_window: bool,
     pub config: AppConfig,
 }
 
@@ -27,7 +28,8 @@ impl Default for GraphEditorApp {
             next_z_index: 2,
             edit_mode: EditMode::default_normal(),
             zero_indexed: false,
-            hovered_on_other_window: false,
+            hovered_on_menu_window: false,
+            hovered_on_input_window: false,
             config: AppConfig::default(),
         }
     }

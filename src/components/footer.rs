@@ -12,7 +12,7 @@ pub fn draw_footer(ctx: &Context) {
         .show(ctx, |ui| {
             egui::Frame::default().show(ui, |ui| {
                 ui.horizontal_centered(|ui| {
-                    ui.label("2025 ©kentakom1213");
+                    ui.label("© 2025 kentakom1213");
                     if ui
                         .hyperlink_to("GitHub", "https://github.com/kentakom1213/graph-editor")
                         .clicked()

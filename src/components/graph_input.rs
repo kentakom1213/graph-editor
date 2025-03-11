@@ -9,6 +9,9 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
         .collapsible(true)
         .title_bar(true)
         .show(ctx, |ui| {
+            // カーソルがあるか判定
+            app.hovered_on_input_window = ui.rect_contains_pointer(ui.max_rect());
+
             // グラフのコード形式
             let graph_encoded = app.graph.encode(app.zero_indexed);
 
