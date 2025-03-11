@@ -80,6 +80,14 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 let mouse_vector = mouse_pos - from_vertex.position;
                 let edge_length = edge_vector.length();
 
+                // 端点との距離
+                let distance_from_vertex = (mouse_pos - from_vertex.position)
+                    .length()
+                    .min((mouse_pos - to_vertex.position).length());
+
+                // カーソルが頂点上にあるかどうか
+                let is_on_vertex = distance_from_vertex < app.config.vertex_radius;
+
                 // エッジ上の最近接点を計算する
                 let t = (edge_vector.dot(mouse_vector) / edge_length.powi(2)).clamp(0.0, 1.0);
                 let nearest_point = from_vertex.position + t * edge_vector;
@@ -90,7 +98,10 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 // 当たり判定の閾値 (線の太さ + 余裕分)
                 let threshold = 10.0;
 
-                if distance < threshold {
+                // カーソルが辺上にあるかどうか
+                let is_on_edge = distance < threshold;
+
+                if is_on_edge && !is_on_vertex {
                     edge.is_pressed = true;
 
                     if ui.input(|i| i.pointer.any_click()) {
