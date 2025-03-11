@@ -35,6 +35,14 @@ pub struct Graph {
 }
 
 impl Graph {
+    pub fn discard_deleted_edges(edges: &mut Vec<Edge>) {
+        edges.retain(|edge| !edge.is_deleted);
+    }
+
+    pub fn discard_deleted_vertices(vertices: &mut Vec<Vertex>) {
+        vertices.retain(|vertex| !vertex.is_deleted);
+    }
+
     pub fn vertices_mut(&mut self) -> &mut Vec<Vertex> {
         &mut self.vertices
     }
@@ -78,7 +86,8 @@ impl Graph {
     }
 
     pub fn encode(&mut self, zero_indexed: bool) -> String {
-        self.edges.retain(|edge| !edge.is_deleted);
+        // 削除済み頂点を削除
+        Self::discard_deleted_edges(&mut self.edges);
 
         let mut res = format!("{} {}", self.vertices.len(), self.edges.len());
 

@@ -66,7 +66,7 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
     let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
 
     // 削除済み辺の削除
-    edges_mut.retain(|edge| !edge.is_deleted);
+    Graph::discard_deleted_edges(edges_mut);
 
     for edge in edges_mut.iter_mut() {
         if let (Some(from_vertex), Some(to_vertex)) = (
