@@ -1,5 +1,8 @@
 use egui::Color32;
 
+/// バージョン情報
+pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// 全体の設定
 pub struct AppConfig {
     pub bg_color: Color32,
