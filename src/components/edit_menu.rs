@@ -71,6 +71,17 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         ui.label(
                             egui::RichText::new("Direction").size(app.config.menu_font_size_mini),
                         );
+                        ui.radio_value(
+                            &mut app.graph.is_directed,
+                            false,
+                            egui::RichText::new("Undirected")
+                                .size(app.config.menu_font_size_normal),
+                        );
+                        ui.radio_value(
+                            &mut app.graph.is_directed,
+                            true,
+                            egui::RichText::new("Directed").size(app.config.menu_font_size_normal),
+                        );
 
                         ui.separator();
 
