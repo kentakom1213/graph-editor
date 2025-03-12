@@ -4,7 +4,7 @@ use crate::{mode::EditMode, GraphEditorApp};
 
 /// 編集メニューを表示する
 pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
-    egui::Window::new("Edit Mode")
+    egui::Window::new("Menu")
         .title_bar(false)
         .fixed_size(egui::vec2(200.0, 150.0))
         .collapsible(false)
@@ -17,43 +17,53 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                 .show(ui, |ui| {
                     ui.vertical(|ui| {
                         // モード切替
-                        ui.label("Edit Mode");
+                        ui.label(
+                            egui::RichText::new("Edit Mode").size(app.config.menu_font_size_mini),
+                        );
 
                         ui.radio_value(
                             &mut app.edit_mode,
                             EditMode::default_normal(),
-                            egui::RichText::new("Normal [Esc]").size(app.config.menu_font_size),
+                            egui::RichText::new("Normal [Esc]")
+                                .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.edit_mode,
                             EditMode::default_add_vertex(),
-                            egui::RichText::new("Add Vertex [V]").size(app.config.menu_font_size),
+                            egui::RichText::new("Add Vertex [V]")
+                                .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.edit_mode,
                             EditMode::default_add_edge(),
-                            egui::RichText::new("Add Edge [E]").size(app.config.menu_font_size),
+                            egui::RichText::new("Add Edge [E]")
+                                .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.edit_mode,
                             EditMode::default_delete(),
-                            egui::RichText::new("Delete [D]").size(app.config.menu_font_size),
+                            egui::RichText::new("Delete [D]")
+                                .size(app.config.menu_font_size_normal),
                         );
 
                         ui.separator();
 
                         // 0-indexed / 1-indexed の選択
-                        ui.label("Indexing");
+                        ui.label(
+                            egui::RichText::new("Indexing").size(app.config.menu_font_size_mini),
+                        );
 
                         ui.radio_value(
                             &mut app.zero_indexed,
                             true,
-                            egui::RichText::new("0-indexed").size(app.config.menu_font_size),
+                            egui::RichText::new("0-indexed [1]")
+                                .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.zero_indexed,
                             false,
-                            egui::RichText::new("1-indexed").size(app.config.menu_font_size),
+                            egui::RichText::new("1-indexed [1]")
+                                .size(app.config.menu_font_size_normal),
                         );
 
                         ui.separator();
@@ -61,7 +71,8 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         // グラフのクリア
                         if ui
                             .button(
-                                egui::RichText::new("Clear All").size(app.config.menu_font_size),
+                                egui::RichText::new("Clear All")
+                                    .size(app.config.menu_font_size_normal),
                             )
                             .clicked()
                         {

@@ -20,7 +20,9 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
                         if ui
-                            .button(egui::RichText::new("Copy").size(app.config.menu_font_size))
+                            .button(
+                                egui::RichText::new("Copy").size(app.config.menu_font_size_normal),
+                            )
                             .clicked()
                         {
                             ctx.copy_text(graph_encoded.clone());

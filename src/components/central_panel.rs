@@ -13,6 +13,9 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
             // モード切替を行う
             change_edit_mode(app, ui);
 
+            // Indexing切替を行う
+            change_indexing(app, ui);
+
             // クリックした位置に頂点を追加
             add_vertex(app, ui);
 
@@ -54,6 +57,12 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     }
     if ui.input(|i| i.key_pressed(egui::Key::D)) {
         app.edit_mode = EditMode::default_delete();
+    }
+}
+
+fn change_indexing(app: &mut GraphEditorApp, ui: &egui::Ui) {
+    if ui.input(|i| i.key_pressed(egui::Key::Num1)) {
+        app.zero_indexed ^= true;
     }
 }
 
