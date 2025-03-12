@@ -63,10 +63,9 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
 
 /// central_panel に辺を描画する
 fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) {
-    let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
+    app.graph.restore_graph();
 
-    // 削除済み辺の削除
-    Graph::discard_deleted_edges(edges_mut);
+    let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
 
     for edge in edges_mut.iter_mut() {
         if let (Some(from_vertex), Some(to_vertex)) = (
@@ -112,9 +111,7 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 }
             }
 
-            let color = if edge.is_deleted {
-                app.config.bg_color
-            } else if edge.is_pressed {
+            let color = if edge.is_pressed {
                 app.config.edge_color_hover
             } else {
                 app.config.edge_color_normal
@@ -130,6 +127,8 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
 
 /// central_panel に頂点を描画する
 fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) {
+    app.graph.restore_graph();
+
     let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
 
     for vertex in vertices_mut.iter_mut().sorted_by_key(|v| v.z_index) {
@@ -174,28 +173,37 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
             vertex.z_index = app.next_z_index;
             app.next_z_index += 1;
 
-            if let EditMode::AddEdge {
-                ref mut from_vertex,
-                ref mut confirmed,
-            } = app.edit_mode
-            {
-                if let Some(from_vertex_inner) = from_vertex {
-                    if *from_vertex_inner == vertex.id {
-                        // 自分だった場合，選択を解除
-                        vertex.is_selected = false;
-                        *from_vertex = None;
+            match app.edit_mode {
+                EditMode::AddEdge {
+                    ref mut from_vertex,
+                    ref mut confirmed,
+                } => {
+                    if let Some(from_vertex_inner) = from_vertex {
+                        if *from_vertex_inner == vertex.id {
+                            // 自分だった場合，選択を解除
+                            vertex.is_selected = false;
+                            *from_vertex = None;
+                        } else {
+                            // クリックした頂点をto_vertexに設定（すでに追加されている場合は無視）
+                            Graph::add_unique_edge_undirected(
+                                edges_mut,
+                                *from_vertex_inner,
+                                vertex.id,
+                            );
+                            *confirmed = true;
+                        }
                     } else {
-                        // クリックした頂点をto_vertexに設定（すでに追加されている場合は無視）
-                        Graph::add_unique_edge_undirected(edges_mut, *from_vertex_inner, vertex.id);
-                        *confirmed = true;
+                        vertex.is_selected = true;
+                        vertex.z_index = app.next_z_index;
+                        app.next_z_index += 1;
+                        // クリックした頂点をfrom_vertexに設定
+                        *from_vertex = Some(vertex.id);
                     }
-                } else {
-                    vertex.is_selected = true;
-                    vertex.z_index = app.next_z_index;
-                    app.next_z_index += 1;
-                    // クリックした頂点をfrom_vertexに設定
-                    *from_vertex = Some(vertex.id);
                 }
+                EditMode::Delete => {
+                    vertex.is_deleted = true;
+                }
+                _ => {}
             }
         }
 

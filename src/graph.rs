@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Debug, Clone)]
 pub struct Vertex {
     pub id: usize,
@@ -31,16 +33,39 @@ impl Edge {
 #[derive(Debug)]
 pub struct Graph {
     vertices: Vec<Vertex>,
-    pub edges: Vec<Edge>,
+    edges: Vec<Edge>,
 }
 
 impl Graph {
-    pub fn discard_deleted_edges(edges: &mut Vec<Edge>) {
-        edges.retain(|edge| !edge.is_deleted);
-    }
+    /// 削除済みフラグが立っている頂点，辺を削除する
+    pub fn restore_graph(&mut self) {
+        // 削除済みフラグが立っている頂点を削除
+        self.vertices.retain(|vertex| !vertex.is_deleted);
 
-    pub fn discard_deleted_vertices(vertices: &mut Vec<Vertex>) {
-        vertices.retain(|vertex| !vertex.is_deleted);
+        // 頂点番号を振り直す
+        let mut new_vertex_id = HashMap::new();
+
+        for (i, vertex) in self.vertices.iter_mut().enumerate() {
+            new_vertex_id.insert(vertex.id, i);
+            vertex.id = i;
+        }
+
+        // 辺の頂点番号を振り直す
+        for edge in &mut self.edges {
+            if let Some((new_from, new_to)) = new_vertex_id
+                .get(&edge.from)
+                .zip(new_vertex_id.get(&edge.to))
+            {
+                edge.from = *new_from;
+                edge.to = *new_to;
+            } else {
+                // 辺を削除
+                edge.is_deleted = true;
+            }
+        }
+
+        // 削除済みフラグが立っている辺を削除
+        self.edges.retain(|edge| !edge.is_deleted);
     }
 
     pub fn vertices_mut(&mut self) -> &mut Vec<Vertex> {
@@ -87,7 +112,7 @@ impl Graph {
 
     pub fn encode(&mut self, zero_indexed: bool) -> String {
         // 削除済み頂点を削除
-        Self::discard_deleted_edges(&mut self.edges);
+        self.restore_graph();
 
         let mut res = format!("{} {}", self.vertices.len(), self.edges.len());
 
