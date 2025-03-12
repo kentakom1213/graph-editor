@@ -5,6 +5,7 @@ use crate::{mode::EditMode, GraphEditorApp};
 /// 編集メニューを表示する
 pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
     egui::Window::new("Edit Mode")
+        .title_bar(false)
         .fixed_size(egui::vec2(200.0, 150.0))
         .collapsible(false)
         .show(ctx, |ui| {
@@ -15,6 +16,9 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                 .inner_margin(egui::Margin::same(10))
                 .show(ui, |ui| {
                     ui.vertical(|ui| {
+                        // モード切替
+                        ui.label("Edit Mode");
+
                         ui.radio_value(
                             &mut app.edit_mode,
                             EditMode::default_normal(),
@@ -34,6 +38,22 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             &mut app.edit_mode,
                             EditMode::default_delete(),
                             egui::RichText::new("Delete [D]").size(app.config.menu_font_size),
+                        );
+
+                        ui.separator();
+
+                        // 0-indexed / 1-indexed の選択
+                        ui.label("Indexing");
+
+                        ui.radio_value(
+                            &mut app.zero_indexed,
+                            true,
+                            egui::RichText::new("0-indexed").size(app.config.menu_font_size),
+                        );
+                        ui.radio_value(
+                            &mut app.zero_indexed,
+                            false,
+                            egui::RichText::new("1-indexed").size(app.config.menu_font_size),
                         );
 
                         ui.separator();
