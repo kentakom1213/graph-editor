@@ -38,7 +38,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
                 app.edit_mode = EditMode::default_add_edge();
             }
             if ui.input(|i| i.key_pressed(egui::Key::D)) {
-                app.edit_mode = EditMode::default_delete_edge();
+                app.edit_mode = EditMode::default_delete();
             }
 
             // クリックした位置に頂点を追加する
@@ -63,10 +63,9 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
 
 /// central_panel に辺を描画する
 fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) {
-    let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
+    app.graph.restore_graph();
 
-    // 削除済み辺の削除
-    edges_mut.retain(|edge| !edge.is_deleted);
+    let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
 
     for edge in edges_mut.iter_mut() {
         if let (Some(from_vertex), Some(to_vertex)) = (
@@ -74,11 +73,19 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
             vertices_mut.iter().find(|v| v.id == edge.to),
         ) {
             // ノーマルモードの場合，エッジの選択判定を行う
-            if app.edit_mode.is_delete_edge() {
+            if app.edit_mode.is_delete() {
                 let mouse_pos = ui.input(|i| i.pointer.hover_pos()).unwrap_or_default();
                 let edge_vector = to_vertex.position - from_vertex.position;
                 let mouse_vector = mouse_pos - from_vertex.position;
                 let edge_length = edge_vector.length();
+
+                // 端点との距離
+                let distance_from_vertex = (mouse_pos - from_vertex.position)
+                    .length()
+                    .min((mouse_pos - to_vertex.position).length());
+
+                // カーソルが頂点上にあるかどうか
+                let is_on_vertex = distance_from_vertex < app.config.vertex_radius;
 
                 // エッジ上の最近接点を計算する
                 let t = (edge_vector.dot(mouse_vector) / edge_length.powi(2)).clamp(0.0, 1.0);
@@ -90,7 +97,10 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 // 当たり判定の閾値 (線の太さ + 余裕分)
                 let threshold = 10.0;
 
-                if distance < threshold {
+                // カーソルが辺上にあるかどうか
+                let is_on_edge = distance < threshold;
+
+                if is_on_edge && !is_on_vertex {
                     edge.is_pressed = true;
 
                     if ui.input(|i| i.pointer.any_click()) {
@@ -101,9 +111,7 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 }
             }
 
-            let color = if edge.is_deleted {
-                app.config.bg_color
-            } else if edge.is_pressed {
+            let color = if edge.is_pressed {
                 app.config.edge_color_hover
             } else {
                 app.config.edge_color_normal
@@ -119,6 +127,8 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
 
 /// central_panel に頂点を描画する
 fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) {
+    app.graph.restore_graph();
+
     let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
 
     for vertex in vertices_mut.iter_mut().sorted_by_key(|v| v.z_index) {
@@ -153,7 +163,7 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
         }
 
         // ホバー時
-        if app.edit_mode.is_add_edge() {
+        if app.edit_mode.is_add_edge() || app.edit_mode.is_delete() {
             vertex.is_pressed = response.hovered();
         }
 
@@ -163,28 +173,37 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
             vertex.z_index = app.next_z_index;
             app.next_z_index += 1;
 
-            if let EditMode::AddEdge {
-                ref mut from_vertex,
-                ref mut confirmed,
-            } = app.edit_mode
-            {
-                if let Some(from_vertex_inner) = from_vertex {
-                    if *from_vertex_inner == vertex.id {
-                        // 自分だった場合，選択を解除
-                        vertex.is_selected = false;
-                        *from_vertex = None;
+            match app.edit_mode {
+                EditMode::AddEdge {
+                    ref mut from_vertex,
+                    ref mut confirmed,
+                } => {
+                    if let Some(from_vertex_inner) = from_vertex {
+                        if *from_vertex_inner == vertex.id {
+                            // 自分だった場合，選択を解除
+                            vertex.is_selected = false;
+                            *from_vertex = None;
+                        } else {
+                            // クリックした頂点をto_vertexに設定（すでに追加されている場合は無視）
+                            Graph::add_unique_edge_undirected(
+                                edges_mut,
+                                *from_vertex_inner,
+                                vertex.id,
+                            );
+                            *confirmed = true;
+                        }
                     } else {
-                        // クリックした頂点をto_vertexに設定（すでに追加されている場合は無視）
-                        Graph::add_unique_edge_undirected(edges_mut, *from_vertex_inner, vertex.id);
-                        *confirmed = true;
+                        vertex.is_selected = true;
+                        vertex.z_index = app.next_z_index;
+                        app.next_z_index += 1;
+                        // クリックした頂点をfrom_vertexに設定
+                        *from_vertex = Some(vertex.id);
                     }
-                } else {
-                    vertex.is_selected = true;
-                    vertex.z_index = app.next_z_index;
-                    app.next_z_index += 1;
-                    // クリックした頂点をfrom_vertexに設定
-                    *from_vertex = Some(vertex.id);
                 }
+                EditMode::Delete => {
+                    vertex.is_deleted = true;
+                }
+                _ => {}
             }
         }
 
@@ -218,10 +237,10 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
         }
 
         // 頂点の色
-        let color = if vertex.is_pressed {
-            app.config.vertex_color_dragged
-        } else if vertex.is_selected {
+        let color = if vertex.is_selected {
             app.config.vertex_color_selected
+        } else if vertex.is_pressed {
+            app.config.vertex_color_dragged
         } else {
             app.config.vertex_color_normal
         };

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Debug, Clone)]
 pub struct Vertex {
     pub id: usize,
@@ -6,6 +8,7 @@ pub struct Vertex {
     pub is_pressed: bool,
     pub is_selected: bool,
     pub z_index: u32,
+    pub is_deleted: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -30,10 +33,41 @@ impl Edge {
 #[derive(Debug)]
 pub struct Graph {
     vertices: Vec<Vertex>,
-    pub edges: Vec<Edge>,
+    edges: Vec<Edge>,
 }
 
 impl Graph {
+    /// 削除済みフラグが立っている頂点，辺を削除する
+    pub fn restore_graph(&mut self) {
+        // 削除済みフラグが立っている頂点を削除
+        self.vertices.retain(|vertex| !vertex.is_deleted);
+
+        // 頂点番号を振り直す
+        let mut new_vertex_id = HashMap::new();
+
+        for (i, vertex) in self.vertices.iter_mut().enumerate() {
+            new_vertex_id.insert(vertex.id, i);
+            vertex.id = i;
+        }
+
+        // 辺の頂点番号を振り直す
+        for edge in &mut self.edges {
+            if let Some((new_from, new_to)) = new_vertex_id
+                .get(&edge.from)
+                .zip(new_vertex_id.get(&edge.to))
+            {
+                edge.from = *new_from;
+                edge.to = *new_to;
+            } else {
+                // 辺を削除
+                edge.is_deleted = true;
+            }
+        }
+
+        // 削除済みフラグが立っている辺を削除
+        self.edges.retain(|edge| !edge.is_deleted);
+    }
+
     pub fn vertices_mut(&mut self) -> &mut Vec<Vertex> {
         &mut self.vertices
     }
@@ -50,6 +84,7 @@ impl Graph {
             drag_offset: egui::Vec2::ZERO,
             is_selected: false,
             z_index,
+            is_deleted: false,
         });
     }
 
@@ -76,7 +111,8 @@ impl Graph {
     }
 
     pub fn encode(&mut self, zero_indexed: bool) -> String {
-        self.edges.retain(|edge| !edge.is_deleted);
+        // 削除済み頂点を削除
+        self.restore_graph();
 
         let mut res = format!("{} {}", self.vertices.len(), self.edges.len());
 
@@ -107,6 +143,7 @@ impl Default for Graph {
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,
                     z_index: 0,
+                    is_deleted: false,
                 },
                 Vertex {
                     id: 1,
@@ -115,6 +152,7 @@ impl Default for Graph {
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,
                     z_index: 1,
+                    is_deleted: false,
                 },
             ],
             edges: vec![Edge {
