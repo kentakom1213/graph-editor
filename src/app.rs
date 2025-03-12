@@ -47,6 +47,6 @@ impl eframe::App for GraphEditorApp {
         draw_graph_input(self, ctx);
 
         // フッターを描画
-        draw_footer(ctx);
+        draw_footer(self, ctx);
     }
 }

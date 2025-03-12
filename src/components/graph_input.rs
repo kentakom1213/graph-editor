@@ -20,24 +20,13 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
                         if ui
-                            .button(egui::RichText::new("Copy").size(app.config.menu_font_size))
+                            .button(
+                                egui::RichText::new("Copy").size(app.config.menu_font_size_normal),
+                            )
                             .clicked()
                         {
                             ctx.copy_text(graph_encoded.clone());
                         }
-                        ui.label(" ");
-
-                        // 0-indexed / 1-indexed の選択
-                        ui.radio_value(
-                            &mut app.zero_indexed,
-                            true,
-                            egui::RichText::new("0-indexed").size(app.config.menu_font_size),
-                        );
-                        ui.radio_value(
-                            &mut app.zero_indexed,
-                            false,
-                            egui::RichText::new("1-indexed").size(app.config.menu_font_size),
-                        );
                     });
                     ui.separator();
 
