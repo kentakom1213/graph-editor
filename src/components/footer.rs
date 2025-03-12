@@ -1,5 +1,7 @@
 use egui::Context;
 
+use crate::config::APP_VERSION;
+
 /// フッターを描画する
 pub fn draw_footer(ctx: &Context) {
     // 画面下部にフッターを追加
@@ -12,7 +14,8 @@ pub fn draw_footer(ctx: &Context) {
         .show(ctx, |ui| {
             egui::Frame::default().show(ui, |ui| {
                 ui.horizontal_centered(|ui| {
-                    ui.label("© 2025 kentakom1213");
+                    ui.label(format!("Graph Editor v{APP_VERSION} © 2025 kentakom1213"));
+
                     if ui
                         .hyperlink_to("GitHub", "https://github.com/kentakom1213/graph-editor")
                         .clicked()
