@@ -129,6 +129,7 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
 fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) {
     app.graph.restore_graph();
 
+    let is_directed = app.graph.is_directed;
     let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
 
     for vertex in vertices_mut.iter_mut().sorted_by_key(|v| v.z_index) {
@@ -185,7 +186,8 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
                             *from_vertex = None;
                         } else {
                             // クリックした頂点をto_vertexに設定（すでに追加されている場合は無視）
-                            Graph::add_unique_edge_undirected(
+                            Graph::add_unique_edge(
+                                is_directed,
                                 edges_mut,
                                 *from_vertex_inner,
                                 vertex.id,
