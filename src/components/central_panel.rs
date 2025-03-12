@@ -46,17 +46,17 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
             }
             *from_vertex = None;
         } else {
-            app.edit_mode = EditMode::default_normal();
+            app.switch_normal_mode();
         }
     }
     if ui.input(|i| i.key_pressed(egui::Key::V)) {
-        app.edit_mode = EditMode::default_add_vertex();
+        app.switch_add_vertex_mode();
     }
     if ui.input(|i| i.key_pressed(egui::Key::E)) {
-        app.edit_mode = EditMode::default_add_edge();
+        app.switch_add_edge_mode();
     }
     if ui.input(|i| i.key_pressed(egui::Key::D)) {
-        app.edit_mode = EditMode::default_delete();
+        app.switch_delete_mode();
     }
 }
 

@@ -73,6 +73,10 @@ impl Graph {
         &mut self.vertices
     }
 
+    pub fn edges_mut(&mut self) -> &mut Vec<Edge> {
+        &mut self.edges
+    }
+
     pub fn vertices_edges_mut(&mut self) -> (&mut Vec<Vertex>, &mut Vec<Edge>) {
         (&mut self.vertices, &mut self.edges)
     }
