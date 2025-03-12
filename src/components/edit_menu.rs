@@ -68,6 +68,12 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
 
                         ui.separator();
 
+                        ui.label(
+                            egui::RichText::new("Direction").size(app.config.menu_font_size_mini),
+                        );
+
+                        ui.separator();
+
                         // グラフのクリア
                         if ui
                             .button(

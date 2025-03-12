@@ -38,7 +38,7 @@ impl Default for AppConfig {
             edge_color_hover: Color32::from_rgb(200, 100, 100),
             edge_stroke: 6.0,
             menu_font_size_normal: 20.0,
-            menu_font_size_mini: 16.0,
+            menu_font_size_mini: 15.0,
             graph_input_font_size: 20.0,
         }
     }
