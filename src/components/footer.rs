@@ -18,12 +18,12 @@ pub fn draw_footer(app: &mut GraphEditorApp, ctx: &Context) {
                         egui::RichText::new(format!(
                             "Graph Editor v{APP_VERSION} © 2025 kentakom1213"
                         ))
-                        .size(app.config.menu_font_size_mini),
+                        .size(app.config.footer_font_size),
                     );
 
                     if ui
                         .hyperlink_to(
-                            egui::RichText::new("GitHub").size(app.config.menu_font_size_mini),
+                            egui::RichText::new("GitHub").size(app.config.footer_font_size),
                             "https://github.com/kentakom1213/graph-editor",
                         )
                         .clicked()

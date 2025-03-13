@@ -5,9 +5,9 @@ use crate::{mode::EditMode, GraphEditorApp};
 /// 編集メニューを表示する
 pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
     egui::Window::new("Menu")
-        .title_bar(false)
+        .title_bar(true)
+        .collapsible(true)
         .fixed_size(egui::vec2(200.0, 150.0))
-        .collapsible(false)
         .show(ctx, |ui| {
             // カーソルがあるか判定
             app.hovered_on_menu_window = ui.rect_contains_pointer(ui.max_rect());
