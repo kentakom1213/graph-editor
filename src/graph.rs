@@ -155,11 +155,11 @@ impl Graph {
 impl Default for Graph {
     fn default() -> Self {
         Self {
-            is_directed: true,
+            is_directed: false,
             vertices: vec![
                 Vertex {
                     id: 0,
-                    position: egui::pos2(200.0, 400.0),
+                    position: egui::pos2(400.0, 400.0),
                     is_pressed: false,
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,
@@ -168,7 +168,7 @@ impl Default for Graph {
                 },
                 Vertex {
                     id: 1,
-                    position: egui::pos2(400.0, 400.0),
+                    position: egui::pos2(600.0, 400.0),
                     is_pressed: false,
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,

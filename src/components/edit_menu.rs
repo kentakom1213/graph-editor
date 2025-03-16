@@ -50,26 +50,26 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
 
                         // 0-indexed / 1-indexed の選択
                         ui.label(
-                            egui::RichText::new("Indexing").size(app.config.menu_font_size_mini),
+                            egui::RichText::new("Indexing [1]")
+                                .size(app.config.menu_font_size_mini),
                         );
 
                         ui.radio_value(
                             &mut app.zero_indexed,
                             true,
-                            egui::RichText::new("0-indexed [1]")
-                                .size(app.config.menu_font_size_normal),
+                            egui::RichText::new("0-indexed").size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.zero_indexed,
                             false,
-                            egui::RichText::new("1-indexed [1]")
-                                .size(app.config.menu_font_size_normal),
+                            egui::RichText::new("1-indexed").size(app.config.menu_font_size_normal),
                         );
 
                         ui.separator();
 
                         ui.label(
-                            egui::RichText::new("Direction").size(app.config.menu_font_size_mini),
+                            egui::RichText::new("Direction [Shift + D]")
+                                .size(app.config.menu_font_size_mini),
                         );
                         ui.radio_value(
                             &mut app.graph.is_directed,

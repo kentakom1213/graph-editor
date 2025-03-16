@@ -8,6 +8,7 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
     egui::Window::new("Graph Input")
         .collapsible(true)
         .title_bar(true)
+        .default_width(20.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
             app.hovered_on_input_window = ui.rect_contains_pointer(ui.max_rect());

@@ -68,7 +68,12 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
         app.switch_add_edge_mode();
     }
     if ui.input(|i| i.key_pressed(egui::Key::D)) {
-        app.switch_delete_mode();
+        // Shift + D で無向グラフ/有向グラフを切り替え
+        if ui.input(|i| i.modifiers.shift) {
+            app.graph.is_directed ^= true;
+        } else {
+            app.switch_delete_mode();
+        }
     }
 }
 
