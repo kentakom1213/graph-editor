@@ -19,6 +19,36 @@ impl GraphEditorApp {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn deselect_all_vertices_edges(&mut self) {
+        for vertex in self.graph.vertices_mut() {
+            vertex.is_pressed = false;
+            vertex.is_selected = false;
+        }
+        for edge in self.graph.edges_mut() {
+            edge.is_pressed = false;
+        }
+    }
+
+    pub fn switch_normal_mode(&mut self) {
+        self.deselect_all_vertices_edges();
+        self.edit_mode = EditMode::default_normal();
+    }
+
+    pub fn switch_add_vertex_mode(&mut self) {
+        self.deselect_all_vertices_edges();
+        self.edit_mode = EditMode::default_add_vertex();
+    }
+
+    pub fn switch_add_edge_mode(&mut self) {
+        self.deselect_all_vertices_edges();
+        self.edit_mode = EditMode::default_add_edge();
+    }
+
+    pub fn switch_delete_mode(&mut self) {
+        self.deselect_all_vertices_edges();
+        self.edit_mode = EditMode::default_delete();
+    }
 }
 
 impl Default for GraphEditorApp {
@@ -47,6 +77,6 @@ impl eframe::App for GraphEditorApp {
         draw_graph_input(self, ctx);
 
         // フッターを描画
-        draw_footer(ctx);
+        draw_footer(self, ctx);
     }
 }

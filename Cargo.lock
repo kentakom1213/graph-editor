@@ -1451,11 +1451,12 @@ dependencies = [
 
 [[package]]
 name = "graph-editor"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "egui",
  "env_logger",
+ "epaint",
  "itertools",
  "log",
  "serde",

@@ -16,8 +16,13 @@ pub struct AppConfig {
     pub vertex_font_color: Color32,
     pub edge_color_normal: Color32,
     pub edge_color_hover: Color32,
+    pub edge_arrow_length: f32,
+    pub edge_arrow_width: f32,
+    pub edge_bezier_distance: f32,
     pub edge_stroke: f32,
-    pub menu_font_size: f32,
+    pub menu_font_size_normal: f32,
+    pub menu_font_size_mini: f32,
+    pub footer_font_size: f32,
     pub graph_input_font_size: f32,
 }
 
@@ -36,7 +41,12 @@ impl Default for AppConfig {
             edge_color_normal: Color32::from_rgb(100, 100, 100),
             edge_color_hover: Color32::from_rgb(200, 100, 100),
             edge_stroke: 6.0,
-            menu_font_size: 20.0,
+            edge_arrow_length: 18.0,
+            edge_arrow_width: 9.0,
+            edge_bezier_distance: 50.0,
+            menu_font_size_normal: 20.0,
+            menu_font_size_mini: 15.0,
+            footer_font_size: 13.0,
             graph_input_font_size: 20.0,
         }
     }

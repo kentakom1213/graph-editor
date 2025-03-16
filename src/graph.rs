@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
@@ -32,6 +32,7 @@ impl Edge {
 
 #[derive(Debug)]
 pub struct Graph {
+    pub is_directed: bool,
     vertices: Vec<Vertex>,
     edges: Vec<Edge>,
 }
@@ -68,8 +69,16 @@ impl Graph {
         self.edges.retain(|edge| !edge.is_deleted);
     }
 
+    pub fn edges(&self) -> &Vec<Edge> {
+        &self.edges
+    }
+
     pub fn vertices_mut(&mut self) -> &mut Vec<Vertex> {
         &mut self.vertices
+    }
+
+    pub fn edges_mut(&mut self) -> &mut Vec<Edge> {
+        &mut self.edges
     }
 
     pub fn vertices_edges_mut(&mut self) -> (&mut Vec<Vertex>, &mut Vec<Edge>) {
@@ -88,16 +97,21 @@ impl Graph {
         });
     }
 
-    /// 無向グラフとみなしたとき，すでに辺が存在するか
-    fn has_same_edge_undirected(edges: &[Edge], from: usize, to: usize) -> bool {
-        edges
-            .iter()
-            .any(|edge| (edge.from, edge.to) == (from, to) || (edge.from, edge.to) == (to, from))
+    /// 始点と終点が同じ辺が存在するか
+    fn has_same_edge(is_directed: bool, edges: &[Edge], from: usize, to: usize) -> bool {
+        edges.iter().any(|edge| {
+            (edge.from, edge.to) == (from, to) || !is_directed && (edge.from, edge.to) == (to, from)
+        })
     }
 
-    /// ユニークな無向辺を追加する．正常に追加された場合`true`を返す．
-    pub fn add_unique_edge_undirected(edges: &mut Vec<Edge>, from: usize, to: usize) -> bool {
-        if Self::has_same_edge_undirected(edges, from, to) {
+    /// ユニークな辺を追加する．正常に追加された場合`true`を返す．
+    pub fn add_unique_edge(
+        is_directed: bool,
+        edges: &mut Vec<Edge>,
+        from: usize,
+        to: usize,
+    ) -> bool {
+        if Self::has_same_edge(is_directed, edges, from, to) {
             false
         } else {
             edges.push(Edge::new(from, to));
@@ -114,9 +128,14 @@ impl Graph {
         // 削除済み頂点を削除
         self.restore_graph();
 
+        let mut seen_edges = HashSet::new();
         let mut res = format!("{} {}", self.vertices.len(), self.edges.len());
 
         for edges in &self.edges {
+            // すでにみていた場合飛ばす
+            if !self.is_directed && seen_edges.contains(&(edges.to, edges.from)) {
+                continue;
+            }
             res.push_str(&format!(
                 "\n{} {}",
                 if zero_indexed {
@@ -126,6 +145,7 @@ impl Graph {
                 },
                 if zero_indexed { edges.to } else { edges.to + 1 }
             ));
+            seen_edges.insert((edges.from, edges.to));
         }
 
         res
@@ -135,10 +155,11 @@ impl Graph {
 impl Default for Graph {
     fn default() -> Self {
         Self {
+            is_directed: false,
             vertices: vec![
                 Vertex {
                     id: 0,
-                    position: egui::pos2(200.0, 400.0),
+                    position: egui::pos2(400.0, 400.0),
                     is_pressed: false,
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,
@@ -147,7 +168,7 @@ impl Default for Graph {
                 },
                 Vertex {
                     id: 1,
-                    position: egui::pos2(400.0, 400.0),
+                    position: egui::pos2(600.0, 400.0),
                     is_pressed: false,
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,
