@@ -1,17 +1,38 @@
-pub fn mid_point(a: egui::Pos2, b: egui::Pos2) -> egui::Pos2 {
-    a + (b - a) / 2.0
+pub fn calc_bezier_control_point(
+    start: egui::Pos2,
+    end: egui::Pos2,
+    distance: f32,
+    is_clockwise: bool,
+) -> egui::Pos2 {
+    let mid = start + (end - start) / 2.0;
+    let dir = (end - start).normalized().rot90();
+    let control = mid + dir * if is_clockwise { distance } else { -distance };
+    control
 }
 
 /// ベジェ曲線
-fn bezier_curve(start: egui::Pos2, control: egui::Pos2, end: egui::Pos2, t: f32) -> egui::Pos2 {
+pub fn bezier_curve(start: egui::Pos2, control: egui::Pos2, end: egui::Pos2, t: f32) -> egui::Pos2 {
     let x = (1.0 - t).powf(2.0) * start.x + 2.0 * t * (1.0 - t) * control.x + t.powf(2.0) * end.x;
     let y = (1.0 - t).powf(2.0) * start.y + 2.0 * t * (1.0 - t) * control.y + t.powf(2.0) * end.y;
     egui::Pos2::new(x, y)
 }
 
+/// ベジェ曲線のパラメータ`t`における微分
+pub fn d_bezier_dt(start: egui::Pos2, control: egui::Pos2, end: egui::Pos2, t: f32) -> egui::Vec2 {
+    let mt = 1.0 - t;
+    let dx = 2.0 * mt * (control.x - start.x) + 2.0 * t * (end.x - control.x);
+    let dy = 2.0 * mt * (control.y - start.y) + 2.0 * t * (end.y - control.y);
+    egui::Vec2::new(dx, dy)
+}
+
+/// ベジェ曲線の2階微分
+pub fn d2_bezier_dt2(start: egui::Pos2, control: egui::Pos2, end: egui::Pos2) -> egui::Vec2 {
+    control.to_vec2() - 2.0 * start.to_vec2() + end.to_vec2()
+}
+
 /// ニュートン法で方程式 f(x) = 0 の解を求める
 /// f: 関数, df: f の導関数, x0: 初期値, tol: 許容誤差, max_iter: 最大反復回数
-fn newton_method(
+pub fn newton_method(
     f: impl Fn(f32) -> f32,
     df: impl Fn(f32) -> f32,
     x0: f32,
@@ -86,10 +107,10 @@ pub fn calc_intersection_of_bezier_and_circle(
 
     let t = newton_method(f, df, 0.5, 1e-6, 10)?;
 
-    let dx = |t: f32| -> f32 { 2.0 * (x0 - 2.0 * x1 + x2) * t + 2.0 * (x1 - x0) };
-    let dy = |t: f32| -> f32 { 2.0 * (y0 - 2.0 * y1 + y2) * t + 2.0 * (y1 - y0) };
-
-    (0.0..1.0)
-        .contains(&t)
-        .then(|| (bezier(t), egui::Vec2::new(dx(t), dy(t)).normalized()))
+    (0.0..1.0).contains(&t).then(|| {
+        (
+            bezier(t),
+            d_bezier_dt(bezier_start, bezier_control, bezier_end, t),
+        )
+    })
 }

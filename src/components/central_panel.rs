@@ -3,9 +3,16 @@ use std::collections::HashMap;
 use egui::Context;
 use itertools::Itertools;
 
-use crate::{graph::Graph, mode::EditMode, GraphEditorApp};
+use crate::{
+    components::utility::{bezier_curve, d2_bezier_dt2, d_bezier_dt},
+    graph::Graph,
+    mode::EditMode,
+    GraphEditorApp,
+};
 
-use super::utility::{calc_intersection_of_bezier_and_circle, mid_point};
+use super::utility::{
+    calc_bezier_control_point, calc_intersection_of_bezier_and_circle, newton_method,
+};
 
 /// メイン領域を描画
 pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
@@ -120,9 +127,31 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 // カーソルが頂点上にあるかどうか
                 let is_on_vertex = distance_from_vertex < app.config.vertex_radius;
 
-                // マウスとエッジの最近接点の距離
-                let distance =
-                    distance_from_edge_line(from_vertex.position, to_vertex.position, mouse_pos);
+                // マウスと辺の最近接点の距離
+                let distance = if !is_directed || edge_count.get(&(edge.from, edge.to)) == Some(&1)
+                {
+                    distance_from_edge_line(from_vertex.position, to_vertex.position, mouse_pos)
+                } else {
+                    distance_from_edge_bezier(
+                        from_vertex.position,
+                        to_vertex.position,
+                        app.config.edge_bezier_distance,
+                        mouse_pos,
+                    )
+                };
+
+                {
+                    let mid =
+                        from_vertex.position + (to_vertex.position - from_vertex.position) / 2.0;
+
+                    painter.text(
+                        mid,
+                        egui::Align2::CENTER_CENTER,
+                        format!("{distance:?}"),
+                        egui::FontId::monospace(13.0),
+                        egui::Color32::BLUE,
+                    );
+                }
 
                 // 当たり判定の閾値 (線の太さ + 余裕分)
                 let threshold = 10.0;
@@ -190,10 +219,44 @@ fn distance_from_edge_line(from_pos: egui::Pos2, to_pos: egui::Pos2, mouse_pos: 
     let mouse_vector = mouse_pos - from_pos;
     let edge_length = edge_vector.length();
 
-    let t = (edge_vector.dot(mouse_vector) / edge_length.powi(2)).clamp(0.0, 1.0);
-    let nearest_point = from_pos + t * edge_vector;
+    let t_ast = (edge_vector.dot(mouse_vector) / edge_length.powi(2)).clamp(0.0, 1.0);
+    let nearest_point = from_pos + t_ast * edge_vector;
 
     (mouse_pos - nearest_point).length()
+}
+
+fn distance_from_edge_bezier(
+    from_pos: egui::Pos2,
+    to_pos: egui::Pos2,
+    bezier_distance: f32,
+    mouse_pos: egui::Pos2,
+) -> f32 {
+    let control = calc_bezier_control_point(from_pos, to_pos, bezier_distance, false);
+
+    let bezier = |t: f32| -> egui::Pos2 { bezier_curve(from_pos, control, to_pos, t) };
+    let d_bezier = |t: f32| -> egui::Vec2 { d_bezier_dt(from_pos, control, to_pos, t) };
+    let dd_bezier = d2_bezier_dt2(from_pos, control, to_pos);
+
+    let d_dist_sq_dt = |t: f32| -> f32 {
+        let pt = bezier(t);
+        let d_pos = d_bezier(t);
+        2.0 * (pt - mouse_pos).dot(d_pos)
+    };
+    let d2_sqr_dist_dt2 = |t: f32| -> f32 {
+        let pt = bezier(t); // (x, y)
+        let dp = d_bezier(t); // (dx/dt, dy/dt)
+        let ddp = dd_bezier; // (d^2x/dt^2, d^2y/dt^2) for quadratic is constant
+
+        // 2( (dx/dt)^2 + (dy/dt)^2 ) + 2( (x - Mx)*d^2x/dt^2 + (y - My)*d^2y/dt^2 )
+        2.0 * dp.length_sq() + 2.0 * (pt - mouse_pos).dot(ddp)
+    };
+
+    let t_ast = newton_method(d_dist_sq_dt, d2_sqr_dist_dt2, 0.5, 1e-6, 10);
+
+    t_ast
+        .filter(|&t| (0.0..=1.0).contains(&t))
+        .map(|t| bezier(t).distance(mouse_pos))
+        .unwrap_or(f32::INFINITY)
 }
 
 fn draw_edge_undirected(
@@ -255,8 +318,7 @@ fn draw_edge_directed_curved(
     stroke: f32,
     color: egui::Color32,
 ) -> Option<()> {
-    let control =
-        mid_point(from_pos, to_pos) + (to_pos - from_pos).normalized().rot90() * bezier_distance;
+    let control = calc_bezier_control_point(from_pos, to_pos, bezier_distance, false);
 
     // ベジェ曲線と円の交点を計算
     let (arrowhead, dir) =
@@ -272,7 +334,7 @@ fn draw_edge_directed_curved(
     painter.add(bezier);
 
     // 矢印のヘッド（三角形）の3つの頂点を計算
-    let dir = dir * arrow_length;
+    let dir = dir.normalized() * arrow_length;
     let left = egui::Pos2::new(
         arrowhead.x - dir.x - dir.y * (arrow_width / arrow_length),
         arrowhead.y - dir.y + dir.x * (arrow_width / arrow_length),
