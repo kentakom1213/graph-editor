@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
@@ -124,9 +124,14 @@ impl Graph {
         // 削除済み頂点を削除
         self.restore_graph();
 
+        let mut seen_edges = HashSet::new();
         let mut res = format!("{} {}", self.vertices.len(), self.edges.len());
 
         for edges in &self.edges {
+            // すでにみていた場合飛ばす
+            if !self.is_directed && seen_edges.contains(&(edges.to, edges.from)) {
+                continue;
+            }
             res.push_str(&format!(
                 "\n{} {}",
                 if zero_indexed {
@@ -136,6 +141,7 @@ impl Graph {
                 },
                 if zero_indexed { edges.to } else { edges.to + 1 }
             ));
+            seen_edges.insert((edges.from, edges.to));
         }
 
         res
@@ -145,7 +151,7 @@ impl Graph {
 impl Default for Graph {
     fn default() -> Self {
         Self {
-            is_directed: false,
+            is_directed: true,
             vertices: vec![
                 Vertex {
                     id: 0,
