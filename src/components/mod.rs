@@ -2,6 +2,7 @@ mod central_panel;
 mod edit_menu;
 mod footer;
 mod graph_input;
+mod utility;
 
 pub use central_panel::draw_central_panel;
 pub use edit_menu::draw_edit_menu;
