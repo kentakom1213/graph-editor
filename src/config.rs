@@ -19,6 +19,7 @@ pub struct AppConfig {
     pub edge_stroke: f32,
     pub menu_font_size_normal: f32,
     pub menu_font_size_mini: f32,
+    pub footer_font_size: f32,
     pub graph_input_font_size: f32,
 }
 
@@ -39,6 +40,7 @@ impl Default for AppConfig {
             edge_stroke: 6.0,
             menu_font_size_normal: 20.0,
             menu_font_size_mini: 15.0,
+            footer_font_size: 13.0,
             graph_input_font_size: 20.0,
         }
     }
