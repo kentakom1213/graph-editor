@@ -85,6 +85,7 @@ fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
 fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) {
     app.graph.restore_graph();
 
+    let is_directed = app.graph.is_directed;
     let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
 
     for edge in edges_mut.iter_mut() {
@@ -131,18 +132,92 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 }
             }
 
-            let color = if edge.is_pressed {
+            let edge_color = if edge.is_pressed {
                 app.config.edge_color_hover
             } else {
                 app.config.edge_color_normal
             };
 
-            painter.line_segment(
-                [from_vertex.position, to_vertex.position],
-                egui::Stroke::new(app.config.edge_stroke, color),
-            );
+            if is_directed {
+                draw_edge_directed(
+                    painter,
+                    from_vertex.position,
+                    to_vertex.position,
+                    app.config.vertex_radius,
+                    app.config.edge_stroke,
+                    edge_color,
+                );
+            } else {
+                draw_edge_undirected(
+                    painter,
+                    from_vertex.position,
+                    to_vertex.position,
+                    app.config.edge_stroke,
+                    edge_color,
+                );
+            }
         }
     }
+}
+
+fn draw_edge_undirected(
+    painter: &egui::Painter,
+    from_pos: egui::Pos2,
+    to_pos: egui::Pos2,
+    stroke: f32,
+    color: egui::Color32,
+) {
+    painter.line_segment([from_pos, to_pos], egui::Stroke::new(stroke, color));
+}
+
+fn calc_edge_endpoint_arrowhead(
+    from_pos: egui::Pos2,
+    to_pos: egui::Pos2,
+    radius: f32,
+    arrow_size: f32,
+) -> (egui::Pos2, egui::Pos2) {
+    let dir = (to_pos - from_pos).normalized();
+    let arrowhead = to_pos - dir * radius;
+    let endpoint = arrowhead - dir * arrow_size;
+
+    (endpoint, arrowhead)
+}
+
+fn draw_edge_directed(
+    painter: &egui::Painter,
+    from_pos: egui::Pos2,
+    to_pos: egui::Pos2,
+    radius: f32,
+    stroke: f32,
+    color: egui::Color32,
+) {
+    let arrow_width = 9.0;
+    let arrow_length = 18.0;
+
+    // 矢印の方向を取得
+    let (endpoint, arrowhead) =
+        calc_edge_endpoint_arrowhead(from_pos, to_pos, radius, arrow_length);
+    let dir = (endpoint - from_pos).normalized() * arrow_length;
+
+    // 矢印のヘッド（三角形）の3つの頂点を計算
+    let left = egui::Pos2::new(
+        arrowhead.x - dir.x - dir.y * (arrow_width / arrow_length),
+        arrowhead.y - dir.y + dir.x * (arrow_width / arrow_length),
+    );
+    let right = egui::Pos2::new(
+        arrowhead.x - dir.x + dir.y * (arrow_width / arrow_length),
+        arrowhead.y - dir.y - dir.x * (arrow_width / arrow_length),
+    );
+
+    // 三角形を描画
+    painter.add(egui::Shape::convex_polygon(
+        vec![arrowhead, left, right],
+        color,
+        egui::Stroke::NONE,
+    ));
+
+    // 線を描画
+    painter.line_segment([from_pos, endpoint], egui::Stroke::new(stroke, color));
 }
 
 /// central_panel に頂点を描画する
