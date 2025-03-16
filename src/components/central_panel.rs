@@ -140,19 +140,6 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                     )
                 };
 
-                {
-                    let mid =
-                        from_vertex.position + (to_vertex.position - from_vertex.position) / 2.0;
-
-                    painter.text(
-                        mid,
-                        egui::Align2::CENTER_CENTER,
-                        format!("{distance:?}"),
-                        egui::FontId::monospace(13.0),
-                        egui::Color32::BLUE,
-                    );
-                }
-
                 // 当たり判定の閾値 (線の太さ + 余裕分)
                 let threshold = 10.0;
 
@@ -199,6 +186,7 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                         app.config.vertex_radius,
                         app.config.edge_stroke,
                         edge_color,
+                        app.config.bg_color,
                     );
                 }
             } else {
@@ -317,6 +305,7 @@ fn draw_edge_directed_curved(
     radius: f32,
     stroke: f32,
     color: egui::Color32,
+    background_color: egui::Color32,
 ) -> Option<()> {
     let control = calc_bezier_control_point(from_pos, to_pos, bezier_distance, false);
 
@@ -332,6 +321,12 @@ fn draw_edge_directed_curved(
         stroke: epaint::PathStroke::new(stroke, color),
     };
     painter.add(bezier);
+
+    // 矢印のヘッドに曲線が重ならないよう，マスクを作成
+    painter.line_segment(
+        [arrowhead - dir.normalized() * arrow_length / 2.0, arrowhead],
+        egui::Stroke::new(stroke, background_color),
+    );
 
     // 矢印のヘッド（三角形）の3つの頂点を計算
     let dir = dir.normalized() * arrow_length;
