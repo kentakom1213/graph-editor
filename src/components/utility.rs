@@ -2,6 +2,13 @@ pub fn mid_point(a: egui::Pos2, b: egui::Pos2) -> egui::Pos2 {
     a + (b - a) / 2.0
 }
 
+/// ベジェ曲線
+fn bezier_curve(start: egui::Pos2, control: egui::Pos2, end: egui::Pos2, t: f32) -> egui::Pos2 {
+    let x = (1.0 - t).powf(2.0) * start.x + 2.0 * t * (1.0 - t) * control.x + t.powf(2.0) * end.x;
+    let y = (1.0 - t).powf(2.0) * start.y + 2.0 * t * (1.0 - t) * control.y + t.powf(2.0) * end.y;
+    egui::Pos2::new(x, y)
+}
+
 /// ニュートン法で方程式 f(x) = 0 の解を求める
 /// f: 関数, df: f の導関数, x0: 初期値, tol: 許容誤差, max_iter: 最大反復回数
 fn newton_method(
@@ -58,13 +65,15 @@ pub fn calc_intersection_of_bezier_and_circle(
     let (xc, yc) = (circle_center.x, circle_center.y);
     let r = circle_radius;
 
-    let x =
-        |t: f32| -> f32 { (1.0 - t).powf(2.0) * x0 + 2.0 * t * (1.0 - t) * x1 + t.powf(2.0) * x2 };
-    let y =
-        |t: f32| -> f32 { (1.0 - t).powf(2.0) * y0 + 2.0 * t * (1.0 - t) * y1 + t.powf(2.0) * y2 };
+    let bezier =
+        |t: f32| -> egui::Pos2 { bezier_curve(bezier_start, bezier_control, bezier_end, t) };
 
-    let f = |t: f32| -> f32 { -r.powf(2.0) + (x(t) - xc).powf(2.0) + (y(t) - yc).powf(2.0) };
+    let f = |t: f32| -> f32 {
+        let pos = bezier(t);
+        -r.powf(2.0) + (pos.x - xc).powf(2.0) + (pos.y - yc).powf(2.0)
+    };
 
+    // df/dt (project://memo/intersection_of_bezier_and_circle.py で導出)
     let df = |t: f32| -> f32 {
         (-4.0 * t * x1 + 4.0 * t * x2 + 2.0 * x0 * (2.0 * t - 2.0) + 2.0 * x1 * (2.0 - 2.0 * t))
             * (t.powf(2.0) * x2 + t * x1 * (2.0 - 2.0 * t) + x0 * (1.0 - t).powf(2.0) - xc)
@@ -80,10 +89,7 @@ pub fn calc_intersection_of_bezier_and_circle(
     let dx = |t: f32| -> f32 { 2.0 * (x0 - 2.0 * x1 + x2) * t + 2.0 * (x1 - x0) };
     let dy = |t: f32| -> f32 { 2.0 * (y0 - 2.0 * y1 + y2) * t + 2.0 * (y1 - y0) };
 
-    (0.0..1.0).contains(&t).then(|| {
-        (
-            egui::Pos2::new(x(t), y(t)),
-            egui::Vec2::new(dx(t), dy(t)).normalized(),
-        )
-    })
+    (0.0..1.0)
+        .contains(&t)
+        .then(|| (bezier(t), egui::Vec2::new(dx(t), dy(t)).normalized()))
 }
