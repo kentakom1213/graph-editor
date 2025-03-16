@@ -5,6 +5,7 @@ use itertools::Itertools;
 
 use crate::{
     components::utility::{bezier_curve, d2_bezier_dt2, d_bezier_dt},
+    config::AppConfig,
     graph::Graph,
     mode::EditMode,
     GraphEditorApp,
@@ -169,24 +170,16 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                         painter,
                         from_vertex.position,
                         to_vertex.position,
-                        app.config.edge_arrow_length,
-                        app.config.edge_arrow_width,
-                        app.config.vertex_radius,
-                        app.config.edge_stroke,
                         edge_color,
+                        &app.config,
                     );
                 } else {
                     draw_edge_directed_curved(
                         painter,
                         from_vertex.position,
                         to_vertex.position,
-                        app.config.edge_arrow_length,
-                        app.config.edge_arrow_width,
-                        app.config.edge_bezier_distance,
-                        app.config.vertex_radius,
-                        app.config.edge_stroke,
                         edge_color,
-                        app.config.bg_color,
+                        &app.config,
                     );
                 }
             } else {
@@ -261,26 +254,23 @@ fn draw_edge_directed(
     painter: &egui::Painter,
     from_pos: egui::Pos2,
     to_pos: egui::Pos2,
-    arrow_length: f32,
-    arrow_width: f32,
-    radius: f32,
-    stroke: f32,
     color: egui::Color32,
+    config: &AppConfig,
 ) {
     // 矢印の方向を取得
     let dir = (to_pos - from_pos).normalized();
-    let arrowhead = to_pos - dir * radius;
-    let endpoint = arrowhead - dir * arrow_length;
+    let arrowhead = to_pos - dir * config.vertex_radius;
+    let endpoint = arrowhead - dir * config.edge_arrow_length;
 
     // 矢印のヘッド（三角形）の3つの頂点を計算
-    let dir = dir * arrow_length;
+    let dir = dir * config.edge_arrow_length;
     let left = egui::Pos2::new(
-        arrowhead.x - dir.x - dir.y * (arrow_width / arrow_length),
-        arrowhead.y - dir.y + dir.x * (arrow_width / arrow_length),
+        arrowhead.x - dir.x - dir.y * (config.edge_arrow_width / config.edge_arrow_length),
+        arrowhead.y - dir.y + dir.x * (config.edge_arrow_width / config.edge_arrow_length),
     );
     let right = egui::Pos2::new(
-        arrowhead.x - dir.x + dir.y * (arrow_width / arrow_length),
-        arrowhead.y - dir.y - dir.x * (arrow_width / arrow_length),
+        arrowhead.x - dir.x + dir.y * (config.edge_arrow_width / config.edge_arrow_length),
+        arrowhead.y - dir.y - dir.x * (config.edge_arrow_width / config.edge_arrow_length),
     );
 
     // 三角形を描画
@@ -291,7 +281,10 @@ fn draw_edge_directed(
     ));
 
     // 線を描画
-    painter.line_segment([from_pos, endpoint], egui::Stroke::new(stroke, color));
+    painter.line_segment(
+        [from_pos, endpoint],
+        egui::Stroke::new(config.edge_stroke, color),
+    );
 }
 
 /// 曲線付きの矢印を描画する関数
@@ -299,44 +292,47 @@ fn draw_edge_directed_curved(
     painter: &egui::Painter,
     from_pos: egui::Pos2,
     to_pos: egui::Pos2,
-    arrow_length: f32,
-    arrow_width: f32,
-    bezier_distance: f32,
-    radius: f32,
-    stroke: f32,
     color: egui::Color32,
-    background_color: egui::Color32,
+    config: &AppConfig,
 ) -> Option<()> {
-    let control = calc_bezier_control_point(from_pos, to_pos, bezier_distance, false);
+    let control = calc_bezier_control_point(from_pos, to_pos, config.edge_bezier_distance, false);
 
     // ベジェ曲線と円の交点を計算
-    let (arrowhead, dir) =
-        calc_intersection_of_bezier_and_circle(from_pos, control, to_pos, to_pos, radius)?;
+    let (arrowhead, dir) = calc_intersection_of_bezier_and_circle(
+        from_pos,
+        control,
+        to_pos,
+        to_pos,
+        config.vertex_radius,
+    )?;
 
     // 2次ベジェ曲線を描画
     let bezier = epaint::QuadraticBezierShape {
         points: [from_pos, control, to_pos], // 始点・制御点・終点
         closed: false,
         fill: egui::Color32::TRANSPARENT,
-        stroke: epaint::PathStroke::new(stroke, color),
+        stroke: epaint::PathStroke::new(config.edge_stroke, color),
     };
     painter.add(bezier);
 
     // 矢印のヘッドに曲線が重ならないよう，マスクを作成
     painter.line_segment(
-        [arrowhead - dir.normalized() * arrow_length / 2.0, arrowhead],
-        egui::Stroke::new(stroke, background_color),
+        [
+            arrowhead - dir.normalized() * config.edge_arrow_length / 2.0,
+            arrowhead,
+        ],
+        egui::Stroke::new(config.edge_stroke, config.bg_color),
     );
 
     // 矢印のヘッド（三角形）の3つの頂点を計算
-    let dir = dir.normalized() * arrow_length;
+    let dir = dir.normalized() * config.edge_arrow_length;
     let left = egui::Pos2::new(
-        arrowhead.x - dir.x - dir.y * (arrow_width / arrow_length),
-        arrowhead.y - dir.y + dir.x * (arrow_width / arrow_length),
+        arrowhead.x - dir.x - dir.y * (config.edge_arrow_width / config.edge_arrow_length),
+        arrowhead.y - dir.y + dir.x * (config.edge_arrow_width / config.edge_arrow_length),
     );
     let right = egui::Pos2::new(
-        arrowhead.x - dir.x + dir.y * (arrow_width / arrow_length),
-        arrowhead.y - dir.y - dir.x * (arrow_width / arrow_length),
+        arrowhead.x - dir.x + dir.y * (config.edge_arrow_width / config.edge_arrow_length),
+        arrowhead.y - dir.y - dir.x * (config.edge_arrow_width / config.edge_arrow_length),
     );
 
     // 三角形を描画

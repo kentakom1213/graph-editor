@@ -6,8 +6,8 @@ pub fn calc_bezier_control_point(
 ) -> egui::Pos2 {
     let mid = start + (end - start) / 2.0;
     let dir = (end - start).normalized().rot90();
-    let control = mid + dir * if is_clockwise { distance } else { -distance };
-    control
+
+    mid + dir * if is_clockwise { distance } else { -distance }
 }
 
 /// ベジェ曲線
