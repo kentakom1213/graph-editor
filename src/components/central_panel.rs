@@ -153,6 +153,8 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                         painter,
                         from_vertex.position,
                         to_vertex.position,
+                        app.config.edge_arrow_length,
+                        app.config.edge_arrow_width,
                         app.config.vertex_radius,
                         app.config.edge_stroke,
                         edge_color,
@@ -162,6 +164,9 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                         painter,
                         from_vertex.position,
                         to_vertex.position,
+                        app.config.edge_arrow_length,
+                        app.config.edge_arrow_width,
+                        app.config.edge_bezier_distance,
                         app.config.vertex_radius,
                         app.config.edge_stroke,
                         edge_color,
@@ -205,19 +210,19 @@ fn draw_edge_directed(
     painter: &egui::Painter,
     from_pos: egui::Pos2,
     to_pos: egui::Pos2,
+    arrow_length: f32,
+    arrow_width: f32,
     radius: f32,
     stroke: f32,
     color: egui::Color32,
 ) {
-    let arrow_width = 9.0;
-    let arrow_length = 18.0;
-
     // 矢印の方向を取得
     let dir = (to_pos - from_pos).normalized();
     let arrowhead = to_pos - dir * radius;
     let endpoint = arrowhead - dir * arrow_length;
 
     // 矢印のヘッド（三角形）の3つの頂点を計算
+    let dir = dir * arrow_length;
     let left = egui::Pos2::new(
         arrowhead.x - dir.x - dir.y * (arrow_width / arrow_length),
         arrowhead.y - dir.y + dir.x * (arrow_width / arrow_length),
@@ -243,14 +248,13 @@ fn draw_edge_directed_curved(
     painter: &egui::Painter,
     from_pos: egui::Pos2,
     to_pos: egui::Pos2,
+    arrow_length: f32,
+    arrow_width: f32,
+    bezier_distance: f32,
     radius: f32,
     stroke: f32,
     color: egui::Color32,
 ) -> Option<()> {
-    let arrow_width = 9.0;
-    let arrow_length = 18.0;
-    let bezier_distance = 70.0;
-
     let control =
         mid_point(from_pos, to_pos) + (to_pos - from_pos).normalized().rot90() * bezier_distance;
 
