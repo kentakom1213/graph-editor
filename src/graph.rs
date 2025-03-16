@@ -69,6 +69,10 @@ impl Graph {
         self.edges.retain(|edge| !edge.is_deleted);
     }
 
+    pub fn edges(&self) -> &Vec<Edge> {
+        &self.edges
+    }
+
     pub fn vertices_mut(&mut self) -> &mut Vec<Vertex> {
         &mut self.vertices
     }

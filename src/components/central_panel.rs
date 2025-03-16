@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use egui::Context;
 use itertools::Itertools;
 
@@ -87,6 +89,17 @@ fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
 fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) {
     app.graph.restore_graph();
 
+    // 辺をカウントする
+    let edge_count = app
+        .graph
+        .edges()
+        .iter()
+        .fold(HashMap::new(), |mut map, edge| {
+            *map.entry((edge.from, edge.to)).or_insert(0) += 1;
+            *map.entry((edge.to, edge.from)).or_insert(0) += 1;
+            map
+        });
+
     let is_directed = app.graph.is_directed;
     let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
 
@@ -135,14 +148,25 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
             };
 
             if is_directed {
-                draw_edge_directed_curved(
-                    painter,
-                    from_vertex.position,
-                    to_vertex.position,
-                    app.config.vertex_radius,
-                    app.config.edge_stroke,
-                    edge_color,
-                );
+                if edge_count.get(&(edge.from, edge.to)) == Some(&1) {
+                    draw_edge_directed(
+                        painter,
+                        from_vertex.position,
+                        to_vertex.position,
+                        app.config.vertex_radius,
+                        app.config.edge_stroke,
+                        edge_color,
+                    );
+                } else {
+                    draw_edge_directed_curved(
+                        painter,
+                        from_vertex.position,
+                        to_vertex.position,
+                        app.config.vertex_radius,
+                        app.config.edge_stroke,
+                        edge_color,
+                    );
+                }
             } else {
                 draw_edge_undirected(
                     painter,
@@ -177,19 +201,6 @@ fn draw_edge_undirected(
     painter.line_segment([from_pos, to_pos], egui::Stroke::new(stroke, color));
 }
 
-fn calc_edge_endpoint_arrowhead(
-    from_pos: egui::Pos2,
-    to_pos: egui::Pos2,
-    radius: f32,
-    arrow_size: f32,
-) -> (egui::Pos2, egui::Pos2) {
-    let dir = (to_pos - from_pos).normalized();
-    let arrowhead = to_pos - dir * radius;
-    let endpoint = arrowhead - dir * arrow_size;
-
-    (endpoint, arrowhead)
-}
-
 fn draw_edge_directed(
     painter: &egui::Painter,
     from_pos: egui::Pos2,
@@ -202,9 +213,9 @@ fn draw_edge_directed(
     let arrow_length = 18.0;
 
     // 矢印の方向を取得
-    let (endpoint, arrowhead) =
-        calc_edge_endpoint_arrowhead(from_pos, to_pos, radius, arrow_length);
-    let dir = (endpoint - from_pos).normalized() * arrow_length;
+    let dir = (to_pos - from_pos).normalized();
+    let arrowhead = to_pos - dir * radius;
+    let endpoint = arrowhead - dir * arrow_length;
 
     // 矢印のヘッド（三角形）の3つの頂点を計算
     let left = egui::Pos2::new(
