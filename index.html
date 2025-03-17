@@ -23,7 +23,10 @@
       property="og:url"
       content="https://kentakom1213.github.io/graph-editor/"
     />
-    <meta property="og:image" content="assets/card.png" />
+    <meta
+      property="og:image"
+      content="https://kentakom1213.github.io/graph-editor/assets/card.png"
+    />
 
     <!-- Twitter用のmetaタグ (X) -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -32,7 +35,10 @@
       name="twitter:description"
       content="Simple graph generation application"
     />
-    <meta name="twitter:image" content="assets/card.png" />
+    <meta
+      name="twitter:image"
+      content="https://kentakom1213.github.io/graph-editor/assets/card.png"
+    />
 
     <!-- config for our rust wasm binary. go to https://trunkrs.dev/assets/#rust for more customization -->
     <link data-trunk rel="rust" data-wasm-opt="2" />
@@ -65,6 +71,12 @@
       data-trunk
       rel="copy-file"
       href="assets/maskable_icon_x512.png"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/card.png"
       data-target-path="assets"
     />
 
