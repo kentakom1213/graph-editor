@@ -24,4 +24,3 @@ sed -i "s/Emil Ernerfeldt/$name/g" Cargo.toml
 sed -i "s/emil.ernerfeldt@gmail.com/$email/g" Cargo.toml
 
 echo "Done."
-
