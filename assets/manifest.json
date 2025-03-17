@@ -17,6 +17,11 @@
       "src": "./assets/icon-1024.png",
       "sizes": "1024x1024",
       "type": "image/png"
+    },
+    {
+      "src": "./assets/card.png",
+      "sizes": "1234x817",
+      "type": "image/png"
     }
   ],
   "lang": "en-US",
