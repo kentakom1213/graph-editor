@@ -3,14 +3,42 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
   <!-- Disable zooming: -->
-  <meta
+  <!-- <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, user-scalable=no"
-  />
+  /> -->
 
   <head>
     <!-- change this to your project name -->
     <title>Graph Editor</title>
+
+    <!-- OGP設定 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Graph Editor" />
+    <meta
+      property="og:description"
+      content="Simple graph generation application"
+    />
+    <meta
+      property="og:url"
+      content="https://kentakom1213.github.io/graph-editor/"
+    />
+    <meta
+      property="og:image"
+      content="https://kentakom1213.github.io/graph-editor/assets/card.png"
+    />
+
+    <!-- Twitter用のmetaタグ (X) -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Graph Editor" />
+    <meta
+      name="twitter:description"
+      content="Simple graph generation application"
+    />
+    <meta
+      name="twitter:image"
+      content="https://kentakom1213.github.io/graph-editor/assets/card.png"
+    />
 
     <!-- config for our rust wasm binary. go to https://trunkrs.dev/assets/#rust for more customization -->
     <link data-trunk rel="rust" data-wasm-opt="2" />
