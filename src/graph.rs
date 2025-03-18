@@ -1,14 +1,29 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    rc::Rc,
+};
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
     pub id: usize,
-    pub position: egui::Pos2,
+    position: egui::Pos2,
     pub drag_offset: egui::Vec2,
     pub is_pressed: bool,
     pub is_selected: bool,
     pub z_index: u32,
     pub is_deleted: bool,
+    offset: Rc<RefCell<egui::Vec2>>,
+}
+
+impl Vertex {
+    pub fn get_position(&self) -> egui::Pos2 {
+        self.position + *self.offset.borrow()
+    }
+
+    pub fn update_position(&mut self, new_position: egui::Pos2) {
+        self.position = new_position - *self.offset.borrow();
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -85,7 +100,12 @@ impl Graph {
         (&mut self.vertices, &mut self.edges)
     }
 
-    pub fn add_vertex(&mut self, position: egui::Pos2, z_index: u32) {
+    pub fn add_vertex(
+        &mut self,
+        position: egui::Pos2,
+        z_index: u32,
+        offset: Rc<RefCell<egui::Vec2>>,
+    ) {
         self.vertices.push(Vertex {
             id: self.vertices.len(),
             position,
@@ -94,6 +114,7 @@ impl Graph {
             is_selected: false,
             z_index,
             is_deleted: false,
+            offset,
         });
     }
 
@@ -152,8 +173,8 @@ impl Graph {
     }
 }
 
-impl Default for Graph {
-    fn default() -> Self {
+impl Graph {
+    pub fn new(offset: Rc<RefCell<egui::Vec2>>) -> Self {
         Self {
             is_directed: false,
             vertices: vec![
@@ -165,6 +186,7 @@ impl Default for Graph {
                     is_selected: false,
                     z_index: 0,
                     is_deleted: false,
+                    offset: offset.clone(),
                 },
                 Vertex {
                     id: 1,
@@ -174,6 +196,7 @@ impl Default for Graph {
                     is_selected: false,
                     z_index: 1,
                     is_deleted: false,
+                    offset,
                 },
             ],
             edges: vec![Edge {
