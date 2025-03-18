@@ -48,6 +48,7 @@ impl Edge {
 #[derive(Debug)]
 pub struct Graph {
     pub is_directed: bool,
+    pub offset: Rc<RefCell<egui::Vec2>>,
     vertices: Vec<Vertex>,
     edges: Vec<Edge>,
 }
@@ -100,12 +101,10 @@ impl Graph {
         (&mut self.vertices, &mut self.edges)
     }
 
-    pub fn add_vertex(
-        &mut self,
-        position: egui::Pos2,
-        z_index: u32,
-        offset: Rc<RefCell<egui::Vec2>>,
-    ) {
+    pub fn add_vertex(&mut self, position: egui::Pos2, z_index: u32) {
+        let position = position - *self.offset.borrow();
+        let offset = self.offset.clone();
+
         self.vertices.push(Vertex {
             id: self.vertices.len(),
             position,
@@ -173,8 +172,10 @@ impl Graph {
     }
 }
 
-impl Graph {
-    pub fn new(offset: Rc<RefCell<egui::Vec2>>) -> Self {
+impl Default for Graph {
+    fn default() -> Self {
+        let offset = Rc::new(RefCell::new(egui::Vec2::ZERO));
+
         Self {
             is_directed: false,
             vertices: vec![
@@ -196,7 +197,7 @@ impl Graph {
                     is_selected: false,
                     z_index: 1,
                     is_deleted: false,
-                    offset,
+                    offset: offset.clone(),
                 },
             ],
             edges: vec![Edge {
@@ -205,6 +206,7 @@ impl Graph {
                 is_pressed: false,
                 is_deleted: false,
             }],
+            offset,
         }
     }
 }

@@ -1,6 +1,3 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use eframe::egui;
 
 use crate::components::{draw_central_panel, draw_edit_menu, draw_footer, draw_graph_input};
@@ -10,7 +7,6 @@ use crate::mode::EditMode;
 
 pub struct GraphEditorApp {
     pub graph: Graph,
-    pub offset: Rc<RefCell<egui::Vec2>>,
     pub last_mouse_pos: Option<egui::Pos2>,
     pub next_z_index: u32,
     pub edit_mode: EditMode,
@@ -58,11 +54,8 @@ impl GraphEditorApp {
 
 impl Default for GraphEditorApp {
     fn default() -> Self {
-        let offset = Rc::new(RefCell::new(egui::Vec2::ZERO));
-
         Self {
-            graph: Graph::new(offset.clone()),
-            offset,
+            graph: Graph::default(),
             last_mouse_pos: None,
             next_z_index: 2,
             edit_mode: EditMode::default_normal(),

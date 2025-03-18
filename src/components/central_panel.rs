@@ -89,7 +89,7 @@ fn drag_by_right_click(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
         if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
             if let Some(last_pos) = app.last_mouse_pos {
                 let delta = mouse_pos - last_pos;
-                *app.offset.borrow_mut() += delta;
+                *app.graph.offset.borrow_mut() += delta;
             }
             app.last_mouse_pos = Some(mouse_pos);
         }
@@ -113,8 +113,7 @@ fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
         && !app.hovered_on_input_window
     {
         if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-            app.graph
-                .add_vertex(mouse_pos, app.next_z_index, app.offset.clone());
+            app.graph.add_vertex(mouse_pos, app.next_z_index);
             app.next_z_index += 1;
         }
     }
