@@ -7,6 +7,7 @@ use crate::mode::EditMode;
 
 pub struct GraphEditorApp {
     pub graph: Graph,
+    pub last_mouse_pos: Option<egui::Pos2>,
     pub next_z_index: u32,
     pub edit_mode: EditMode,
     pub zero_indexed: bool,
@@ -55,6 +56,7 @@ impl Default for GraphEditorApp {
     fn default() -> Self {
         Self {
             graph: Graph::default(),
+            last_mouse_pos: None,
             next_z_index: 2,
             edit_mode: EditMode::default_normal(),
             zero_indexed: false,

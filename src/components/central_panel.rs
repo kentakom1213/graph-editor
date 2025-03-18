@@ -20,16 +20,20 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
     egui::CentralPanel::default()
         .frame(egui::Frame::new().fill(app.config.bg_color))
         .show(ctx, |ui| {
-            let painter = ui.painter();
-
             // モード切替を行う
             change_edit_mode(app, ui);
+
+            // ドラッグを行う
+            drag_by_right_click(app, ui);
 
             // Indexing切替を行う
             change_indexing(app, ui);
 
             // クリックした位置に頂点を追加
             add_vertex(app, ui);
+
+            // ペインターを取得
+            let painter = ui.painter();
 
             // 辺の描画
             draw_edges(app, ui, painter);
@@ -74,6 +78,23 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
         } else {
             app.switch_delete_mode();
         }
+    }
+}
+
+fn drag_by_right_click(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
+    let response = ui.allocate_response(ui.available_size(), egui::Sense::drag());
+
+    // マウス入力の処理
+    if response.dragged_by(egui::PointerButton::Secondary) {
+        if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
+            if let Some(last_pos) = app.last_mouse_pos {
+                let delta = mouse_pos - last_pos;
+                *app.graph.offset.borrow_mut() += delta;
+            }
+            app.last_mouse_pos = Some(mouse_pos);
+        }
+    } else {
+        app.last_mouse_pos = None;
     }
 }
 
@@ -126,9 +147,9 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 let mouse_pos = ui.input(|i| i.pointer.hover_pos()).unwrap_or_default();
 
                 // 端点との距離
-                let distance_from_vertex = (mouse_pos - from_vertex.position)
+                let distance_from_vertex = (mouse_pos - from_vertex.get_position())
                     .length()
-                    .min((mouse_pos - to_vertex.position).length());
+                    .min((mouse_pos - to_vertex.get_position()).length());
 
                 // カーソルが頂点上にあるかどうか
                 let is_on_vertex = distance_from_vertex < app.config.vertex_radius;
@@ -136,11 +157,15 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 // マウスと辺の最近接点の距離
                 let distance = if !is_directed || edge_count.get(&(edge.from, edge.to)) == Some(&1)
                 {
-                    distance_from_edge_line(from_vertex.position, to_vertex.position, mouse_pos)
+                    distance_from_edge_line(
+                        from_vertex.get_position(),
+                        to_vertex.get_position(),
+                        mouse_pos,
+                    )
                 } else {
                     distance_from_edge_bezier(
-                        from_vertex.position,
-                        to_vertex.position,
+                        from_vertex.get_position(),
+                        to_vertex.get_position(),
                         app.config.edge_bezier_distance,
                         mouse_pos,
                     )
@@ -173,16 +198,16 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                 if edge_count.get(&(edge.from, edge.to)) == Some(&1) {
                     draw_edge_directed(
                         painter,
-                        from_vertex.position,
-                        to_vertex.position,
+                        from_vertex.get_position(),
+                        to_vertex.get_position(),
                         edge_color,
                         &app.config,
                     );
                 } else {
                     draw_edge_directed_curved(
                         painter,
-                        from_vertex.position,
-                        to_vertex.position,
+                        from_vertex.get_position(),
+                        to_vertex.get_position(),
                         edge_color,
                         &app.config,
                     );
@@ -190,8 +215,8 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
             } else {
                 draw_edge_undirected(
                     painter,
-                    from_vertex.position,
-                    to_vertex.position,
+                    from_vertex.get_position(),
+                    to_vertex.get_position(),
                     app.config.edge_stroke,
                     edge_color,
                 );
@@ -359,7 +384,7 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
 
     for vertex in vertices_mut.iter_mut().sorted_by_key(|v| v.z_index) {
         let rect = egui::Rect::from_center_size(
-            vertex.position,
+            vertex.get_position(),
             egui::vec2(
                 app.config.vertex_radius * 2.0,
                 app.config.vertex_radius * 2.0,
@@ -377,12 +402,12 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
             vertex.z_index = app.next_z_index;
             app.next_z_index += 1;
             if let Some(mouse_pos) = response.hover_pos() {
-                vertex.drag_offset = mouse_pos - vertex.position;
+                vertex.drag_offset = mouse_pos - vertex.get_position();
             }
         } else if response.dragged() {
             // ドラッグ中の位置更新
             if let Some(mouse_pos) = response.hover_pos() {
-                vertex.position = mouse_pos - vertex.drag_offset;
+                vertex.update_position(mouse_pos - vertex.drag_offset);
             }
         } else {
             vertex.is_pressed = false;
@@ -443,7 +468,7 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
                 if vertex.id == from_vertex_inner {
                     if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
                         painter.line_segment(
-                            [vertex.position, mouse_pos],
+                            [vertex.get_position(), mouse_pos],
                             egui::Stroke::new(app.config.edge_stroke, app.config.edge_color_normal),
                         );
                     }
@@ -480,14 +505,14 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
         }
         .to_string();
 
-        painter.circle_filled(vertex.position, app.config.vertex_radius, color);
+        painter.circle_filled(vertex.get_position(), app.config.vertex_radius, color);
         painter.circle_stroke(
-            vertex.position,
+            vertex.get_position(),
             app.config.vertex_radius,
             egui::Stroke::new(app.config.vertex_stroke, app.config.vertex_color_outline),
         );
         painter.text(
-            vertex.position,
+            vertex.get_position(),
             egui::Align2::CENTER_CENTER,
             vertex_show_id,
             egui::FontId::proportional(app.config.vertex_font_size),

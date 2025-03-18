@@ -1,6 +1,6 @@
 {
-  "name": "egui Template PWA",
-  "short_name": "egui-template-pwa",
+  "name": "Graph Editor",
+  "short_name": "graph-editor",
   "icons": [
     {
       "src": "./assets/icon-256.png",
