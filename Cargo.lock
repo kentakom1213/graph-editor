@@ -1451,7 +1451,7 @@ dependencies = [
 
 [[package]]
 name = "graph-editor"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "eframe",
  "egui",

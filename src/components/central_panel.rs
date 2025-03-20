@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use egui::Context;
 use itertools::Itertools;
 
 use crate::{
@@ -16,7 +15,7 @@ use super::utility::{
 };
 
 /// メイン領域を描画
-pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &Context) {
+pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
     egui::CentralPanel::default()
         .frame(egui::Frame::new().fill(app.config.bg_color))
         .show(ctx, |ui| {
@@ -95,6 +94,11 @@ fn drag_by_right_click(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
         }
     } else {
         app.last_mouse_pos = None;
+    }
+
+    // 2本指ジェスチャーに対応
+    if let Some(multitouch) = ui.input(|i| i.multi_touch()) {
+        *app.graph.offset.borrow_mut() += multitouch.translation_delta;
     }
 }
 
