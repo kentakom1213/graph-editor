@@ -4,22 +4,34 @@
 
 Graph Editor は [eframe](https://github.com/emilk/egui/tree/master/crates/eframe) と [egui](https://github.com/emilk/egui/) によるグラフ編集アプリです．
 
-## 📌 主な機能
+![demo](./images/graph-editor-demo.gif)
 
-- **頂点の追加と移動**: クリックで新しい頂点を追加し、ドラッグで移動可能。
-- **辺の作成**: 頂点同士を接続して辺を追加。
-- **要素の選択と削除**: 頂点や辺を選択して削除可能。
-- **編集モードの切り替え**:
-  - Normal モード
-  - Add Vertex (頂点追加) モード
-  - Add Edge (辺追加) モード
-  - Delete Edge (辺削除) モード
-- **ショートカットキー対応**:
-  - `V`: 頂点追加モード
-  - `E`: 辺追加モード
-  - `D`: 辺削除モード
-  - `Esc`: 通常モードに戻る
-- **ステータスパネル**: 編集モードや情報をコード形式で表示、コピー可能。
+## 📌 操作
+
+### Edit Mode
+
+| モード                       | コマンド | 説明                              |
+| :--------------------------- | :------: | :-------------------------------- |
+| Normal モード                |    N     | 頂点の移動などを行う              |
+| Add Vertex (頂点追加) モード |    V     | クリックした位置に頂点を追加する  |
+| Add Edge (辺追加) モード     |    E     | 選択した 2 つの頂点の間に辺を張る |
+| Delete Edge (辺削除) モード  |    D     | クリックした頂点/辺を削除する     |
+
+### Indexing
+
+頂点の表示方法を変更する．
+
+| Indexing  |  コマンド  | 説明                        |
+| :-------- | :--------: | :-------------------------- |
+| 0-indexed | 1 (toggle) | 頂点を `0` 始まりで表示する |
+| 1-indexed | 1 (toggle) | 頂点を `1` 始まりで表示する |
+
+### Direction
+
+| Direction  |      コマンド      | 説明                     |
+| :--------- | :----------------: | :----------------------- |
+| Undirected | Shift + D (toggle) | 無向グラフとして描画する |
+| Directed   | Shift + D (toggle) | 有向グラフとして描画する |
 
 ---
 
@@ -36,7 +48,7 @@ cargo run --release
 
 ---
 
-## 🌐 Web版をローカルでプレビューする方法
+## 🌐 Web 版をローカルでプレビューする方法
 
 ### ✅ インストール
 
@@ -66,5 +78,3 @@ trunk serve
 ## 📄 ライセンス
 
 このプロジェクトは MIT ライセンス、APACHE ライセンスの下で提供されています。詳細は [LICENSE-APACHE](https://github.com/kentakom1213/graph-editor/blob/main/LICENSE-APACHE)、[LICENSE-MIT](https://github.com/kentakom1213/graph-editor/blob/main/LICENSE-MIT) ファイルを参照してください。
-
-
