@@ -1,6 +1,6 @@
 [package]
 name = "graph-editor"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Kenta KOMOTO"]
 edition = "2021"
 include = ["LICENSE-APACHE", "LICENSE-MIT", "**/*.rs", "Cargo.toml"]
@@ -25,6 +25,9 @@ log = "0.4"
 serde = { version = "1", features = ["derive"] }
 itertools = "0.14.0"
 epaint = "0.31.1"
+anyhow = "1.0.97"
+rand = { version = "0.8" }
+getrandom = { version = "0.2.2", features = ["js"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

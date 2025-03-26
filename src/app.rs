@@ -4,9 +4,11 @@ use crate::components::{draw_central_panel, draw_edit_menu, draw_footer, draw_gr
 use crate::config::AppConfig;
 use crate::graph::Graph;
 use crate::mode::EditMode;
+use crate::update::request_repaint;
 
 pub struct GraphEditorApp {
     pub graph: Graph,
+    pub is_animated: bool,
     pub last_mouse_pos: Option<egui::Pos2>,
     pub next_z_index: u32,
     pub edit_mode: EditMode,
@@ -14,6 +16,8 @@ pub struct GraphEditorApp {
     pub hovered_on_menu_window: bool,
     pub hovered_on_input_window: bool,
     pub config: AppConfig,
+    pub last_update: f64,
+    pub input_text: String,
 }
 
 impl GraphEditorApp {
@@ -56,6 +60,7 @@ impl Default for GraphEditorApp {
     fn default() -> Self {
         Self {
             graph: Graph::default(),
+            is_animated: false,
             last_mouse_pos: None,
             next_z_index: 2,
             edit_mode: EditMode::default_normal(),
@@ -63,6 +68,8 @@ impl Default for GraphEditorApp {
             hovered_on_menu_window: false,
             hovered_on_input_window: false,
             config: AppConfig::default(),
+            last_update: 0.0,
+            input_text: String::new(),
         }
     }
 }
@@ -80,5 +87,8 @@ impl eframe::App for GraphEditorApp {
 
         // フッターを描画
         draw_footer(self, ctx);
+
+        // 再描画
+        request_repaint(self, ctx);
     }
 }
