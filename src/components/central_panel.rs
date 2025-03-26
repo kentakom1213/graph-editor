@@ -78,6 +78,10 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
             app.switch_delete_mode();
         }
     }
+    if ui.input(|i| i.key_pressed(egui::Key::A)) {
+        // A でグラフのシミュレーションを切り替え
+        app.graph.is_animating ^= true;
+    }
 }
 
 fn drag_by_right_click(app: &mut GraphEditorApp, ui: &mut egui::Ui) {

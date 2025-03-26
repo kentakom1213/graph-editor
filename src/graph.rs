@@ -48,6 +48,7 @@ impl Edge {
 #[derive(Debug)]
 pub struct Graph {
     pub is_directed: bool,
+    pub is_animating: bool,
     pub offset: Rc<RefCell<egui::Vec2>>,
     vertices: Vec<Vertex>,
     edges: Vec<Edge>,
@@ -178,6 +179,7 @@ impl Default for Graph {
 
         Self {
             is_directed: false,
+            is_animating: false,
             vertices: vec![
                 Vertex {
                     id: 0,
