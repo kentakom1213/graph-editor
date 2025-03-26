@@ -151,7 +151,7 @@ impl Graph {
     }
 
     /// 隣接頂点のidを列挙する
-    pub fn neighbor_vertices<'a>(&'a self, id: usize) -> impl Iterator<Item = &'a Vertex> {
+    pub fn neighbor_vertices(&self, id: usize) -> impl Iterator<Item = &Vertex> {
         self.edges
             .iter()
             .filter_map(move |v| {
