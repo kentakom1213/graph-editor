@@ -1,6 +1,6 @@
 [package]
 name = "graph-editor"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Kenta KOMOTO"]
 edition = "2021"
 include = ["LICENSE-APACHE", "LICENSE-MIT", "**/*.rs", "Cargo.toml"]
