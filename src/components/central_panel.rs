@@ -397,7 +397,6 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
             app.config.simulate_h,
             app.config.simulate_m,
             app.config.simulate_time_delta,
-            app.config.simulate_dist_eps,
         );
     }
 

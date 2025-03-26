@@ -6,6 +6,8 @@ use std::{
 
 use egui::Vec2;
 
+const DISTANCE_EPS: f32 = 1e-5;
+
 #[derive(Debug, Clone)]
 pub struct Vertex {
     pub id: usize,
@@ -26,6 +28,11 @@ impl Vertex {
 
     pub fn update_position(&mut self, new_position: egui::Pos2) {
         self.position = new_position - *self.offset.borrow();
+    }
+
+    pub fn solve_drag_offset(&mut self) {
+        self.position += self.drag_offset;
+        self.drag_offset = egui::Vec2::ZERO;
     }
 }
 
@@ -193,7 +200,12 @@ impl Graph {
 
     /// 1ステップ分シミュレーションを行う
     /// アルゴリズム: <project://memo/graph_visualization.md >
-    pub fn simulate_step(&mut self, c: f32, k: f32, l: f32, h: f32, m: f32, dt: f32, eps: f32) {
+    pub fn simulate_step(&mut self, c: f32, k: f32, l: f32, h: f32, m: f32, dt: f32) {
+        // ドラッグ差分を解消
+        self.vertices_mut()
+            .iter_mut()
+            .for_each(|v| v.solve_drag_offset());
+
         let n = self.vertices.len();
 
         for i in 0..n {
@@ -206,7 +218,7 @@ impl Graph {
             let fv = self
                 .vertices
                 .iter()
-                .filter(|w| w.position.distance(v.position) > eps)
+                .filter(|w| w.position.distance(v.position) > DISTANCE_EPS)
                 // 頂点間の斥力
                 .map(|w| -r(w.position) * c / v.position.distance_sq(w.position))
                 // 辺による引力
