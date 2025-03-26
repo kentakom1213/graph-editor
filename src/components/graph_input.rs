@@ -4,6 +4,10 @@ use crate::GraphEditorApp;
 
 /// グラフのエンコードを表示する
 pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
+    if !app.hovered_on_input_window {
+        app.input_text = app.graph.encode(app.zero_indexed)
+    }
+
     // テキストの表示
     egui::Window::new("Graph Input")
         .collapsible(true)
@@ -12,9 +16,6 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
         .show(ctx, |ui| {
             // カーソルがあるか判定
             app.hovered_on_input_window = ui.rect_contains_pointer(ui.max_rect());
-
-            // グラフのコード形式
-            let graph_encoded = app.graph.encode(app.zero_indexed);
 
             egui::Frame::default()
                 .inner_margin(egui::Margin::same(10))
@@ -26,17 +27,28 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
                             )
                             .clicked()
                         {
-                            ctx.copy_text(graph_encoded.clone());
+                            ctx.copy_text(app.input_text.clone());
+                        }
+
+                        if ui
+                            .button(
+                                egui::RichText::new("Apply").size(app.config.menu_font_size_normal),
+                            )
+                            .clicked()
+                            && app
+                                .graph
+                                .apply_input(&app.input_text, app.zero_indexed, ctx.used_size())
+                                .is_ok()
+                        {
+                            app.is_animated = true;
                         }
                     });
                     ui.separator();
 
                     // コード形式で表示
-                    ui.label(
-                        egui::RichText::new(graph_encoded)
-                            .monospace()
-                            .size(app.config.graph_input_font_size),
-                    );
+                    if ui.code_editor(&mut app.input_text).has_focus() {
+                        app.hovered_on_input_window = true;
+                    }
                 });
         });
 }

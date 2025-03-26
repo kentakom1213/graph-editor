@@ -25,9 +25,6 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
             // ドラッグを行う
             drag_by_right_click(app, ui);
 
-            // Indexing切替を行う
-            change_indexing(app, ui);
-
             // クリックした位置に頂点を追加
             add_vertex(app, ui);
 
@@ -44,6 +41,11 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
 
 /// モード切替の処理
 fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
+    // 入力中はモード切替を行わない
+    if app.hovered_on_input_window {
+        return;
+    }
+
     if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
         // AddEdgeモードで，片方の頂点が選択済みの場合，選択状態を解除
         if let EditMode::AddEdge {
@@ -78,6 +80,9 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
             app.switch_delete_mode();
         }
     }
+    if ui.input(|i| i.key_pressed(egui::Key::Num1)) {
+        app.zero_indexed ^= true;
+    }
     if ui.input(|i| i.key_pressed(egui::Key::A)) {
         // A でグラフのシミュレーションを切り替え
         app.is_animated ^= true;
@@ -103,12 +108,6 @@ fn drag_by_right_click(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
     // 2本指ジェスチャーに対応
     if let Some(multitouch) = ui.input(|i| i.multi_touch()) {
         *app.graph.offset.borrow_mut() += multitouch.translation_delta;
-    }
-}
-
-fn change_indexing(app: &mut GraphEditorApp, ui: &egui::Ui) {
-    if ui.input(|i| i.key_pressed(egui::Key::Num1)) {
-        app.zero_indexed ^= true;
     }
 }
 

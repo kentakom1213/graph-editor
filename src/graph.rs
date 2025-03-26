@@ -198,6 +198,93 @@ impl Graph {
         res
     }
 
+    /// グラフの入力からグラフを生成する
+    pub fn apply_input(
+        &mut self,
+        input_text: &str,
+        zero_indexed: bool,
+        window_size: egui::Vec2,
+    ) -> anyhow::Result<()> {
+        // グラフの初期化
+        self.clear();
+        *self.offset.borrow_mut() = egui::Vec2::ZERO;
+
+        // 入力のパース
+        let (n, edges) = Self::parse_input(input_text, zero_indexed)?;
+
+        // グラフの構築
+        let new_vertices = (0..n).map(|id| Vertex {
+            id,
+            position: Self::random_position(window_size.x, window_size.y),
+            velocity: egui::Vec2::ZERO,
+            is_pressed: false,
+            drag_offset: egui::Vec2::ZERO,
+            is_selected: false,
+            z_index: 0,
+            is_deleted: false,
+            offset: self.offset.clone(),
+        });
+
+        self.vertices.extend(new_vertices);
+
+        let new_edges = edges.into_iter().map(|(from, to)| Edge::new(from, to));
+
+        self.edges.extend(new_edges);
+
+        Ok(())
+    }
+
+    fn random_position(max_x: f32, max_y: f32) -> egui::Pos2 {
+        egui::pos2(
+            rand::random::<f32>() * max_x * 0.6 + max_x * 0.1,
+            rand::random::<f32>() * max_y * 0.6 + max_x * 0.1,
+        )
+    }
+
+    fn parse_input(
+        input_text: &str,
+        zero_indexed: bool,
+    ) -> anyhow::Result<(usize, Vec<(usize, usize)>)> {
+        let mut source = input_text
+            .split_ascii_whitespace()
+            .map(|s| s.parse::<usize>());
+
+        let n = source
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("Insufficient input"))??;
+        let m = source
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("Insufficient input"))??;
+
+        let edges = (0..m)
+            .map(|_| {
+                let mut from = source
+                    .next()
+                    .ok_or_else(|| anyhow::anyhow!("Insufficient input"))??;
+                let mut to = source
+                    .next()
+                    .ok_or_else(|| anyhow::anyhow!("Insufficient input"))??;
+
+                if !zero_indexed {
+                    from -= 1;
+                    to -= 1;
+                }
+
+                if from > n || to > n {
+                    return Err(anyhow::anyhow!("Invalid edge: {} {}", from, to));
+                }
+
+                anyhow::Ok((from, to))
+            })
+            .collect::<anyhow::Result<_>>()?;
+
+        if source.next().is_some() {
+            return Err(anyhow::anyhow!("Excessive input"));
+        }
+
+        Ok((n, edges))
+    }
+
     /// 1ステップ分シミュレーションを行う
     /// アルゴリズム: <project://memo/graph_visualization.md >
     pub fn simulate_step(&mut self, c: f32, k: f32, l: f32, h: f32, m: f32, dt: f32) {
