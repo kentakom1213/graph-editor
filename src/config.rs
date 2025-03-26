@@ -37,7 +37,6 @@ pub struct AppConfig {
     /// 微小時間
     pub simulate_time_delta: f32,
     pub simulate_dist_eps: f32,
-    /// 再描画の間隔（アニメーション時）
     pub repaint_duration: std::time::Duration,
 }
 
@@ -63,14 +62,14 @@ impl Default for AppConfig {
             menu_font_size_mini: 15.0,
             footer_font_size: 13.0,
             graph_input_font_size: 20.0,
-            simulate_c: 4e5,
-            simulate_k: 1.0,
+            simulate_c: 5e5,
+            simulate_k: 2.0,
             simulate_l: 250.0,
             simulate_h: 0.9,
             simulate_m: 10.0,
             simulate_time_delta: 0.1,
-            simulate_dist_eps: 1.0,
-            repaint_duration: std::time::Duration::from_millis(20),
+            simulate_dist_eps: 10.0,
+            repaint_duration: std::time::Duration::from_millis(5),
         }
     }
 }
