@@ -171,28 +171,35 @@ impl Graph {
         self.edges.clear();
     }
 
+    pub fn list_unique_edges(&self) -> Vec<(usize, usize)> {
+        let mut seen = HashSet::new();
+
+        self.edges
+            .iter()
+            .filter_map(|e| {
+                if !self.is_directed && seen.contains(&(e.to, e.from)) {
+                    None
+                } else {
+                    seen.insert((e.from, e.to));
+                    Some((e.from, e.to))
+                }
+            })
+            .collect()
+    }
+
     pub fn encode(&mut self, zero_indexed: bool) -> String {
         // 削除済み頂点を削除
         self.restore_graph();
 
-        let mut seen_edges = HashSet::new();
-        let mut res = format!("{} {}", self.vertices.len(), self.edges.len());
+        let unique_edges = self.list_unique_edges();
+        let mut res = format!("{} {}", self.vertices.len(), unique_edges.len());
 
-        for edges in &self.edges {
-            // すでにみていた場合飛ばす
-            if !self.is_directed && seen_edges.contains(&(edges.to, edges.from)) {
-                continue;
-            }
+        for (from, to) in unique_edges {
             res.push_str(&format!(
                 "\n{} {}",
-                if zero_indexed {
-                    edges.from
-                } else {
-                    edges.from + 1
-                },
-                if zero_indexed { edges.to } else { edges.to + 1 }
+                if zero_indexed { from } else { from + 1 },
+                if zero_indexed { to } else { to + 1 }
             ));
-            seen_edges.insert((edges.from, edges.to));
         }
 
         res

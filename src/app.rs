@@ -60,7 +60,7 @@ impl Default for GraphEditorApp {
     fn default() -> Self {
         Self {
             graph: Graph::default(),
-            is_animated: false,
+            is_animated: true,
             last_mouse_pos: None,
             next_z_index: 2,
             edit_mode: EditMode::default_normal(),
