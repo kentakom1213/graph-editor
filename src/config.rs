@@ -24,6 +24,21 @@ pub struct AppConfig {
     pub menu_font_size_mini: f32,
     pub footer_font_size: f32,
     pub graph_input_font_size: f32,
+    /// クーロン定数
+    pub simulate_c: f32,
+    /// ばね定数
+    pub simulate_k: f32,
+    /// ばねの自然長
+    pub simulate_l: f32,
+    /// 減衰定数
+    pub simulate_h: f32,
+    /// 頂点の重さ
+    pub simulate_m: f32,
+    /// 微小時間
+    pub simulate_time_delta: f32,
+    pub simulate_dist_eps: f32,
+    /// 再描画の間隔（アニメーション時）
+    pub repaint_duration: std::time::Duration,
 }
 
 impl Default for AppConfig {
@@ -48,6 +63,14 @@ impl Default for AppConfig {
             menu_font_size_mini: 15.0,
             footer_font_size: 13.0,
             graph_input_font_size: 20.0,
+            simulate_c: 4e5,
+            simulate_k: 1.0,
+            simulate_l: 250.0,
+            simulate_h: 0.9,
+            simulate_m: 10.0,
+            simulate_time_delta: 0.1,
+            simulate_dist_eps: 1.0,
+            repaint_duration: std::time::Duration::from_millis(20),
         }
     }
 }

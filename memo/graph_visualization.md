@@ -29,24 +29,24 @@
 
 2. 全ての頂点 $v\in V$ について，
 
-   1. 頂点 $v$ に加わる力を $\boldsymbol{f}_v := (0, 0)$ とする．
+   1. 頂点 $v$ に加わる力を $\boldsymbol{f}_v := (0, 0)$​ とする．
 
-   2. 全ての頂点 $w\in V$ について，
+   1. 全ての頂点 $w\in V$ について，$v.\!\boldsymbol{x}$ から $w.\!\boldsymbol{x}$ へ向かう単位ベクトルを $\hat{r}$ とするとき，
       $$
-      \boldsymbol{f}_v := \boldsymbol{f}_v + \frac{c}{\|v.\!\boldsymbol{x} - w.\!\boldsymbol{x}\|^2}.
-      $$
-
-   3. 頂点 $v$ の隣接頂点 $w\in N(v)$ について，
-      $$
-      \boldsymbol{f}_v := \boldsymbol{f}_v + k \cdot (\|v.\!\boldsymbol{x} - w.\!\boldsymbol{x}\| - l).
+      \boldsymbol{f}_v := \boldsymbol{f}_v + \frac{c}{\|v.\!\boldsymbol{x} - w.\!\boldsymbol{x}\|^2}\cdot \hat{r}.
       $$
 
-   4. 振動の減衰を加味して速度を更新する．
+   2. 頂点 $v$ の隣接頂点 $w\in N(v)$ について，
+      $$
+      \boldsymbol{f}_v := \boldsymbol{f}_v + k \cdot (\|v.\!\boldsymbol{x} - w.\!\boldsymbol{x}\| - l) \cdot \hat{r}.
+      $$
+
+   3. 振動の減衰を加味して速度を更新する．
       $$
       v.\!\boldsymbol{\dot{x}} := h \cdot \left(v.\!\boldsymbol{\dot{x}} + \Delta t \cdot \frac{\boldsymbol{f}_v}{v.\!m} \right).
       $$
 
-   5. 頂点の位置を更新する．
+   4. 頂点の位置を更新する．
       $$
       v.\!\boldsymbol{x} := v.\!\boldsymbol{x} + \Delta t \cdot v.\!\boldsymbol{\dot{x}}.
       $$

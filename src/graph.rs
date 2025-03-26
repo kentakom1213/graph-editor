@@ -4,10 +4,13 @@ use std::{
     rc::Rc,
 };
 
+use egui::Vec2;
+
 #[derive(Debug, Clone)]
 pub struct Vertex {
     pub id: usize,
     position: egui::Pos2,
+    velocity: egui::Vec2,
     pub drag_offset: egui::Vec2,
     pub is_pressed: bool,
     pub is_selected: bool,
@@ -48,7 +51,6 @@ impl Edge {
 #[derive(Debug)]
 pub struct Graph {
     pub is_directed: bool,
-    pub is_animating: bool,
     pub offset: Rc<RefCell<egui::Vec2>>,
     vertices: Vec<Vertex>,
     edges: Vec<Edge>,
@@ -109,6 +111,7 @@ impl Graph {
         self.vertices.push(Vertex {
             id: self.vertices.len(),
             position,
+            velocity: Vec2::ZERO,
             is_pressed: false,
             drag_offset: egui::Vec2::ZERO,
             is_selected: false,
@@ -138,6 +141,22 @@ impl Graph {
             edges.push(Edge::new(from, to));
             true
         }
+    }
+
+    /// 隣接頂点のidを列挙する
+    pub fn neighbor_vertices<'a>(&'a self, id: usize) -> impl Iterator<Item = &'a Vertex> {
+        self.edges
+            .iter()
+            .filter_map(move |v| {
+                if v.from == id {
+                    Some(v.to)
+                } else if v.to == id {
+                    Some(v.from)
+                } else {
+                    None
+                }
+            })
+            .filter_map(|id| self.vertices.iter().find(|v| v.id == id))
     }
 
     pub fn clear(&mut self) {
@@ -171,6 +190,42 @@ impl Graph {
 
         res
     }
+
+    /// 1ステップ分シミュレーションを行う
+    /// アルゴリズム: <project://memo/graph_visualization.md >
+    pub fn simulate_step(&mut self, c: f32, k: f32, l: f32, h: f32, m: f32, dt: f32, eps: f32) {
+        let n = self.vertices.len();
+
+        for i in 0..n {
+            let v = self.vertices[i].clone();
+
+            // vからxへ向かう単位ベクトル
+            let r = |x: egui::Pos2| -> egui::Vec2 { (x - v.position).normalized() };
+
+            // 頂点vに働く力
+            let fv = self
+                .vertices
+                .iter()
+                .filter(|w| w.position.distance(v.position) > eps)
+                // 頂点間の斥力
+                .map(|w| -r(w.position) * c / v.position.distance_sq(w.position))
+                // 辺による引力
+                .chain(
+                    self.neighbor_vertices(v.id)
+                        .map(|w| r(w.position) * (v.position.distance(w.position) - l) * k),
+                )
+                .fold(egui::Vec2::ZERO, |acc, f| acc + f);
+
+            // 速度を更新
+            let next_velocity = (v.velocity + fv * dt / m) * h;
+
+            // 位置を更新
+            let next_position = v.position + v.velocity * dt;
+
+            self.vertices[i].velocity = next_velocity;
+            self.vertices[i].position = next_position;
+        }
+    }
 }
 
 impl Default for Graph {
@@ -179,11 +234,11 @@ impl Default for Graph {
 
         Self {
             is_directed: false,
-            is_animating: false,
             vertices: vec![
                 Vertex {
                     id: 0,
                     position: egui::pos2(400.0, 400.0),
+                    velocity: egui::Vec2::ZERO,
                     is_pressed: false,
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,
@@ -194,6 +249,7 @@ impl Default for Graph {
                 Vertex {
                     id: 1,
                     position: egui::pos2(600.0, 400.0),
+                    velocity: egui::Vec2::ZERO,
                     is_pressed: false,
                     drag_offset: egui::Vec2::ZERO,
                     is_selected: false,

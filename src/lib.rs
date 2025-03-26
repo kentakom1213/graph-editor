@@ -5,5 +5,6 @@ mod components;
 mod config;
 mod graph;
 mod mode;
+mod update_paint;
 
 pub use app::GraphEditorApp;

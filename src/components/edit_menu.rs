@@ -86,7 +86,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         ui.separator();
 
                         ui.checkbox(
-                            &mut app.graph.is_animating,
+                            &mut app.is_animated,
                             egui::RichText::new("Animate [A]")
                                 .size(app.config.menu_font_size_normal),
                         );

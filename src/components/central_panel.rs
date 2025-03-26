@@ -80,7 +80,7 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     }
     if ui.input(|i| i.key_pressed(egui::Key::A)) {
         // A でグラフのシミュレーションを切り替え
-        app.graph.is_animating ^= true;
+        app.is_animated ^= true;
     }
 }
 
@@ -385,7 +385,21 @@ fn draw_edge_directed_curved(
 
 /// central_panel に頂点を描画する
 fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) {
+    // グラフの更新
     app.graph.restore_graph();
+
+    // シミュレーションがonの場合，位置を更新
+    if app.is_animated {
+        app.graph.simulate_step(
+            app.config.simulate_c,
+            app.config.simulate_k,
+            app.config.simulate_l,
+            app.config.simulate_h,
+            app.config.simulate_m,
+            app.config.simulate_time_delta,
+            app.config.simulate_dist_eps,
+        );
+    }
 
     let is_directed = app.graph.is_directed;
     let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
