@@ -1,5 +1,7 @@
 use egui::Color32;
 
+use crate::graph::{visualize_methods, Visualize};
+
 /// バージョン情報
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -24,6 +26,8 @@ pub struct AppConfig {
     pub menu_font_size_mini: f32,
     pub footer_font_size: f32,
     pub graph_input_font_size: f32,
+    /// 可視化アルゴリズム
+    pub visualize_method: Box<dyn Visualize>,
     /// クーロン定数
     pub simulate_c: f32,
     /// ばね定数
@@ -36,21 +40,19 @@ pub struct AppConfig {
     pub simulate_m: f32,
     /// 微小時間
     pub simulate_time_delta: f32,
-    /// 再描画するまでの間隔
-    pub repaint_duration: std::time::Duration,
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
             bg_color: Color32::from_rgb(230, 230, 230),
-            vertex_radius: 50.0,
+            vertex_radius: 45.0,
             vertex_stroke: 3.0,
             vertex_color_outline: Color32::from_rgb(150, 150, 150),
             vertex_color_normal: Color32::WHITE,
             vertex_color_dragged: Color32::from_rgb(200, 100, 100),
             vertex_color_selected: Color32::from_rgb(100, 200, 100),
-            vertex_font_size: 50.0,
+            vertex_font_size: 45.0,
             vertex_font_color: Color32::BLACK,
             edge_color_normal: Color32::from_rgb(100, 100, 100),
             edge_color_hover: Color32::from_rgb(200, 100, 100),
@@ -62,13 +64,13 @@ impl Default for AppConfig {
             menu_font_size_mini: 15.0,
             footer_font_size: 13.0,
             graph_input_font_size: 20.0,
+            visualize_method: Box::new(visualize_methods::HillClimbing(1_000)),
             simulate_c: 1e5,
-            simulate_k: 2.0,
-            simulate_l: 200.0,
+            simulate_k: 1.5,
+            simulate_l: 180.0,
             simulate_h: 0.8,
             simulate_m: 10.0,
             simulate_time_delta: 0.2,
-            repaint_duration: std::time::Duration::from_millis(20),
         }
     }
 }

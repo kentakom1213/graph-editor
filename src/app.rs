@@ -16,7 +16,6 @@ pub struct GraphEditorApp {
     pub hovered_on_menu_window: bool,
     pub hovered_on_input_window: bool,
     pub config: AppConfig,
-    pub last_update: f64,
     pub input_text: String,
 }
 
@@ -68,7 +67,6 @@ impl Default for GraphEditorApp {
             hovered_on_menu_window: false,
             hovered_on_input_window: false,
             config: AppConfig::default(),
-            last_update: 0.0,
             input_text: String::new(),
         }
     }

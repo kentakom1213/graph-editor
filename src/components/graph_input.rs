@@ -37,7 +37,12 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
                             .clicked()
                             && app
                                 .graph
-                                .apply_input(&app.input_text, app.zero_indexed, ctx.used_size())
+                                .apply_input(
+                                    app.config.visualize_method.as_ref(),
+                                    &app.input_text,
+                                    app.zero_indexed,
+                                    ctx.used_size(),
+                                )
                                 .is_ok()
                         {
                             app.is_animated = true;
