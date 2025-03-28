@@ -6,6 +6,8 @@ use std::{
 
 use egui::Vec2;
 
+use super::Visualize;
+
 const DISTANCE_EPS: f32 = 1e-5;
 
 #[derive(Debug, Clone)]
@@ -208,6 +210,7 @@ impl Graph {
     /// グラフの入力からグラフを生成する
     pub fn apply_input(
         &mut self,
+        vizualizer: &dyn Visualize,
         input_text: &str,
         zero_indexed: bool,
         window_size: egui::Vec2,
@@ -219,18 +222,27 @@ impl Graph {
         // 入力のパース
         let (n, edges) = Self::parse_input(input_text, zero_indexed)?;
 
+        // 頂点座標を適切な位置に（上下左右 10% の余白をもたせる）
+        let adjust_to_window = |pos: egui::Pos2| -> egui::Pos2 {
+            (pos.to_vec2() * window_size * 0.8 + window_size * 0.1).to_pos2()
+        };
+
         // グラフの構築
-        let new_vertices = (0..n).map(|id| Vertex {
-            id,
-            position: Self::random_position(window_size.x, window_size.y),
-            velocity: egui::Vec2::ZERO,
-            is_pressed: false,
-            drag_offset: egui::Vec2::ZERO,
-            is_selected: false,
-            z_index: 0,
-            is_deleted: false,
-            offset: self.offset.clone(),
-        });
+        let new_vertices = vizualizer
+            .resolve_vertex_position(n, &edges)
+            .into_iter()
+            .enumerate()
+            .map(|(id, pos)| Vertex {
+                id,
+                position: adjust_to_window(pos),
+                velocity: egui::Vec2::ZERO,
+                is_pressed: false,
+                drag_offset: egui::Vec2::ZERO,
+                is_selected: false,
+                z_index: 0,
+                is_deleted: false,
+                offset: self.offset.clone(),
+            });
 
         self.vertices.extend(new_vertices);
 
@@ -239,13 +251,6 @@ impl Graph {
         self.edges.extend(new_edges);
 
         Ok(())
-    }
-
-    fn random_position(max_x: f32, max_y: f32) -> egui::Pos2 {
-        egui::pos2(
-            rand::random::<f32>() * max_x * 0.6 + max_x * 0.1,
-            rand::random::<f32>() * max_y * 0.6 + max_x * 0.1,
-        )
     }
 
     fn parse_input(
@@ -294,6 +299,14 @@ impl Graph {
 
     /// 1ステップ分シミュレーションを行う
     /// アルゴリズム: <project://memo/graph_visualization.md >
+    ///
+    /// ### Args
+    /// - `c`: クーロン定数（頂点同士の反発力）
+    /// - `k`: ばね定数
+    /// - `l`: ばねの自然長
+    /// - `h`: 力の減衰率
+    /// - `m`: 頂点の重さ
+    /// - `dt`: 微小時間
     pub fn simulate_step(&mut self, c: f32, k: f32, l: f32, h: f32, m: f32, dt: f32) {
         // ドラッグ差分を解消
         self.vertices_mut()
