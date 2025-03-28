@@ -1,6 +1,6 @@
 use egui::Color32;
 
-use crate::graph::{Naive, Visualize};
+use crate::graph::{visualize_methods, Visualize};
 
 /// バージョン情報
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -44,8 +44,6 @@ pub struct AppConfig {
 
 impl Default for AppConfig {
     fn default() -> Self {
-        let visualize_method = Box::new(Naive);
-
         Self {
             bg_color: Color32::from_rgb(230, 230, 230),
             vertex_radius: 45.0,
@@ -66,7 +64,7 @@ impl Default for AppConfig {
             menu_font_size_mini: 15.0,
             footer_font_size: 13.0,
             graph_input_font_size: 20.0,
-            visualize_method,
+            visualize_method: Box::new(visualize_methods::HillClimbing),
             simulate_c: 1e5,
             simulate_k: 1.5,
             simulate_l: 180.0,

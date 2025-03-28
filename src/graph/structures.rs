@@ -223,8 +223,8 @@ impl Graph {
         let (n, edges) = Self::parse_input(input_text, zero_indexed)?;
 
         // 頂点座標を適切な位置に（上下左右 10% の余白をもたせる）
-        let adjust_to_window = |pos: egui::Pos2| -> egui::Pos2 {
-            (pos.to_vec2() * window_size * 0.8 + window_size * 0.1).to_pos2()
+        let adjust_to_window = |pos: egui::Vec2| -> egui::Pos2 {
+            (pos * window_size * 0.8 + window_size * 0.1).to_pos2()
         };
 
         // グラフの構築
