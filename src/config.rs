@@ -64,7 +64,7 @@ impl Default for AppConfig {
             menu_font_size_mini: 15.0,
             footer_font_size: 13.0,
             graph_input_font_size: 20.0,
-            visualize_method: Box::new(visualize_methods::HillClimbing),
+            visualize_method: Box::new(visualize_methods::HillClimbing(1_000)),
             simulate_c: 1e5,
             simulate_k: 1.5,
             simulate_l: 180.0,
