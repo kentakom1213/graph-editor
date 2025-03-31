@@ -4,7 +4,7 @@
 
 Graph Editor は [eframe](https://github.com/emilk/egui/tree/master/crates/eframe) と [egui](https://github.com/emilk/egui/) によるグラフ編集アプリです．
 
-![demo](./images/graph-editor-demo.gif)
+![demo](./images/graph-editor-demo-v3.gif)
 
 ## 📌 操作
 
