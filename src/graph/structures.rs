@@ -278,8 +278,12 @@ impl Graph {
                     .ok_or_else(|| anyhow::anyhow!("Insufficient input"))??;
 
                 if !zero_indexed {
-                    from -= 1;
-                    to -= 1;
+                    from = from
+                        .checked_sub(1)
+                        .ok_or_else(|| anyhow::anyhow!("Invalid edge: {} {}", from, to))?;
+                    to = to
+                        .checked_sub(1)
+                        .ok_or_else(|| anyhow::anyhow!("Invalid edge: {} {}", from, to))?;
                 }
 
                 if from > n || to > n {
@@ -307,7 +311,7 @@ impl Graph {
     /// - `h`: 力の減衰率
     /// - `m`: 頂点の重さ
     /// - `dt`: 微小時間
-    pub fn simulate_step(&mut self, c: f32, k: f32, l: f32, h: f32, m: f32, dt: f32) {
+    pub fn simulate_step(&mut self, c: f32, k: f32, l: f32, h: f32, m: f32, max_v: f32, dt: f32) {
         // ドラッグ差分を解消
         self.vertices_mut()
             .iter_mut()
@@ -336,7 +340,11 @@ impl Graph {
                 .fold(egui::Vec2::ZERO, |acc, f| acc + f);
 
             // 速度を更新
-            let next_velocity = (v.velocity + fv * dt / m) * h;
+            let mut next_velocity = (v.velocity + fv * dt / m) * h;
+
+            if next_velocity.length() > max_v {
+                next_velocity = next_velocity.normalized() * max_v;
+            }
 
             // 位置を更新
             let next_position = v.position + v.velocity * dt;

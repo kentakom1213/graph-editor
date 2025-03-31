@@ -38,6 +38,8 @@ pub struct AppConfig {
     pub simulate_h: f32,
     /// 頂点の重さ
     pub simulate_m: f32,
+    /// 最大速度
+    pub simulate_max_v: f32,
     /// 微小時間
     pub simulate_time_delta: f32,
 }
@@ -68,8 +70,9 @@ impl Default for AppConfig {
             simulate_c: 2e5,
             simulate_k: 7.0,
             simulate_l: 180.0,
-            simulate_h: 0.8,
-            simulate_m: 10.0,
+            simulate_h: 0.73,
+            simulate_m: 20.0,
+            simulate_max_v: 100.0,
             simulate_time_delta: 0.2,
         }
     }
