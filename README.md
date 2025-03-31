@@ -33,13 +33,20 @@ Graph Editor は [eframe](https://github.com/emilk/egui/tree/master/crates/efram
 | Undirected | Shift + D (toggle) | 無向グラフとして描画する |
 | Directed   | Shift + D (toggle) | 有向グラフとして描画する |
 
+### Animation
+
+| Animation |  コマンド  | 説明             |
+| :-------- | :--------: | :--------------- |
+| On        | A (toggle) | ノードを動かす   |
+| Off       | A (toggle) | ノードを固定する |
+
 ### 共通
 
 - 右クリックでのドラッグ，または 2 本指でのスクロールでグラフ全体を移動する
 
 ---
 
-## 🚀 ローカル環境での実行方法
+## ローカル環境での実行方法
 
 ```bash
 # リポジトリをクローン
@@ -52,9 +59,9 @@ cargo run --release
 
 ---
 
-## 🌐 Web 版をローカルでプレビューする方法
+## Web 版をローカルでプレビューする方法
 
-### ✅ インストール
+### インストール
 
 - Rust と Trunk のインストールが必要です。
 
@@ -66,7 +73,7 @@ rustup target add wasm32-unknown-unknown
 cargo install --locked trunk
 ```
 
-### 🚧 ローカルサーバーで実行する場合
+### ローカルサーバーで実行する場合
 
 ```bash
 # ローカルサーバーを起動
@@ -75,10 +82,10 @@ trunk serve
 
 ブラウザで `http://127.0.0.1:8080` を開いて確認してください。
 
-## 🤝 コントリビューション
+## コントリビューション
 
 バグ報告、機能追加の提案、プルリクエストなど歓迎いたします。
 
-## 📄 ライセンス
+## ライセンス
 
 このプロジェクトは MIT ライセンス、APACHE ライセンスの下で提供されています。詳細は [LICENSE-APACHE](https://github.com/kentakom1213/graph-editor/blob/main/LICENSE-APACHE)、[LICENSE-MIT](https://github.com/kentakom1213/graph-editor/blob/main/LICENSE-MIT) ファイルを参照してください。
