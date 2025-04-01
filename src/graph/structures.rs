@@ -6,6 +6,8 @@ use std::{
 
 use egui::Vec2;
 
+use crate::config::SimulateConfig;
+
 use super::Visualize;
 
 const DISTANCE_EPS: f32 = 1e-5;
@@ -311,7 +313,18 @@ impl Graph {
     /// - `h`: 力の減衰率
     /// - `m`: 頂点の重さ
     /// - `dt`: 微小時間
-    pub fn simulate_step(&mut self, c: f32, k: f32, l: f32, h: f32, m: f32, max_v: f32, dt: f32) {
+    pub fn simulate_step(
+        &mut self,
+        &SimulateConfig {
+            c,
+            k,
+            l,
+            h,
+            m,
+            max_v,
+            dt,
+        }: &SimulateConfig,
+    ) {
         // ドラッグ差分を解消
         self.vertices_mut()
             .iter_mut()

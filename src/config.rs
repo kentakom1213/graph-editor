@@ -28,20 +28,8 @@ pub struct AppConfig {
     pub graph_input_font_size: f32,
     /// 可視化アルゴリズム
     pub visualize_method: Box<dyn Visualize>,
-    /// クーロン定数
-    pub simulate_c: f32,
-    /// ばね定数
-    pub simulate_k: f32,
-    /// ばねの自然長
-    pub simulate_l: f32,
-    /// 減衰定数
-    pub simulate_h: f32,
-    /// 頂点の重さ
-    pub simulate_m: f32,
-    /// 最大速度
-    pub simulate_max_v: f32,
-    /// 微小時間
-    pub simulate_time_delta: f32,
+    /// シミュレーションの設定
+    pub simulate_config: SimulateConfig,
 }
 
 impl Default for AppConfig {
@@ -67,13 +55,39 @@ impl Default for AppConfig {
             footer_font_size: 13.0,
             graph_input_font_size: 20.0,
             visualize_method: Box::new(visualize_methods::HillClimbing(1_000)),
-            simulate_c: 2e5,
-            simulate_k: 7.0,
-            simulate_l: 180.0,
-            simulate_h: 0.73,
-            simulate_m: 20.0,
-            simulate_max_v: 100.0,
-            simulate_time_delta: 0.2,
+            simulate_config: SimulateConfig::default(),
+        }
+    }
+}
+
+/// シミュレーションの設定
+pub struct SimulateConfig {
+    /// クーロン定数
+    pub c: f32,
+    /// ばね定数
+    pub k: f32,
+    /// ばねの自然長
+    pub l: f32,
+    /// 減衰定数
+    pub h: f32,
+    /// 頂点の重さ
+    pub m: f32,
+    /// 最大速度
+    pub max_v: f32,
+    /// 微小時間
+    pub dt: f32,
+}
+
+impl Default for SimulateConfig {
+    fn default() -> Self {
+        Self {
+            c: 2e5,
+            k: 7.0,
+            l: 180.0,
+            h: 0.73,
+            m: 10.0,
+            max_v: 100.0,
+            dt: 0.2,
         }
     }
 }
