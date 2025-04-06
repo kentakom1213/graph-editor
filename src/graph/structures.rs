@@ -221,12 +221,19 @@ impl Graph {
     pub fn apply_input(
         &mut self,
         vizualizer: &dyn Visualize,
-        BaseGraph { n, edges, .. }: BaseGraph,
+        BaseGraph {
+            is_directed,
+            n,
+            edges,
+        }: BaseGraph,
         window_size: egui::Vec2,
     ) -> anyhow::Result<()> {
         // グラフの初期化
         self.clear();
         *self.offset.borrow_mut() = egui::Vec2::ZERO;
+
+        // 有向/無向の反映
+        self.is_directed = is_directed;
 
         // 頂点座標を適切な位置に（上下左右 10% の余白をもたせる）
         let adjust_to_window = |pos: egui::Vec2| -> egui::Pos2 {

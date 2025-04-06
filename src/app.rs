@@ -21,7 +21,7 @@ pub struct GraphEditorApp {
     pub config: AppConfig,
     pub input_text: String,
     pub error_message: Option<String>,
-    graph_data: Option<String>,
+    pub graph6_encode: Option<String>,
 }
 
 impl GraphEditorApp {
@@ -65,6 +65,8 @@ impl GraphEditorApp {
 
         params.get("data")
     }
+
+    pub fn put_url_data(&self) {}
 }
 
 impl Default for GraphEditorApp {
@@ -81,7 +83,7 @@ impl Default for GraphEditorApp {
             config: AppConfig::default(),
             input_text: String::new(),
             error_message: None,
-            graph_data: None,
+            graph6_encode: None,
         }
     }
 }
@@ -89,7 +91,7 @@ impl Default for GraphEditorApp {
 impl eframe::App for GraphEditorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // URLを処理
-        resolve_url(self);
+        resolve_url(self, ctx);
 
         // メイン領域を描画
         draw_central_panel(self, ctx);
