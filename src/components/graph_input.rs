@@ -35,17 +35,20 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
                                 egui::RichText::new("Apply").size(app.config.menu_font_size_normal),
                             )
                             .clicked()
-                            && app
-                                .graph
-                                .apply_input(
-                                    app.config.visualize_method.as_ref(),
-                                    &app.input_text,
-                                    app.zero_indexed,
-                                    ctx.used_size(),
-                                )
-                                .is_ok()
                         {
-                            app.is_animated = true;
+                            match app.graph.apply_input(
+                                app.config.visualize_method.as_ref(),
+                                &app.input_text,
+                                app.zero_indexed,
+                                ctx.used_size(),
+                            ) {
+                                Ok(_) => {
+                                    app.is_animated = true;
+                                }
+                                Err(err) => {
+                                    app.error_message = Some(err.to_string());
+                                }
+                            }
                         }
                     });
                     ui.separator();
