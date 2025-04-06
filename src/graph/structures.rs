@@ -209,11 +209,19 @@ impl Graph {
         res
     }
 
+    pub fn to_basegraph(&self) -> BaseGraph {
+        BaseGraph {
+            is_directed: self.is_directed,
+            n: self.vertices.len(),
+            edges: self.list_unique_edges(),
+        }
+    }
+
     /// グラフの入力からグラフを生成する
     pub fn apply_input(
         &mut self,
         vizualizer: &dyn Visualize,
-        BaseGraph { n, edges }: BaseGraph,
+        BaseGraph { n, edges, .. }: BaseGraph,
         window_size: egui::Vec2,
     ) -> anyhow::Result<()> {
         // グラフの初期化
