@@ -8,7 +8,7 @@ use egui::Vec2;
 
 use crate::config::SimulateConfig;
 
-use super::Visualize;
+use super::{BaseGraph, Visualize};
 
 const DISTANCE_EPS: f32 = 1e-5;
 
@@ -213,16 +213,12 @@ impl Graph {
     pub fn apply_input(
         &mut self,
         vizualizer: &dyn Visualize,
-        input_text: &str,
-        zero_indexed: bool,
+        BaseGraph { n, edges }: BaseGraph,
         window_size: egui::Vec2,
     ) -> anyhow::Result<()> {
         // グラフの初期化
         self.clear();
         *self.offset.borrow_mut() = egui::Vec2::ZERO;
-
-        // 入力のパース
-        let (n, edges) = Self::parse_input(input_text, zero_indexed)?;
 
         // 頂点座標を適切な位置に（上下左右 10% の余白をもたせる）
         let adjust_to_window = |pos: egui::Vec2| -> egui::Pos2 {
@@ -253,54 +249,6 @@ impl Graph {
         self.edges.extend(new_edges);
 
         Ok(())
-    }
-
-    fn parse_input(
-        input_text: &str,
-        zero_indexed: bool,
-    ) -> anyhow::Result<(usize, Vec<(usize, usize)>)> {
-        let mut source = input_text
-            .split_ascii_whitespace()
-            .map(|s| s.parse::<usize>());
-
-        let n = source
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Insufficient input"))??;
-        let m = source
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Insufficient input"))??;
-
-        let edges = (0..m)
-            .map(|_| {
-                let mut from = source
-                    .next()
-                    .ok_or_else(|| anyhow::anyhow!("Insufficient input"))??;
-                let mut to = source
-                    .next()
-                    .ok_or_else(|| anyhow::anyhow!("Insufficient input"))??;
-
-                if !zero_indexed {
-                    from = from
-                        .checked_sub(1)
-                        .ok_or_else(|| anyhow::anyhow!("Invalid edge: {} {}", from, to))?;
-                    to = to
-                        .checked_sub(1)
-                        .ok_or_else(|| anyhow::anyhow!("Invalid edge: {} {}", from, to))?;
-                }
-
-                if from > n || to > n {
-                    return Err(anyhow::anyhow!("Invalid edge: {} {}", from, to));
-                }
-
-                anyhow::Ok((from, to))
-            })
-            .collect::<anyhow::Result<_>>()?;
-
-        if source.next().is_some() {
-            return Err(anyhow::anyhow!("Excessive input"));
-        }
-
-        Ok((n, edges))
     }
 
     /// 1ステップ分シミュレーションを行う

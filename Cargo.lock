@@ -1467,6 +1467,7 @@ dependencies = [
  "env_logger",
  "epaint",
  "getrandom",
+ "graph6-rs",
  "itertools",
  "log",
  "rand",
@@ -1474,6 +1475,12 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
 ]
+
+[[package]]
+name = "graph6-rs"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "076d56e4ce2421f356160e525f57192e0f975793fa55c741c686eccf98546e7d"
 
 [[package]]
 name = "hashbrown"

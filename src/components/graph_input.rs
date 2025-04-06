@@ -1,6 +1,6 @@
 use egui::Context;
 
-use crate::GraphEditorApp;
+use crate::{graph::BaseGraph, GraphEditorApp};
 
 /// グラフのエンコードを表示する
 pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
@@ -36,12 +36,16 @@ pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
                             )
                             .clicked()
                         {
-                            match app.graph.apply_input(
-                                app.config.visualize_method.as_ref(),
-                                &app.input_text,
-                                app.zero_indexed,
-                                ctx.used_size(),
-                            ) {
+                            let new_graph = BaseGraph::parse(&app.input_text, app.zero_indexed)
+                                .and_then(|base| {
+                                    app.graph.apply_input(
+                                        app.config.visualize_method.as_ref(),
+                                        base,
+                                        ctx.used_size(),
+                                    )
+                                });
+
+                            match new_graph {
                                 Ok(_) => {
                                     app.is_animated = true;
                                 }

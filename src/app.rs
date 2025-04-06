@@ -7,6 +7,7 @@ use crate::config::AppConfig;
 use crate::graph::Graph;
 use crate::mode::EditMode;
 use crate::update::request_repaint;
+use crate::url::resolve_url;
 
 pub struct GraphEditorApp {
     pub graph: Graph,
@@ -20,6 +21,7 @@ pub struct GraphEditorApp {
     pub config: AppConfig,
     pub input_text: String,
     pub error_message: Option<String>,
+    graph_data: Option<String>,
 }
 
 impl GraphEditorApp {
@@ -56,6 +58,13 @@ impl GraphEditorApp {
         self.deselect_all_vertices_edges();
         self.edit_mode = EditMode::default_delete();
     }
+
+    pub fn get_url_data(&self) -> Option<String> {
+        let href = web_sys::window()?.location().href().ok()?;
+        let params = web_sys::Url::new(&href).ok()?.search_params();
+
+        params.get("data")
+    }
 }
 
 impl Default for GraphEditorApp {
@@ -72,12 +81,16 @@ impl Default for GraphEditorApp {
             config: AppConfig::default(),
             input_text: String::new(),
             error_message: None,
+            graph_data: None,
         }
     }
 }
 
 impl eframe::App for GraphEditorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // URLを処理
+        resolve_url(self);
+
         // メイン領域を描画
         draw_central_panel(self, ctx);
 
