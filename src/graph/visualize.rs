@@ -68,6 +68,10 @@ pub mod visualize_methods {
 
     impl super::Visualize for HillClimbing {
         fn resolve_vertex_position(&self, n: usize, edges: &[(usize, usize)]) -> Vec<egui::Vec2> {
+            if n == 0 {
+                return vec![];
+            }
+
             let initial_positions = (0..n).map(|_| sample_point()).collect::<Vec<_>>();
 
             let mut best_positions = initial_positions.clone();

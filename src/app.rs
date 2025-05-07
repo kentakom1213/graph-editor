@@ -1,6 +1,8 @@
 use eframe::egui;
 
-use crate::components::{draw_central_panel, draw_edit_menu, draw_footer, draw_graph_input};
+use crate::components::{
+    draw_central_panel, draw_edit_menu, draw_error_modal, draw_footer, draw_graph_input,
+};
 use crate::config::AppConfig;
 use crate::graph::Graph;
 use crate::mode::EditMode;
@@ -17,6 +19,7 @@ pub struct GraphEditorApp {
     pub hovered_on_input_window: bool,
     pub config: AppConfig,
     pub input_text: String,
+    pub error_message: Option<String>,
 }
 
 impl GraphEditorApp {
@@ -68,6 +71,7 @@ impl Default for GraphEditorApp {
             hovered_on_input_window: false,
             config: AppConfig::default(),
             input_text: String::new(),
+            error_message: None,
         }
     }
 }
@@ -85,6 +89,9 @@ impl eframe::App for GraphEditorApp {
 
         // フッターを描画
         draw_footer(self, ctx);
+
+        // エラーメッセージを描画
+        draw_error_modal(self, ctx);
 
         // 再描画
         request_repaint(self, ctx);
