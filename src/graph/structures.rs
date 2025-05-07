@@ -34,12 +34,14 @@ impl Vertex {
         self.position.applied(&self.affine.borrow())
     }
 
-    pub fn affine<'a>(&'a self) -> Ref<'a, Affine2D> {
+    pub fn affine(&self) -> Ref<'_, Affine2D> {
         self.affine.borrow()
     }
 
     pub fn update_position(&mut self, new_position: egui::Pos2) {
-        self.position = new_position.applied(&self.affine.borrow().inverse().unwrap());
+        if let Some(inv) = self.affine.borrow().inverse() {
+            self.position = new_position.applied(&inv);
+        }
     }
 
     pub fn solve_drag_offset(&mut self) {

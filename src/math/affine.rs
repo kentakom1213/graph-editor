@@ -2,7 +2,9 @@
 //!
 //! 2次元平面上の点の拡大，縮小，平行移動
 
-use std::ops::{Div, DivAssign, Mul, MulAssign};
+#![allow(clippy::needless_range_loop)]
+
+use std::ops::{Mul, MulAssign};
 
 use num_traits::One;
 
@@ -108,14 +110,6 @@ impl MulAssign for Affine2D {
 impl One for Affine2D {
     fn one() -> Self {
         Self(AFFINE2D_ONE)
-    }
-}
-
-impl Div for Affine2D {
-    type Output = Self;
-    fn div(self, rhs: Self) -> Self::Output {
-        let rhs_inv = rhs.inverse().unwrap();
-        self * rhs_inv
     }
 }
 

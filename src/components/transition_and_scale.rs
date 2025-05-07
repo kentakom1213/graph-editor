@@ -1,4 +1,7 @@
-use crate::{math::affine::Affine2D, GraphEditorApp};
+use crate::{
+    math::affine::{Affine2D, ApplyAffine},
+    GraphEditorApp,
+};
 
 /// 右クリックでドラッグを行う
 pub fn drag_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
@@ -31,18 +34,26 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
     let input = ui.input(|i| i.clone());
 
     let mouse_pos = input.pointer.hover_pos();
-    let scroll_delta = input.smooth_scroll_delta.y;
-
-    // 現在のscaleの逆数倍で変化させる
-    let cur_scale = app.graph.affine.borrow().scale_x();
-    let scale = 1.0 + 0.01 * scroll_delta / cur_scale;
 
     if let Some(pos) = mouse_pos {
-        let prev = app.graph.affine.borrow().to_owned();
-        let affine = Affine2D::from_center_and_scale(pos, scale);
+        let scroll_delta = input.smooth_scroll_delta.y;
 
-        if let Some(res) = prev.try_compose(&affine, 0.1, 3.0) {
-            *app.graph.affine.borrow_mut() = res;
+        // 現在のscaleの逆数倍で変化させる
+        let prev = app.graph.affine.borrow().to_owned();
+
+        let cur_scale = prev.scale_x();
+        let scale = 1.0 + 0.001 * scroll_delta / cur_scale;
+
+        if let Some(inv) = prev.inverse() {
+            // 中心の調整
+            let center = pos.applied(&inv);
+
+            // アフィン変換の生成
+            let affine = Affine2D::from_center_and_scale(center, scale);
+
+            if let Some(res) = prev.try_compose(&affine, 0.1, 3.0) {
+                *app.graph.affine.borrow_mut() = res;
+            }
         }
     }
 }
