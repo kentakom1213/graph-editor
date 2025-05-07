@@ -51,6 +51,37 @@ impl Affine2D {
 
         (scale_min <= scale && scale <= scale_max).then_some(composed)
     }
+
+    /// アフィン変換の逆元
+    pub fn inverse(&self) -> Option<Self> {
+        let (a, b, tx) = (self.0[0][0], self.0[0][1], self.0[0][2]);
+        let (c, d, ty) = (self.0[1][0], self.0[1][1], self.0[1][2]);
+
+        // 行列式を計算
+        let det = a * d - b * c;
+        if det.abs() < 1e-6 {
+            // 正則でない場合
+            return None;
+        }
+
+        let inv_det = 1.0 / det;
+
+        // 線形部分の逆行列
+        let a_inv = d * inv_det;
+        let b_inv = -b * inv_det;
+        let c_inv = -c * inv_det;
+        let d_inv = a * inv_det;
+
+        // 平行移動の逆変換
+        let tx_inv = -(a_inv * tx + b_inv * ty);
+        let ty_inv = -(c_inv * tx + d_inv * ty);
+
+        Some(Self([
+            [a_inv, b_inv, tx_inv],
+            [c_inv, d_inv, ty_inv],
+            [0.0, 0.0, 1.0],
+        ]))
+    }
 }
 
 impl Mul for Affine2D {
@@ -80,10 +111,22 @@ impl One for Affine2D {
     }
 }
 
+impl Div for Affine2D {
+    type Output = Self;
+    fn div(self, rhs: Self) -> Self::Output {
+        let rhs_inv = rhs.inverse().unwrap();
+        self * rhs_inv
+    }
+}
+
 /// アフィン変換を適用する
 pub trait ApplyAffine: Sized {
     /// アフィン変換を適用した結果を取得する
     fn applied(&self, affine: &Affine2D) -> Self;
+    /// アフィン変換を適用する
+    fn apply(&mut self, affine: &Affine2D) {
+        *self = self.applied(affine);
+    }
 }
 
 impl ApplyAffine for egui::Vec2 {

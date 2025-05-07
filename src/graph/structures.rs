@@ -21,7 +21,7 @@ pub struct Vertex {
     pub id: usize,
     position: egui::Pos2,
     velocity: egui::Vec2,
-    pub drag_offset: egui::Vec2,
+    pub drag: Affine2D,
     pub is_pressed: bool,
     pub is_selected: bool,
     pub z_index: u32,
@@ -39,12 +39,12 @@ impl Vertex {
     }
 
     pub fn update_position(&mut self, new_position: egui::Pos2) {
-        self.position = new_position - self.affine.borrow().translation();
+        self.position = new_position.applied(&self.affine.borrow().inverse().unwrap());
     }
 
     pub fn solve_drag_offset(&mut self) {
-        self.position += self.drag_offset;
-        self.drag_offset = egui::Vec2::ZERO;
+        self.position.apply(&self.drag);
+        self.drag = Affine2D::one();
     }
 }
 
@@ -135,7 +135,7 @@ impl Graph {
             position,
             velocity: Vec2::ZERO,
             is_pressed: false,
-            drag_offset: egui::Vec2::ZERO,
+            drag: Affine2D::one(),
             is_selected: false,
             z_index,
             is_deleted: false,
@@ -246,7 +246,7 @@ impl Graph {
                 position: adjust_to_window(pos),
                 velocity: egui::Vec2::ZERO,
                 is_pressed: false,
-                drag_offset: egui::Vec2::ZERO,
+                drag: Affine2D::one(),
                 is_selected: false,
                 z_index: 0,
                 is_deleted: false,
@@ -339,7 +339,7 @@ impl Default for Graph {
                     position: egui::pos2(400.0, 400.0),
                     velocity: egui::Vec2::ZERO,
                     is_pressed: false,
-                    drag_offset: egui::Vec2::ZERO,
+                    drag: Affine2D::one(),
                     is_selected: false,
                     z_index: 0,
                     is_deleted: false,
@@ -350,7 +350,7 @@ impl Default for Graph {
                     position: egui::pos2(600.0, 400.0),
                     velocity: egui::Vec2::ZERO,
                     is_pressed: false,
-                    drag_offset: egui::Vec2::ZERO,
+                    drag: Affine2D::one(),
                     is_selected: false,
                     z_index: 1,
                     is_deleted: false,

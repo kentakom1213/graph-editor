@@ -7,7 +7,7 @@ use crate::{
     config::AppConfig,
     graph::Graph,
     math::{
-        affine::ApplyAffine,
+        affine::{Affine2D, ApplyAffine},
         bezier::{
             bezier_curve, calc_bezier_control_point, calc_intersection_of_bezier_and_circle,
             d2_bezier_dt2, d_bezier_dt,
@@ -400,14 +400,14 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
             vertex.z_index = app.next_z_index;
             app.next_z_index += 1;
             if let Some(mouse_pos) = response.hover_pos() {
-                let scale = vertex.affine().scale_x();
-                let delta = (mouse_pos - vertex.get_position()) / scale;
-                vertex.drag_offset = delta;
+                let delta = Affine2D::from_transition(mouse_pos - vertex.get_position())
+                    / vertex.affine().inverse().unwrap();
+                vertex.drag = delta;
             }
         } else if response.dragged() {
             // ドラッグ中の位置更新
             if let Some(mouse_pos) = response.hover_pos() {
-                vertex.update_position(mouse_pos - vertex.drag_offset);
+                vertex.update_position(mouse_pos.applied(&vertex.drag));
             }
         } else {
             vertex.is_pressed = false;

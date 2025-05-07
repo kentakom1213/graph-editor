@@ -34,7 +34,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
     let scroll_delta = input.smooth_scroll_delta.y;
 
     // 現在のscaleの逆数倍で変化させる
-    let cur_scale = app.graph.affine.borrow().scale_x() + 1.0;
+    let cur_scale = app.graph.affine.borrow().scale_x();
     let scale = 1.0 + 0.01 * scroll_delta / cur_scale;
 
     if let Some(pos) = mouse_pos {
