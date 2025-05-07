@@ -1,7 +1,7 @@
 use eframe::egui;
 
 use crate::components::{
-    draw_central_panel, draw_edit_menu, draw_error_modal, draw_footer, draw_graph_input,
+    draw_central_panel, draw_edit_menu, draw_error_modal, draw_footer, draw_graph_io,
 };
 use crate::config::AppConfig;
 use crate::graph::Graph;
@@ -85,7 +85,7 @@ impl eframe::App for GraphEditorApp {
         draw_edit_menu(self, ctx);
 
         // グラフの入力を描画
-        draw_graph_input(self, ctx);
+        draw_graph_io(self, ctx);
 
         // フッターを描画
         draw_footer(self, ctx);

@@ -3,13 +3,13 @@ use egui::Context;
 use crate::{graph::BaseGraph, GraphEditorApp};
 
 /// グラフのエンコードを表示する
-pub fn draw_graph_input(app: &mut GraphEditorApp, ctx: &Context) {
+pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
     if !app.hovered_on_input_window {
         app.input_text = app.graph.encode(app.zero_indexed)
     }
 
     // テキストの表示
-    egui::Window::new("Graph Input")
+    egui::Window::new("Graph I/O")
         .collapsible(true)
         .title_bar(true)
         .default_width(20.0)

@@ -25,7 +25,6 @@ pub struct AppConfig {
     pub menu_font_size_normal: f32,
     pub menu_font_size_mini: f32,
     pub footer_font_size: f32,
-    pub graph_input_font_size: f32,
     /// 可視化アルゴリズム
     pub visualize_method: Box<dyn Visualize>,
     /// シミュレーションの設定
@@ -53,7 +52,6 @@ impl Default for AppConfig {
             menu_font_size_normal: 20.0,
             menu_font_size_mini: 15.0,
             footer_font_size: 13.0,
-            graph_input_font_size: 20.0,
             visualize_method: Box::new(visualize_methods::HillClimbing(1_000)),
             simulate_config: SimulateConfig::default(),
         }
