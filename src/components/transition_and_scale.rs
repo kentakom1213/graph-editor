@@ -1,0 +1,48 @@
+use crate::{math::affine::Affine2D, GraphEditorApp};
+
+/// 右クリックでドラッグを行う
+pub fn drag_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
+    let response = ui.allocate_response(ui.available_size(), egui::Sense::drag());
+
+    // マウス入力の処理
+    if response.dragged_by(egui::PointerButton::Secondary) {
+        if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
+            if let Some(last_pos) = app.last_mouse_pos {
+                let cur_scale = app.graph.affine.borrow().scale_x();
+                let delta = mouse_pos - last_pos;
+                *app.graph.affine.borrow_mut() *= Affine2D::from_transition(delta / cur_scale);
+            }
+            app.last_mouse_pos = Some(mouse_pos);
+        }
+    } else {
+        app.last_mouse_pos = None;
+    }
+
+    // 2本指ジェスチャーに対応
+    if let Some(multitouch) = ui.input(|i| i.multi_touch()) {
+        let cur_scale = app.graph.affine.borrow().scale_x();
+        *app.graph.affine.borrow_mut() *=
+            Affine2D::from_transition(multitouch.translation_delta / cur_scale);
+    }
+}
+
+/// グラフのスケールを行う
+pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
+    let input = ui.input(|i| i.clone());
+
+    let mouse_pos = input.pointer.hover_pos();
+    let scroll_delta = input.smooth_scroll_delta.y;
+
+    // 現在のscaleの逆数倍で変化させる
+    let cur_scale = app.graph.affine.borrow().scale_x() + 1.0;
+    let scale = 1.0 + 0.01 * scroll_delta / cur_scale;
+
+    if let Some(pos) = mouse_pos {
+        let prev = app.graph.affine.borrow().to_owned();
+        let affine = Affine2D::from_center_and_scale(pos, scale);
+
+        if let Some(res) = prev.try_compose(&affine, 0.1, 3.0) {
+            *app.graph.affine.borrow_mut() = res;
+        }
+    }
+}

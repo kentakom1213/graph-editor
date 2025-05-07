@@ -2,16 +2,20 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
+use super::transition_and_scale::{drag_central_panel, scale_central_panel};
 use crate::{
-    components::utility::{bezier_curve, d2_bezier_dt2, d_bezier_dt},
     config::AppConfig,
     graph::Graph,
+    math::{
+        affine::ApplyAffine,
+        bezier::{
+            bezier_curve, calc_bezier_control_point, calc_intersection_of_bezier_and_circle,
+            d2_bezier_dt2, d_bezier_dt,
+        },
+        newton::newton_method,
+    },
     mode::EditMode,
     GraphEditorApp,
-};
-
-use super::utility::{
-    calc_bezier_control_point, calc_intersection_of_bezier_and_circle, newton_method,
 };
 
 /// メイン領域を描画
@@ -23,7 +27,10 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
             change_edit_mode(app, ui);
 
             // ドラッグを行う
-            drag_by_right_click(app, ui);
+            drag_central_panel(app, ui);
+
+            // スケールを行う
+            scale_central_panel(app, ui);
 
             // クリックした位置に頂点を追加
             add_vertex(app, ui);
@@ -86,28 +93,6 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     if ui.input(|i| i.key_pressed(egui::Key::A)) {
         // A でグラフのシミュレーションを切り替え
         app.is_animated ^= true;
-    }
-}
-
-fn drag_by_right_click(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
-    let response = ui.allocate_response(ui.available_size(), egui::Sense::drag());
-
-    // マウス入力の処理
-    if response.dragged_by(egui::PointerButton::Secondary) {
-        if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-            if let Some(last_pos) = app.last_mouse_pos {
-                let delta = mouse_pos - last_pos;
-                *app.graph.offset.borrow_mut() += delta;
-            }
-            app.last_mouse_pos = Some(mouse_pos);
-        }
-    } else {
-        app.last_mouse_pos = None;
-    }
-
-    // 2本指ジェスチャーに対応
-    if let Some(multitouch) = ui.input(|i| i.multi_touch()) {
-        *app.graph.offset.borrow_mut() += multitouch.translation_delta;
     }
 }
 
@@ -415,7 +400,9 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
             vertex.z_index = app.next_z_index;
             app.next_z_index += 1;
             if let Some(mouse_pos) = response.hover_pos() {
-                vertex.drag_offset = mouse_pos - vertex.get_position();
+                let scale = vertex.affine().scale_x();
+                let delta = (mouse_pos - vertex.get_position()) / scale;
+                vertex.drag_offset = delta;
             }
         } else if response.dragged() {
             // ドラッグ中の位置更新

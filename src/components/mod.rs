@@ -3,8 +3,7 @@ mod edit_menu;
 mod error_modal;
 mod footer;
 mod graph_io;
-mod scale;
-mod utility;
+mod transition_and_scale;
 
 pub use central_panel::draw_central_panel;
 pub use edit_menu::draw_edit_menu;
