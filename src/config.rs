@@ -25,6 +25,12 @@ pub struct AppConfig {
     pub menu_font_size_normal: f32,
     pub menu_font_size_mini: f32,
     pub footer_font_size: f32,
+    /// 最大倍率
+    pub scale_max: f32,
+    /// 最小倍率
+    pub scale_min: f32,
+    /// 倍率の刻み
+    pub scale_delta: f32,
     /// 可視化アルゴリズム
     pub visualize_method: Box<dyn Visualize>,
     /// シミュレーションの設定
@@ -35,7 +41,7 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             bg_color: Color32::from_rgb(230, 230, 230),
-            vertex_radius: 40.0,
+            vertex_radius: 36.0,
             vertex_stroke: 3.0,
             vertex_color_outline: Color32::from_rgb(150, 150, 150),
             vertex_color_normal: Color32::WHITE,
@@ -52,6 +58,9 @@ impl Default for AppConfig {
             menu_font_size_normal: 20.0,
             menu_font_size_mini: 15.0,
             footer_font_size: 13.0,
+            scale_max: 3.0,
+            scale_min: 0.1,
+            scale_delta: 0.002,
             visualize_method: Box::new(visualize_methods::HillClimbing(1_000)),
             simulate_config: SimulateConfig::default(),
         }

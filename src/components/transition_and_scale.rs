@@ -41,7 +41,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
         let cur_affine = app.graph.affine.borrow().to_owned();
 
         let cur_scale = cur_affine.scale_x();
-        let scale = 1.0 + 0.001 * scroll_delta / cur_scale;
+        let scale = 1.0 + app.config.scale_delta * scroll_delta / cur_scale;
 
         if let Some(inv) = cur_affine.inverse() {
             // 中心の調整
@@ -50,7 +50,9 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
             // アフィン変換の生成
             let affine = Affine2D::from_center_and_scale(center, scale);
 
-            if let Some(res) = cur_affine.try_compose(&affine, 0.1, 3.0) {
+            if let Some(res) =
+                cur_affine.try_compose(&affine, app.config.scale_min, app.config.scale_max)
+            {
                 *app.graph.affine.borrow_mut() = res;
             }
         }
@@ -69,7 +71,9 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
             // アフィン変換の生成
             let affine = Affine2D::from_center_and_scale(center, scale);
 
-            if let Some(res) = cur_affine.try_compose(&affine, 0.1, 3.0) {
+            if let Some(res) =
+                cur_affine.try_compose(&affine, app.config.scale_min, app.config.scale_max)
+            {
                 *app.graph.affine.borrow_mut() = res;
             }
         }
