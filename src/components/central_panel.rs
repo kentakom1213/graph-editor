@@ -105,9 +105,14 @@ fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
         && !app.hovered_on_input_window
     {
         if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-            let pos = mouse_pos.applied(&app.graph.affine.borrow().inverse().unwrap());
-            app.graph.add_vertex(pos, app.next_z_index);
-            app.next_z_index += 1;
+            let affine = app.graph.affine.borrow().to_owned();
+            if let Some(inv) = affine.inverse() {
+                let scaled_pos = mouse_pos.applied(&inv);
+                let pos = scaled_pos + affine.translation();
+
+                app.graph.add_vertex(pos, app.next_z_index);
+                app.next_z_index += 1;
+            }
         }
     }
 }
