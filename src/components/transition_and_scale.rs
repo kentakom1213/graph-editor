@@ -33,25 +33,43 @@ pub fn drag_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
 pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
     let input = ui.input(|i| i.clone());
 
-    let mouse_pos = input.pointer.hover_pos();
-
-    if let Some(pos) = mouse_pos {
+    // スクロールに対応
+    if let Some(pos) = input.pointer.hover_pos() {
         let scroll_delta = input.smooth_scroll_delta.y;
 
         // 現在のscaleの逆数倍で変化させる
-        let prev = app.graph.affine.borrow().to_owned();
+        let cur_affine = app.graph.affine.borrow().to_owned();
 
-        let cur_scale = prev.scale_x();
+        let cur_scale = cur_affine.scale_x();
         let scale = 1.0 + 0.001 * scroll_delta / cur_scale;
 
-        if let Some(inv) = prev.inverse() {
+        if let Some(inv) = cur_affine.inverse() {
             // 中心の調整
             let center = pos.applied(&inv);
 
             // アフィン変換の生成
             let affine = Affine2D::from_center_and_scale(center, scale);
 
-            if let Some(res) = prev.try_compose(&affine, 0.1, 3.0) {
+            if let Some(res) = cur_affine.try_compose(&affine, 0.1, 3.0) {
+                *app.graph.affine.borrow_mut() = res;
+            }
+        }
+    }
+
+    // 2本指ジェスチャーに対応
+    if let Some(multitouch) = input.multi_touch() {
+        let scale = multitouch.zoom_delta;
+
+        let cur_affine = app.graph.affine.borrow().to_owned();
+
+        if let Some(inv) = cur_affine.inverse() {
+            // 中心の調整
+            let center = multitouch.center_pos.applied(&inv);
+
+            // アフィン変換の生成
+            let affine = Affine2D::from_center_and_scale(center, scale);
+
+            if let Some(res) = cur_affine.try_compose(&affine, 0.1, 3.0) {
                 *app.graph.affine.borrow_mut() = res;
             }
         }
