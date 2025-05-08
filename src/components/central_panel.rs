@@ -2,16 +2,20 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
+use super::transition_and_scale::{drag_central_panel, scale_central_panel};
 use crate::{
-    components::utility::{bezier_curve, d2_bezier_dt2, d_bezier_dt},
     config::AppConfig,
     graph::Graph,
+    math::{
+        affine::{Affine2D, ApplyAffine},
+        bezier::{
+            bezier_curve, calc_bezier_control_point, calc_intersection_of_bezier_and_circle,
+            d2_bezier_dt2, d_bezier_dt,
+        },
+        newton::newton_method,
+    },
     mode::EditMode,
     GraphEditorApp,
-};
-
-use super::utility::{
-    calc_bezier_control_point, calc_intersection_of_bezier_and_circle, newton_method,
 };
 
 /// メイン領域を描画
@@ -23,7 +27,10 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
             change_edit_mode(app, ui);
 
             // ドラッグを行う
-            drag_by_right_click(app, ui);
+            drag_central_panel(app, ui);
+
+            // スケールを行う
+            scale_central_panel(app, ui);
 
             // クリックした位置に頂点を追加
             add_vertex(app, ui);
@@ -89,28 +96,6 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     }
 }
 
-fn drag_by_right_click(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
-    let response = ui.allocate_response(ui.available_size(), egui::Sense::drag());
-
-    // マウス入力の処理
-    if response.dragged_by(egui::PointerButton::Secondary) {
-        if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-            if let Some(last_pos) = app.last_mouse_pos {
-                let delta = mouse_pos - last_pos;
-                *app.graph.offset.borrow_mut() += delta;
-            }
-            app.last_mouse_pos = Some(mouse_pos);
-        }
-    } else {
-        app.last_mouse_pos = None;
-    }
-
-    // 2本指ジェスチャーに対応
-    if let Some(multitouch) = ui.input(|i| i.multi_touch()) {
-        *app.graph.offset.borrow_mut() += multitouch.translation_delta;
-    }
-}
-
 /// クリックした位置に頂点を追加する
 fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
     // クリックした位置に頂点を追加する
@@ -120,8 +105,14 @@ fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
         && !app.hovered_on_input_window
     {
         if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-            app.graph.add_vertex(mouse_pos, app.next_z_index);
-            app.next_z_index += 1;
+            let affine = app.graph.affine.borrow().to_owned();
+            if let Some(inv) = affine.inverse() {
+                let scaled_pos = mouse_pos.applied(&inv);
+                let pos = scaled_pos + affine.translation();
+
+                app.graph.add_vertex(pos, app.next_z_index);
+                app.next_z_index += 1;
+            }
         }
     }
 }
@@ -415,12 +406,13 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
             vertex.z_index = app.next_z_index;
             app.next_z_index += 1;
             if let Some(mouse_pos) = response.hover_pos() {
-                vertex.drag_offset = mouse_pos - vertex.get_position();
+                let delta = Affine2D::from_transition(mouse_pos - vertex.get_position());
+                vertex.drag = delta;
             }
         } else if response.dragged() {
             // ドラッグ中の位置更新
             if let Some(mouse_pos) = response.hover_pos() {
-                vertex.update_position(mouse_pos - vertex.drag_offset);
+                vertex.update_position(mouse_pos.applied(&vertex.drag));
             }
         } else {
             vertex.is_pressed = false;

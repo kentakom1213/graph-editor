@@ -1,12 +1,16 @@
 use std::{
-    cell::RefCell,
+    cell::{Ref, RefCell},
     collections::{HashMap, HashSet},
     rc::Rc,
 };
 
 use egui::Vec2;
+use num_traits::One;
 
-use crate::config::SimulateConfig;
+use crate::{
+    config::SimulateConfig,
+    math::affine::{Affine2D, ApplyAffine},
+};
 
 use super::{BaseGraph, Visualize};
 
@@ -17,26 +21,32 @@ pub struct Vertex {
     pub id: usize,
     position: egui::Pos2,
     velocity: egui::Vec2,
-    pub drag_offset: egui::Vec2,
+    pub drag: Affine2D,
     pub is_pressed: bool,
     pub is_selected: bool,
     pub z_index: u32,
     pub is_deleted: bool,
-    offset: Rc<RefCell<egui::Vec2>>,
+    affine: Rc<RefCell<Affine2D>>,
 }
 
 impl Vertex {
     pub fn get_position(&self) -> egui::Pos2 {
-        self.position + *self.offset.borrow()
+        self.position.applied(&self.affine.borrow())
+    }
+
+    pub fn affine(&self) -> Ref<'_, Affine2D> {
+        self.affine.borrow()
     }
 
     pub fn update_position(&mut self, new_position: egui::Pos2) {
-        self.position = new_position - *self.offset.borrow();
+        if let Some(inv) = self.affine.borrow().inverse() {
+            self.position = new_position.applied(&inv);
+        }
     }
 
     pub fn solve_drag_offset(&mut self) {
-        self.position += self.drag_offset;
-        self.drag_offset = egui::Vec2::ZERO;
+        self.position.apply(&self.drag);
+        self.drag = Affine2D::one();
     }
 }
 
@@ -61,9 +71,13 @@ impl Edge {
 
 #[derive(Debug)]
 pub struct Graph {
+    /// 有向グラフ / 無向グラフ
     pub is_directed: bool,
-    pub offset: Rc<RefCell<egui::Vec2>>,
+    /// 頂点集合に対するアフィン変換
+    pub affine: Rc<RefCell<Affine2D>>,
+    /// 頂点集合
     vertices: Vec<Vertex>,
+    /// 辺集合
     edges: Vec<Edge>,
 }
 
@@ -116,19 +130,18 @@ impl Graph {
     }
 
     pub fn add_vertex(&mut self, position: egui::Pos2, z_index: u32) {
-        let position = position - *self.offset.borrow();
-        let offset = self.offset.clone();
+        let position = position - self.affine.borrow().translation();
 
         self.vertices.push(Vertex {
             id: self.vertices.len(),
             position,
             velocity: Vec2::ZERO,
             is_pressed: false,
-            drag_offset: egui::Vec2::ZERO,
+            drag: Affine2D::one(),
             is_selected: false,
             z_index,
             is_deleted: false,
-            offset,
+            affine: self.affine.clone(),
         });
     }
 
@@ -218,7 +231,7 @@ impl Graph {
     ) -> anyhow::Result<()> {
         // グラフの初期化
         self.clear();
-        *self.offset.borrow_mut() = egui::Vec2::ZERO;
+        *self.affine.borrow_mut() = Affine2D::one();
 
         // 頂点座標を適切な位置に（上下左右 10% の余白をもたせる）
         let adjust_to_window = |pos: egui::Vec2| -> egui::Pos2 {
@@ -235,11 +248,11 @@ impl Graph {
                 position: adjust_to_window(pos),
                 velocity: egui::Vec2::ZERO,
                 is_pressed: false,
-                drag_offset: egui::Vec2::ZERO,
+                drag: Affine2D::one(),
                 is_selected: false,
                 z_index: 0,
                 is_deleted: false,
-                offset: self.offset.clone(),
+                affine: self.affine.clone(),
             });
 
         self.vertices.extend(new_vertices);
@@ -318,7 +331,7 @@ impl Graph {
 
 impl Default for Graph {
     fn default() -> Self {
-        let offset = Rc::new(RefCell::new(egui::Vec2::ZERO));
+        let affine = Rc::new(RefCell::new(Affine2D::one()));
 
         Self {
             is_directed: false,
@@ -328,22 +341,22 @@ impl Default for Graph {
                     position: egui::pos2(400.0, 400.0),
                     velocity: egui::Vec2::ZERO,
                     is_pressed: false,
-                    drag_offset: egui::Vec2::ZERO,
+                    drag: Affine2D::one(),
                     is_selected: false,
                     z_index: 0,
                     is_deleted: false,
-                    offset: offset.clone(),
+                    affine: affine.clone(),
                 },
                 Vertex {
                     id: 1,
                     position: egui::pos2(600.0, 400.0),
                     velocity: egui::Vec2::ZERO,
                     is_pressed: false,
-                    drag_offset: egui::Vec2::ZERO,
+                    drag: Affine2D::one(),
                     is_selected: false,
                     z_index: 1,
                     is_deleted: false,
-                    offset: offset.clone(),
+                    affine: affine.clone(),
                 },
             ],
             edges: vec![Edge {
@@ -352,7 +365,7 @@ impl Default for Graph {
                 is_pressed: false,
                 is_deleted: false,
             }],
-            offset,
+            affine,
         }
     }
 }

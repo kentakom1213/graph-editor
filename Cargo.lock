@@ -1459,7 +1459,7 @@ dependencies = [
 
 [[package]]
 name = "graph-editor"
-version = "0.3.4"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "eframe",
@@ -1469,6 +1469,7 @@ dependencies = [
  "getrandom",
  "itertools",
  "log",
+ "num-traits",
  "rand",
  "serde",
  "wasm-bindgen-futures",
@@ -1877,9 +1878,9 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "num-traits"
-version = "0.2.17"
+version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39e3200413f237f41ab11ad6d161bc7239c84dcb631773ccd7de3dfe4b5c267c"
+checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
 ]
