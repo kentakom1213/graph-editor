@@ -11,6 +11,7 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
     // テキストの表示
     egui::Window::new("Graph Input")
         .collapsible(false)
+        .default_width(150.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
             app.hovered_on_input_window = ui.rect_contains_pointer(ui.max_rect());
