@@ -22,11 +22,11 @@ pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
         egui::menu::bar(ui, |ui| {
             ui.checkbox(
                 &mut app.panel_tab.edit_menu,
-                egui::RichText::new("Edit").size(app.config.menu_font_size_normal),
+                egui::RichText::new("Menu").size(app.config.menu_font_size_normal),
             );
             ui.checkbox(
                 &mut app.panel_tab.graph_io,
-                egui::RichText::new("View").size(app.config.menu_font_size_normal),
+                egui::RichText::new("Input").size(app.config.menu_font_size_normal),
             );
         });
     });
