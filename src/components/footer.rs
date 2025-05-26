@@ -5,12 +5,8 @@ use crate::{config::APP_VERSION, GraphEditorApp};
 /// フッターを描画する
 pub fn draw_footer(app: &mut GraphEditorApp, ctx: &Context) {
     // 画面下部にフッターを追加
-    let screen_rect = ctx.screen_rect();
-    let footer_height = 30.0;
-    let footer_pos = egui::pos2(20.0, screen_rect.max.y - footer_height);
-
     egui::Area::new("Footer".into())
-        .fixed_pos(footer_pos)
+        .anchor(egui::Align2::RIGHT_BOTTOM, egui::vec2(-20.0, -10.0))
         .show(ctx, |ui| {
             egui::Frame::default().show(ui, |ui| {
                 ui.horizontal_centered(|ui| {
