@@ -2,6 +2,7 @@ use eframe::egui;
 
 use crate::components::{
     draw_central_panel, draw_edit_menu, draw_error_modal, draw_footer, draw_graph_io,
+    draw_top_panel, PanelTabState,
 };
 use crate::config::AppConfig;
 use crate::graph::Graph;
@@ -20,6 +21,7 @@ pub struct GraphEditorApp {
     pub config: AppConfig,
     pub input_text: String,
     pub error_message: Option<String>,
+    pub panel_tab: PanelTabState,
 }
 
 impl GraphEditorApp {
@@ -72,20 +74,28 @@ impl Default for GraphEditorApp {
             config: AppConfig::default(),
             input_text: String::new(),
             error_message: None,
+            panel_tab: PanelTabState::default(),
         }
     }
 }
 
 impl eframe::App for GraphEditorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // トップパネル（タブバー）を描画
+        draw_top_panel(self, ctx); // ★ 追加
+
         // メイン領域を描画
         draw_central_panel(self, ctx);
 
-        // 編集メニューを描画
-        draw_edit_menu(self, ctx);
-
-        // グラフの入力を描画
-        draw_graph_io(self, ctx);
+        // 現在選択されているタブに応じてサイドパネルの内容を切り替える
+        if self.panel_tab.edit_menu {
+            // 編集メニューを描画
+            draw_edit_menu(self, ctx);
+        }
+        if self.panel_tab.graph_io {
+            // グラフの入力を描画
+            draw_graph_io(self, ctx);
+        }
 
         // フッターを描画
         draw_footer(self, ctx);
