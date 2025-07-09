@@ -19,6 +19,9 @@ impl Default for PanelTabState {
 
 pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
     TopBottomPanel::top("top_panel").show(ctx, |ui| {
+        // カーソルがあるか判定
+        app.hovered_on_top_panel = ui.rect_contains_pointer(ui.max_rect());
+
         egui::menu::bar(ui, |ui| {
             ui.checkbox(
                 &mut app.panel_tab.edit_menu,
