@@ -23,11 +23,11 @@ pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
         app.hovered_on_top_panel = ui.rect_contains_pointer(ui.max_rect());
 
         egui::menu::bar(ui, |ui| {
-            ui.checkbox(
+            ui.toggle_value(
                 &mut app.panel_tab.edit_menu,
                 egui::RichText::new("Menu").size(app.config.menu_font_size_normal),
             );
-            ui.checkbox(
+            ui.toggle_value(
                 &mut app.panel_tab.graph_io,
                 egui::RichText::new("Input").size(app.config.menu_font_size_normal),
             );
