@@ -8,7 +8,7 @@ pub fn drag_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
     let response = ui.allocate_response(ui.available_size(), egui::Sense::drag());
 
     // マウス入力の処理
-    if response.dragged_by(egui::PointerButton::Secondary) {
+    if response.dragged_by(egui::PointerButton::Primary) {
         if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
             if let Some(last_pos) = app.last_mouse_pos {
                 let cur_scale = app.graph.affine.borrow().scale_x();
