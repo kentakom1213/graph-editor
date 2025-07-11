@@ -42,7 +42,7 @@ Graph Editor は [eframe](https://github.com/emilk/egui/tree/master/crates/efram
 
 ### 共通
 
-- 右クリックでのドラッグ，または 2 本指でのスクロールでグラフ全体を移動する
+- ドラッグ，または 2 本指でのスクロールでグラフ全体を移動する
 
 ---
 
