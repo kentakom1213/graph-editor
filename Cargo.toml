@@ -1,10 +1,10 @@
 [package]
 name = "graph-editor"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Kenta KOMOTO"]
 edition = "2021"
 include = ["LICENSE-APACHE", "LICENSE-MIT", "**/*.rs", "Cargo.toml"]
-rust-version = "1.82"
+rust-version = "1.88"
 
 [package.metadata.docs.rs]
 all-features = true
