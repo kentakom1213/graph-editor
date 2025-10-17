@@ -1,11 +1,13 @@
 /// 可視化を行う
-pub trait Visualize {
+pub trait Visualizer {
     /// グラフ G = (V,E) が与えられたとき，
     /// 頂点から 2 次元平面への写像 f: V → (0,1)^2 を構成する．
     fn resolve_vertex_position(&self, n: usize, edges: &[(usize, usize)]) -> Vec<egui::Vec2>;
 }
 
 pub mod visualize_methods {
+    #![allow(dead_code)]
+
     /// [0,1]^2 から一様ランダムにサンプリングする
     fn sample_point() -> egui::Vec2 {
         egui::vec2(rand::random::<f32>(), rand::random::<f32>())
@@ -52,11 +54,11 @@ pub mod visualize_methods {
         count
     }
 
-    // -------------------- Visualize Methods --------------------
+    // -------------------- Visualizer Methods --------------------
     /// 一様ランダムに各頂点の座標を選択する．
     pub struct Naive;
 
-    impl super::Visualize for Naive {
+    impl super::Visualizer for Naive {
         fn resolve_vertex_position(&self, n: usize, _edges: &[(usize, usize)]) -> Vec<egui::Vec2> {
             (0..n).map(|_| sample_point()).collect()
         }
@@ -66,7 +68,7 @@ pub mod visualize_methods {
     /// - `max_iter`: 最大反復回数
     pub struct HillClimbing(pub usize);
 
-    impl super::Visualize for HillClimbing {
+    impl super::Visualizer for HillClimbing {
         fn resolve_vertex_position(&self, n: usize, edges: &[(usize, usize)]) -> Vec<egui::Vec2> {
             if n == 0 {
                 return vec![];

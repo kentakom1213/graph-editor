@@ -37,8 +37,8 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
                         {
                             let new_graph = BaseGraph::parse(&app.input_text, app.zero_indexed)
                                 .and_then(|base| {
-                                    app.graph.apply_input(
-                                        app.config.visualize_method.as_ref(),
+                                    app.graph.rebuild_from_basegraph(
+                                        app.config.visualizer.as_ref(),
                                         base,
                                         ctx.used_size(),
                                     )

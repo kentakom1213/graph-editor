@@ -1,6 +1,6 @@
 use egui::Color32;
 
-use crate::graph::{visualize_methods, Visualize};
+use crate::graph::{simulation_methods, visualize_methods, Simulator, Visualizer};
 
 /// バージョン情報
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -32,9 +32,9 @@ pub struct AppConfig {
     /// 倍率の刻み
     pub scale_delta: f32,
     /// 可視化アルゴリズム
-    pub visualize_method: Box<dyn Visualize>,
-    /// シミュレーションの設定
-    pub simulate_config: SimulateConfig,
+    pub visualizer: Box<dyn Visualizer>,
+    /// シミュレーションアルゴリズム
+    pub simulator: Box<dyn Simulator>,
 }
 
 impl Default for AppConfig {
@@ -61,8 +61,10 @@ impl Default for AppConfig {
             scale_max: 3.0,
             scale_min: 0.1,
             scale_delta: 0.002,
-            visualize_method: Box::new(visualize_methods::HillClimbing(1_000)),
-            simulate_config: SimulateConfig::default(),
+            visualizer: Box::new(visualize_methods::HillClimbing(1_000)),
+            simulator: Box::new(simulation_methods::ForceDirectedModel {
+                config: SimulateConfig::default(),
+            }),
         }
     }
 }

@@ -1,7 +1,9 @@
 mod base;
+mod simulator;
 mod structures;
-mod visualize;
+mod visualizer;
 
 pub use base::BaseGraph;
+pub use simulator::{simulation_methods, Simulator};
 pub use structures::Graph;
-pub use visualize::{visualize_methods, Visualize};
+pub use visualizer::{visualize_methods, Visualizer};
