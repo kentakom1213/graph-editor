@@ -217,10 +217,35 @@ impl Graph {
         res
     }
 
+    /// グラフの補グラフを求める（無向グラフの場合のみ）
+    pub fn calc_complement(&self) -> BaseGraph {
+        debug_assert!(!self.is_directed);
+
+        let n = self.vertices.len();
+
+        // 辺の存在性を反転
+        let mut edge_existance = vec![vec![true; n]; n];
+
+        for edge in &self.edges {
+            let u = edge.from;
+            let v = edge.to;
+            edge_existance[u][v] = false;
+            edge_existance[v][u] = false;
+        }
+
+        BaseGraph {
+            n,
+            edges: (0..n)
+                .flat_map(move |i| (i + 1..n).map(move |j| (i, j)))
+                .filter(|&(u, v)| edge_existance[u][v])
+                .collect(),
+        }
+    }
+
     /// グラフの入力からグラフを生成する
-    pub fn apply_input(
+    pub fn from_basegraph(
         &mut self,
-        vizualizer: &dyn Visualizer,
+        visualizer: &dyn Visualizer,
         BaseGraph { n, edges }: BaseGraph,
         window_size: egui::Vec2,
     ) -> anyhow::Result<()> {
@@ -234,7 +259,7 @@ impl Graph {
         };
 
         // グラフの構築
-        let new_vertices = vizualizer
+        let new_vertices = visualizer
             .resolve_vertex_position(n, &edges)
             .into_iter()
             .enumerate()
