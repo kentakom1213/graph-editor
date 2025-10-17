@@ -32,9 +32,9 @@ pub struct AppConfig {
     /// 倍率の刻み
     pub scale_delta: f32,
     /// 可視化アルゴリズム
-    pub visualize_method: Box<dyn Visualizer>,
+    pub visualizer: Box<dyn Visualizer>,
     /// シミュレーションアルゴリズム
-    pub simulate_mathod: Box<dyn Simulator>,
+    pub simulator: Box<dyn Simulator>,
 }
 
 impl Default for AppConfig {
@@ -61,8 +61,8 @@ impl Default for AppConfig {
             scale_max: 3.0,
             scale_min: 0.1,
             scale_delta: 0.002,
-            visualize_method: Box::new(visualize_methods::HillClimbing(1_000)),
-            simulate_mathod: Box::new(simulation_methods::ForceDirectedModel {
+            visualizer: Box::new(visualize_methods::HillClimbing(1_000)),
+            simulator: Box::new(simulation_methods::ForceDirectedModel {
                 config: SimulateConfig::default(),
             }),
         }

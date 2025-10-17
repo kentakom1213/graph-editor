@@ -97,13 +97,13 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             egui::RichText::new("Complement")
                                 .size(app.config.menu_font_size_normal),
                         );
-                        let complement_responce =
+                        let complement_response =
                             ui.add_enabled(!app.graph.is_directed, complement_button);
 
-                        if complement_responce.clicked() {
+                        if complement_response.clicked() {
                             let complement = app.graph.calc_complement();
                             let new_graph_result = app.graph.rebuild_from_basegraph(
-                                app.config.visualize_method.as_ref(),
+                                app.config.visualizer.as_ref(),
                                 complement,
                                 ctx.used_size(),
                             );

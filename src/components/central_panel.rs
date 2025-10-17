@@ -381,7 +381,7 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
 
     // シミュレーションがonの場合，位置を更新
     if app.is_animated {
-        app.config.simulate_mathod.simulate_step(&mut app.graph);
+        app.config.simulator.simulate_step(&mut app.graph);
     }
 
     let is_directed = app.graph.is_directed;

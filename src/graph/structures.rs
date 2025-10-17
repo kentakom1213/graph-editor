@@ -224,20 +224,20 @@ impl Graph {
         let n = self.vertices.len();
 
         // 辺の存在性を反転
-        let mut edge_existance = vec![vec![true; n]; n];
+        let mut edge_existence = vec![vec![true; n]; n];
 
         for edge in &self.edges {
             let u = edge.from;
             let v = edge.to;
-            edge_existance[u][v] = false;
-            edge_existance[v][u] = false;
+            edge_existence[u][v] = false;
+            edge_existence[v][u] = false;
         }
 
         BaseGraph {
             n,
             edges: (0..n)
                 .flat_map(move |i| (i + 1..n).map(move |j| (i, j)))
-                .filter(|&(u, v)| edge_existance[u][v])
+                .filter(|&(u, v)| edge_existence[u][v])
                 .collect(),
         }
     }
