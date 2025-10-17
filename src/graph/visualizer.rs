@@ -6,6 +6,8 @@ pub trait Visualizer {
 }
 
 pub mod visualize_methods {
+    #![allow(dead_code)]
+
     /// [0,1]^2 から一様ランダムにサンプリングする
     fn sample_point() -> egui::Vec2 {
         egui::vec2(rand::random::<f32>(), rand::random::<f32>())
