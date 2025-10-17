@@ -102,7 +102,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
 
                         if complement_responce.clicked() {
                             let complement = app.graph.calc_complement();
-                            let new_graph_result = app.graph.from_basegraph(
+                            let new_graph_result = app.graph.rebuild_from_basegraph(
                                 app.config.visualize_method.as_ref(),
                                 complement,
                                 ctx.used_size(),

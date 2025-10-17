@@ -243,7 +243,7 @@ impl Graph {
     }
 
     /// グラフの入力からグラフを生成する
-    pub fn from_basegraph(
+    pub fn rebuild_from_basegraph(
         &mut self,
         visualizer: &dyn Visualizer,
         BaseGraph { n, edges }: BaseGraph,
