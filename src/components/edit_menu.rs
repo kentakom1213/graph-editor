@@ -92,7 +92,6 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         ui.separator();
 
                         // 補グラフを取る
-
                         let complement_button = egui::Button::new(
                             egui::RichText::new("Complement")
                                 .size(app.config.menu_font_size_normal),
@@ -107,7 +106,30 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                                 complement,
                                 ctx.used_size(),
                             );
+                            match new_graph_result {
+                                Ok(_) => {
+                                    app.is_animated = true;
+                                }
+                                Err(err) => {
+                                    app.error_message = Some(err.to_string());
+                                }
+                            }
+                        }
 
+                        // 逆辺を張る
+                        let revert_button = egui::Button::new(
+                            egui::RichText::new("Revert Edge")
+                                .size(app.config.menu_font_size_normal),
+                        );
+                        let revert_response = ui.add_enabled(app.graph.is_directed, revert_button);
+
+                        if revert_response.clicked() {
+                            let reverted = app.graph.calc_reverted();
+                            let new_graph_result = app.graph.rebuild_from_basegraph(
+                                app.config.visualizer.as_ref(),
+                                reverted,
+                                ctx.used_size(),
+                            );
                             match new_graph_result {
                                 Ok(_) => {
                                     app.is_animated = true;

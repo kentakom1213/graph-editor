@@ -242,6 +242,16 @@ impl Graph {
         }
     }
 
+    /// 逆辺を張ったグラフを求める（有向グラフの場合のみ）
+    pub fn calc_reverted(&self) -> BaseGraph {
+        debug_assert!(self.is_directed);
+
+        BaseGraph {
+            n: self.vertices.len(),
+            edges: self.edges.iter().map(|e| (e.to, e.from)).collect(),
+        }
+    }
+
     /// グラフの入力からグラフを生成する
     pub fn rebuild_from_basegraph(
         &mut self,
