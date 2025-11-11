@@ -248,10 +248,7 @@ impl Graph {
 
         BaseGraph {
             n: self.vertices.len(),
-            edges: self.edges
-                .iter()
-                .map(|e| (e.to, e.from))
-                .collect(),
+            edges: self.edges.iter().map(|e| (e.to, e.from)).collect(),
         }
     }
 
