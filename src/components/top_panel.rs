@@ -5,14 +5,41 @@ use crate::GraphEditorApp;
 
 pub struct PanelTabState {
     pub edit_menu: bool,
+    pub color_settings: bool,
     pub graph_io: bool,
 }
 
 impl Default for PanelTabState {
     fn default() -> Self {
-        PanelTabState {
+        Self {
             edit_menu: true,
+            color_settings: true,
             graph_io: true,
+        }
+    }
+}
+
+pub struct CursorHoverState {
+    pub top_panel: bool,
+    pub color_window: bool,
+    pub menu_window: bool,
+    pub input_window: bool,
+}
+
+impl CursorHoverState {
+    /// いずれかのパネルにカーソルが乗っているか
+    pub fn any(&self) -> bool {
+        self.top_panel || self.color_window || self.menu_window || self.input_window
+    }
+}
+
+impl Default for CursorHoverState {
+    fn default() -> Self {
+        Self {
+            top_panel: false,
+            color_window: false,
+            menu_window: false,
+            input_window: false,
         }
     }
 }
@@ -20,12 +47,16 @@ impl Default for PanelTabState {
 pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
     TopBottomPanel::top("top_panel").show(ctx, |ui| {
         // カーソルがあるか判定
-        app.hovered_on_top_panel = ui.rect_contains_pointer(ui.max_rect());
+        app.cursor_hover.top_panel = ui.rect_contains_pointer(ui.max_rect());
 
         egui::menu::bar(ui, |ui| {
             ui.toggle_value(
                 &mut app.panel_tab.edit_menu,
                 egui::RichText::new("Menu").size(app.config.menu_font_size_normal),
+            );
+            ui.toggle_value(
+                &mut app.panel_tab.color_settings,
+                egui::RichText::new("Color").size(app.config.menu_font_size_normal),
             );
             ui.toggle_value(
                 &mut app.panel_tab.graph_io,

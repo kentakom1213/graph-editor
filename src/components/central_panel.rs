@@ -49,7 +49,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
 /// モード切替の処理
 fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     // 入力中はモード切替を行わない
-    if app.hovered_on_input_window {
+    if app.cursor_hover.input_window {
         return;
     }
 
@@ -101,9 +101,7 @@ fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
     // クリックした位置に頂点を追加する
     if app.edit_mode.is_add_vertex()
         && ui.input(|i| i.pointer.any_click())
-        && !app.hovered_on_top_panel
-        && !app.hovered_on_menu_window
-        && !app.hovered_on_input_window
+        && !app.cursor_hover.any()
     {
         if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
             let affine = app.graph.affine.borrow().to_owned();

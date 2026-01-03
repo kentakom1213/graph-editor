@@ -1,20 +1,18 @@
 use egui::Context;
 
-use crate::{graph::BaseGraph, GraphEditorApp};
+use crate::GraphEditorApp;
+
+use crate::graph::BaseGraph;
 
 /// グラフのエンコードを表示する
-pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
-    if !app.cursor_hover.input_window {
-        app.input_text = app.graph.encode(app.zero_indexed)
-    }
-
+pub fn draw_color_settings(app: &mut GraphEditorApp, ctx: &Context) {
     // テキストの表示
-    egui::Window::new("Graph Input")
+    egui::Window::new("Color")
         .collapsible(false)
         .default_width(150.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.cursor_hover.input_window = ui.rect_contains_pointer(ui.max_rect());
+            app.cursor_hover.color_window = ui.rect_contains_pointer(ui.max_rect());
 
             egui::Frame::default()
                 .inner_margin(egui::Margin::same(10))
