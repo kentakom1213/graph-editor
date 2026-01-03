@@ -1,3 +1,5 @@
+use crate::components::Colors;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum EditMode {
     Normal,
@@ -6,6 +8,7 @@ pub enum EditMode {
         from_vertex: Option<usize>,
         confirmed: bool,
     },
+    Colorize,
     Delete,
 }
 
@@ -23,6 +26,10 @@ impl EditMode {
             from_vertex: None,
             confirmed: false,
         }
+    }
+
+    pub fn default_colorize() -> Self {
+        Self::Colorize
     }
 
     pub fn default_delete() -> Self {

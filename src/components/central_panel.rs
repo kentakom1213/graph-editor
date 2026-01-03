@@ -79,6 +79,9 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     if ui.input(|i| i.key_pressed(egui::Key::E)) {
         app.switch_add_edge_mode();
     }
+    if ui.input(|i| i.key_pressed(egui::Key::C)) {
+        app.switch_colorize_mode();
+    }
     if ui.input(|i| i.key_pressed(egui::Key::D)) {
         // Shift + D で無向グラフ/有向グラフを切り替え
         if ui.input(|i| i.modifiers.shift) {

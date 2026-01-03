@@ -8,7 +8,7 @@ mod top_panel;
 mod transition_and_scale;
 
 pub use central_panel::draw_central_panel;
-pub use color_panel::draw_color_settings;
+pub use color_panel::{draw_color_settings, Colors};
 pub use edit_menu::draw_edit_menu;
 pub use error_modal::draw_error_modal;
 pub use footer::draw_footer;

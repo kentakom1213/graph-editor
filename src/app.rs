@@ -2,7 +2,7 @@ use eframe::egui;
 
 use crate::components::{
     draw_central_panel, draw_color_settings, draw_edit_menu, draw_error_modal, draw_footer,
-    draw_graph_io, draw_top_panel, CursorHoverState, PanelTabState,
+    draw_graph_io, draw_top_panel, Colors, CursorHoverState, PanelTabState,
 };
 use crate::config::AppConfig;
 use crate::graph::Graph;
@@ -15,6 +15,7 @@ pub struct GraphEditorApp {
     pub last_mouse_pos: Option<egui::Pos2>,
     pub next_z_index: u32,
     pub edit_mode: EditMode,
+    pub selected_color: Colors,
     pub zero_indexed: bool,
     pub cursor_hover: CursorHoverState,
     pub config: AppConfig,
@@ -53,6 +54,11 @@ impl GraphEditorApp {
         self.edit_mode = EditMode::default_add_edge();
     }
 
+    pub fn switch_colorize_mode(&mut self) {
+        self.deselect_all_vertices_edges();
+        self.edit_mode = EditMode::default_colorize();
+    }
+
     pub fn switch_delete_mode(&mut self) {
         self.deselect_all_vertices_edges();
         self.edit_mode = EditMode::default_delete();
@@ -67,6 +73,7 @@ impl Default for GraphEditorApp {
             last_mouse_pos: None,
             next_z_index: 2,
             edit_mode: EditMode::default_normal(),
+            selected_color: Colors::Default,
             zero_indexed: false,
             cursor_hover: CursorHoverState::default(),
             config: AppConfig::default(),

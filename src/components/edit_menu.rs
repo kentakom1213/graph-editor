@@ -40,6 +40,12 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         );
                         ui.radio_value(
                             &mut app.edit_mode,
+                            EditMode::default_colorize(),
+                            egui::RichText::new("Colorize [C]")
+                                .size(app.config.menu_font_size_normal),
+                        );
+                        ui.radio_value(
+                            &mut app.edit_mode,
                             EditMode::default_delete(),
                             egui::RichText::new("Delete [D]")
                                 .size(app.config.menu_font_size_normal),
