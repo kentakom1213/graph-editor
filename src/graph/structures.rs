@@ -301,6 +301,15 @@ impl Graph {
 
         Ok(())
     }
+
+    pub fn reset_colors(&mut self) {
+        for vertex in &mut self.vertices {
+            vertex.color = Colors::default();
+        }
+        for edge in &mut self.edges {
+            edge.color = Colors::default();
+        }
+    }
 }
 
 impl Default for Graph {

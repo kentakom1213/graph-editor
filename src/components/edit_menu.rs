@@ -147,9 +147,22 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             }
                         }
 
+                        // 色のリセット
+                        let reset_color_button = egui::Button::new(
+                            egui::RichText::new("Reset Colors")
+                                .size(app.config.menu_font_size_normal),
+                        );
+                        if ui.add(reset_color_button).clicked() {
+                            app.graph.reset_colors();
+                        }
+
                         ui.separator();
 
                         // グラフのクリア
+                        ui.label(
+                            egui::RichText::new("Clear All").size(app.config.menu_font_size_mini),
+                        );
+
                         if ui
                             .button(
                                 egui::RichText::new("Clear All")
