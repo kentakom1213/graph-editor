@@ -12,7 +12,8 @@ pub fn draw_color_settings(app: &mut GraphEditorApp, ctx: &Context) {
         .default_width(150.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.cursor_hover.color_window = ui.rect_contains_pointer(ui.max_rect());
+            app.cursor_hover
+                .set_color_window(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::default()
                 .inner_margin(egui::Margin::same(10))
@@ -55,9 +56,8 @@ pub fn draw_color_settings(app: &mut GraphEditorApp, ctx: &Context) {
                     ui.separator();
 
                     // コード形式で表示
-                    if ui.code_editor(&mut app.input_text).has_focus() {
-                        app.cursor_hover.input_window = true;
-                    }
+                    app.cursor_hover
+                        .set_input_window(ui.code_editor(&mut app.input_text).has_focus());
                 });
         });
 }

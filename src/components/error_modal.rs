@@ -16,7 +16,7 @@ pub fn draw_error_modal(app: &mut GraphEditorApp, ctx: &Context) {
 
         if ctx.input(|i| {
             i.key_pressed(egui::Key::Escape)
-                || i.pointer.any_released() && !app.cursor_hover.input_window
+                || i.pointer.any_released() && !app.cursor_hover.get_input_window()
         }) {
             app.error_message = None;
             return;

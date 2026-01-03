@@ -49,7 +49,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
 /// モード切替の処理
 fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     // 入力中はモード切替を行わない
-    if app.cursor_hover.input_window {
+    if app.cursor_hover.get_input_window() {
         return;
     }
 

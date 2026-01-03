@@ -8,7 +8,8 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
         .min_width(200.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.cursor_hover.menu_window = ui.rect_contains_pointer(ui.max_rect());
+            app.cursor_hover
+                .set_menu_window(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::new()
                 .inner_margin(egui::Margin::same(10))

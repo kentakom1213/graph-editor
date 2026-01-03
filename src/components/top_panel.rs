@@ -20,13 +20,37 @@ impl Default for PanelTabState {
 }
 
 pub struct CursorHoverState {
-    pub top_panel: bool,
-    pub color_window: bool,
-    pub menu_window: bool,
-    pub input_window: bool,
+    top_panel: bool,
+    color_window: bool,
+    menu_window: bool,
+    input_window: bool,
 }
 
 impl CursorHoverState {
+    pub fn set_top_panel(&mut self, hovered: bool) {
+        self.top_panel = hovered;
+    }
+    pub fn set_color_window(&mut self, hovered: bool) {
+        self.color_window = hovered;
+    }
+    pub fn set_menu_window(&mut self, hovered: bool) {
+        self.menu_window = hovered;
+    }
+    pub fn set_input_window(&mut self, hovered: bool) {
+        self.input_window = hovered;
+    }
+    pub fn get_top_panel(&self) -> bool {
+        self.top_panel
+    }
+    pub fn get_color_window(&self) -> bool {
+        self.color_window
+    }
+    pub fn get_menu_window(&self) -> bool {
+        self.menu_window
+    }
+    pub fn get_input_window(&self) -> bool {
+        self.input_window
+    }
     /// いずれかのパネルにカーソルが乗っているか
     pub fn any(&self) -> bool {
         self.top_panel || self.color_window || self.menu_window || self.input_window
