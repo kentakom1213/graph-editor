@@ -2,8 +2,9 @@ use egui::Context;
 
 use crate::GraphEditorApp;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub enum Colors {
+    #[default]
     Default,
     Red,
     Green,
@@ -16,7 +17,7 @@ pub enum Colors {
 }
 
 impl Colors {
-    fn to_egui_color(&self) -> Option<egui::Color32> {
+    fn to_egui_color(self) -> Option<egui::Color32> {
         match self {
             Colors::Default => None,
             Colors::Red => Some(egui::Color32::from_rgb(255, 0, 0)),
@@ -37,12 +38,6 @@ impl Colors {
     pub fn edge(&self) -> egui::Color32 {
         self.to_egui_color()
             .unwrap_or(egui::Color32::from_rgb(100, 100, 100))
-    }
-}
-
-impl Default for Colors {
-    fn default() -> Self {
-        Colors::Default
     }
 }
 

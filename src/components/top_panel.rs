@@ -19,6 +19,7 @@ impl Default for PanelTabState {
     }
 }
 
+#[derive(Default)]
 pub struct CursorHoverState {
     top_panel: bool,
     color_window: bool,
@@ -54,17 +55,6 @@ impl CursorHoverState {
     /// いずれかのパネルにカーソルが乗っているか
     pub fn any(&self) -> bool {
         self.top_panel || self.color_window || self.menu_window || self.input_window
-    }
-}
-
-impl Default for CursorHoverState {
-    fn default() -> Self {
-        Self {
-            top_panel: false,
-            color_window: false,
-            menu_window: false,
-            input_window: false,
-        }
     }
 }
 
