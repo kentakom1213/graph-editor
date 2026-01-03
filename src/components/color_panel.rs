@@ -2,7 +2,7 @@ use egui::Context;
 
 use crate::GraphEditorApp;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Colors {
     Default,
     Red,
@@ -16,18 +16,33 @@ pub enum Colors {
 }
 
 impl Colors {
-    pub fn to_egui_color(&self) -> egui::Color32 {
+    fn to_egui_color(&self) -> Option<egui::Color32> {
         match self {
-            Colors::Default => egui::Color32::WHITE,
-            Colors::Red => egui::Color32::from_rgb(255, 0, 0),
-            Colors::Green => egui::Color32::from_rgb(0, 255, 0),
-            Colors::Blue => egui::Color32::from_rgb(0, 0, 255),
-            Colors::Yellow => egui::Color32::from_rgb(255, 255, 0),
-            Colors::Orange => egui::Color32::from_rgb(255, 165, 0),
-            Colors::Violet => egui::Color32::from_rgb(238, 130, 238),
-            Colors::Pink => egui::Color32::from_rgb(255, 192, 203),
-            Colors::Brown => egui::Color32::from_rgb(165, 42, 42),
+            Colors::Default => None,
+            Colors::Red => Some(egui::Color32::from_rgb(255, 0, 0)),
+            Colors::Green => Some(egui::Color32::from_rgb(0, 255, 0)),
+            Colors::Blue => Some(egui::Color32::from_rgb(0, 0, 255)),
+            Colors::Yellow => Some(egui::Color32::from_rgb(255, 255, 0)),
+            Colors::Orange => Some(egui::Color32::from_rgb(255, 165, 0)),
+            Colors::Violet => Some(egui::Color32::from_rgb(238, 130, 238)),
+            Colors::Pink => Some(egui::Color32::from_rgb(255, 192, 203)),
+            Colors::Brown => Some(egui::Color32::from_rgb(165, 42, 42)),
         }
+    }
+
+    pub fn vertex(&self) -> egui::Color32 {
+        self.to_egui_color().unwrap_or(egui::Color32::WHITE)
+    }
+
+    pub fn edge(&self) -> egui::Color32 {
+        self.to_egui_color()
+            .unwrap_or(egui::Color32::from_rgb(100, 100, 100))
+    }
+}
+
+impl Default for Colors {
+    fn default() -> Self {
+        Colors::Default
     }
 }
 
@@ -50,64 +65,62 @@ pub fn draw_color_settings(app: &mut GraphEditorApp, ctx: &Context) {
                         ui.radio_value(
                             &mut app.selected_color,
                             Colors::Default,
-                            egui::RichText::new("Default")
-                                .color(Colors::Default.to_egui_color())
-                                .size(app.config.menu_font_size_normal),
+                            egui::RichText::new("Default").size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.selected_color,
                             Colors::Red,
                             egui::RichText::new("Red")
-                                .color(Colors::Red.to_egui_color())
+                                .color(Colors::Red.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.selected_color,
                             Colors::Green,
                             egui::RichText::new("Green")
-                                .color(Colors::Green.to_egui_color())
+                                .color(Colors::Green.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.selected_color,
                             Colors::Blue,
                             egui::RichText::new("Blue")
-                                .color(Colors::Blue.to_egui_color())
+                                .color(Colors::Blue.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.selected_color,
                             Colors::Yellow,
                             egui::RichText::new("Yellow")
-                                .color(Colors::Yellow.to_egui_color())
+                                .color(Colors::Yellow.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.selected_color,
                             Colors::Orange,
                             egui::RichText::new("Orange")
-                                .color(Colors::Orange.to_egui_color())
+                                .color(Colors::Orange.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.selected_color,
                             Colors::Violet,
                             egui::RichText::new("Violet")
-                                .color(Colors::Violet.to_egui_color())
+                                .color(Colors::Violet.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.selected_color,
                             Colors::Pink,
                             egui::RichText::new("Pink")
-                                .color(Colors::Pink.to_egui_color())
+                                .color(Colors::Pink.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
                             &mut app.selected_color,
                             Colors::Brown,
                             egui::RichText::new("Brown")
-                                .color(Colors::Brown.to_egui_color())
+                                .color(Colors::Brown.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                     });

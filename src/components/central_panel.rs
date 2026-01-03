@@ -4,6 +4,7 @@ use itertools::Itertools;
 
 use super::transition_and_scale::{drag_central_panel, scale_central_panel};
 use crate::{
+    components::Colors,
     config::AppConfig,
     graph::Graph,
     math::{
@@ -143,7 +144,7 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
             vertices_mut.iter().find(|v| v.id == edge.to),
         ) {
             // ノーマルモードの場合，エッジの選択判定を行う
-            if app.edit_mode.is_delete() {
+            if app.edit_mode.is_delete() || app.edit_mode.is_colorize() {
                 let mouse_pos = ui.input(|i| i.pointer.hover_pos()).unwrap_or_default();
 
                 // 端点との距離
@@ -181,7 +182,12 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
                     edge.is_pressed = true;
 
                     if ui.input(|i| i.pointer.any_click()) {
-                        edge.is_deleted = true;
+                        // エッジがクリックされた場合の処理
+                        if app.edit_mode.is_colorize() {
+                            edge.color = app.selected_color;
+                        } else if app.edit_mode.is_delete() {
+                            edge.is_deleted = true;
+                        }
                     }
                 } else {
                     edge.is_pressed = false;
@@ -191,7 +197,7 @@ fn draw_edges(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painter) 
             let edge_color = if edge.is_pressed {
                 app.config.edge_color_hover
             } else {
-                app.config.edge_color_normal
+                edge.color.edge()
             };
 
             if is_directed {
@@ -459,6 +465,9 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
                         *from_vertex = Some(vertex.id);
                     }
                 }
+                EditMode::Colorize => {
+                    vertex.color = app.selected_color;
+                }
                 EditMode::Delete => {
                     vertex.is_deleted = true;
                 }
@@ -476,7 +485,7 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
                     if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
                         painter.line_segment(
                             [vertex.get_position(), mouse_pos],
-                            egui::Stroke::new(app.config.edge_stroke, app.config.edge_color_normal),
+                            egui::Stroke::new(app.config.edge_stroke, Colors::Default.edge()),
                         );
                     }
                 }
@@ -501,7 +510,7 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
         } else if vertex.is_pressed {
             app.config.vertex_color_dragged
         } else {
-            app.config.vertex_color_normal
+            vertex.color.vertex()
         };
 
         // 0-indexed / 1-indexed の選択によってIDを変更

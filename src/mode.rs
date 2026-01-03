@@ -1,5 +1,3 @@
-use crate::components::Colors;
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum EditMode {
     Normal,
@@ -46,5 +44,9 @@ impl EditMode {
 
     pub fn is_delete(&self) -> bool {
         matches!(self, Self::Delete)
+    }
+
+    pub fn is_colorize(&self) -> bool {
+        matches!(self, Self::Colorize)
     }
 }
