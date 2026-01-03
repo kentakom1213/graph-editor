@@ -58,8 +58,9 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
                     ui.separator();
 
                     // コード形式で表示
-                    app.cursor_hover
-                        .set_input_window(ui.code_editor(&mut app.input_text).has_focus());
+                    if ui.code_editor(&mut app.input_text).has_focus() {
+                        app.cursor_hover.set_input_window(true);
+                    }
                 });
         });
 }
