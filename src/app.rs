@@ -1,8 +1,8 @@
 use eframe::egui;
 
 use crate::components::{
-    draw_central_panel, draw_edit_menu, draw_error_modal, draw_footer, draw_graph_io,
-    draw_top_panel, PanelTabState,
+    draw_central_panel, draw_color_settings, draw_edit_menu, draw_error_modal, draw_footer,
+    draw_graph_io, draw_top_panel, Colors, CursorHoverState, PanelTabState,
 };
 use crate::config::AppConfig;
 use crate::graph::Graph;
@@ -15,10 +15,9 @@ pub struct GraphEditorApp {
     pub last_mouse_pos: Option<egui::Pos2>,
     pub next_z_index: u32,
     pub edit_mode: EditMode,
+    pub selected_color: Colors,
     pub zero_indexed: bool,
-    pub hovered_on_top_panel: bool,
-    pub hovered_on_menu_window: bool,
-    pub hovered_on_input_window: bool,
+    pub cursor_hover: CursorHoverState,
     pub config: AppConfig,
     pub input_text: String,
     pub error_message: Option<String>,
@@ -55,6 +54,11 @@ impl GraphEditorApp {
         self.edit_mode = EditMode::default_add_edge();
     }
 
+    pub fn switch_colorize_mode(&mut self) {
+        self.deselect_all_vertices_edges();
+        self.edit_mode = EditMode::default_colorize();
+    }
+
     pub fn switch_delete_mode(&mut self) {
         self.deselect_all_vertices_edges();
         self.edit_mode = EditMode::default_delete();
@@ -69,10 +73,9 @@ impl Default for GraphEditorApp {
             last_mouse_pos: None,
             next_z_index: 2,
             edit_mode: EditMode::default_normal(),
+            selected_color: Colors::Default,
             zero_indexed: false,
-            hovered_on_top_panel: false,
-            hovered_on_menu_window: false,
-            hovered_on_input_window: false,
+            cursor_hover: CursorHoverState::default(),
             config: AppConfig::default(),
             input_text: String::new(),
             error_message: None,
@@ -84,7 +87,7 @@ impl Default for GraphEditorApp {
 impl eframe::App for GraphEditorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // トップパネル（タブバー）を描画
-        draw_top_panel(self, ctx); // ★ 追加
+        draw_top_panel(self, ctx);
 
         // メイン領域を描画
         draw_central_panel(self, ctx);
@@ -93,6 +96,10 @@ impl eframe::App for GraphEditorApp {
         if self.panel_tab.edit_menu {
             // 編集メニューを描画
             draw_edit_menu(self, ctx);
+        }
+        if self.panel_tab.color_settings {
+            // 色の設定を描画
+            draw_color_settings(self, ctx);
         }
         if self.panel_tab.graph_io {
             // グラフの入力を描画

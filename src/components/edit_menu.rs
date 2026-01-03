@@ -8,7 +8,8 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
         .min_width(200.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.hovered_on_menu_window = ui.rect_contains_pointer(ui.max_rect());
+            app.cursor_hover
+                .set_menu_window(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::new()
                 .inner_margin(egui::Margin::same(10))
@@ -35,6 +36,12 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             &mut app.edit_mode,
                             EditMode::default_add_edge(),
                             egui::RichText::new("Add Edge [E]")
+                                .size(app.config.menu_font_size_normal),
+                        );
+                        ui.radio_value(
+                            &mut app.edit_mode,
+                            EditMode::default_colorize(),
+                            egui::RichText::new("Colorize [C]")
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
@@ -140,9 +147,22 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             }
                         }
 
+                        // 色のリセット
+                        let reset_color_button = egui::Button::new(
+                            egui::RichText::new("Reset Colors")
+                                .size(app.config.menu_font_size_normal),
+                        );
+                        if ui.add(reset_color_button).clicked() {
+                            app.graph.reset_colors();
+                        }
+
                         ui.separator();
 
                         // グラフのクリア
+                        ui.label(
+                            egui::RichText::new("Clear All").size(app.config.menu_font_size_mini),
+                        );
+
                         if ui
                             .button(
                                 egui::RichText::new("Clear All")

@@ -6,6 +6,7 @@ pub enum EditMode {
         from_vertex: Option<usize>,
         confirmed: bool,
     },
+    Colorize,
     Delete,
 }
 
@@ -25,6 +26,10 @@ impl EditMode {
         }
     }
 
+    pub fn default_colorize() -> Self {
+        Self::Colorize
+    }
+
     pub fn default_delete() -> Self {
         Self::Delete
     }
@@ -39,5 +44,9 @@ impl EditMode {
 
     pub fn is_delete(&self) -> bool {
         matches!(self, Self::Delete)
+    }
+
+    pub fn is_colorize(&self) -> bool {
+        matches!(self, Self::Colorize)
     }
 }

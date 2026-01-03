@@ -7,7 +7,10 @@ use std::{
 use egui::Vec2;
 use num_traits::One;
 
-use crate::math::affine::{Affine2D, ApplyAffine};
+use crate::{
+    components::Colors,
+    math::affine::{Affine2D, ApplyAffine},
+};
 
 use super::{BaseGraph, Visualizer};
 
@@ -21,6 +24,7 @@ pub struct Vertex {
     pub is_selected: bool,
     pub z_index: u32,
     pub is_deleted: bool,
+    pub color: Colors,
     pub affine: Rc<RefCell<Affine2D>>,
 }
 
@@ -51,6 +55,7 @@ pub struct Edge {
     pub to: usize,
     pub is_pressed: bool,
     pub is_deleted: bool,
+    pub color: Colors,
 }
 
 impl Edge {
@@ -60,6 +65,7 @@ impl Edge {
             to,
             is_pressed: false,
             is_deleted: false,
+            color: Colors::default(),
         }
     }
 }
@@ -136,6 +142,7 @@ impl Graph {
             is_selected: false,
             z_index,
             is_deleted: false,
+            color: Colors::default(),
             affine: self.affine.clone(),
         });
     }
@@ -282,6 +289,7 @@ impl Graph {
                 is_selected: false,
                 z_index: 0,
                 is_deleted: false,
+                color: Colors::default(),
                 affine: self.affine.clone(),
             });
 
@@ -292,6 +300,15 @@ impl Graph {
         self.edges.extend(new_edges);
 
         Ok(())
+    }
+
+    pub fn reset_colors(&mut self) {
+        for vertex in &mut self.vertices {
+            vertex.color = Colors::default();
+        }
+        for edge in &mut self.edges {
+            edge.color = Colors::default();
+        }
     }
 }
 
@@ -311,6 +328,7 @@ impl Default for Graph {
                     is_selected: false,
                     z_index: 0,
                     is_deleted: false,
+                    color: Colors::default(),
                     affine: affine.clone(),
                 },
                 Vertex {
@@ -322,6 +340,7 @@ impl Default for Graph {
                     is_selected: false,
                     z_index: 1,
                     is_deleted: false,
+                    color: Colors::default(),
                     affine: affine.clone(),
                 },
             ],
@@ -330,6 +349,7 @@ impl Default for Graph {
                 to: 1,
                 is_pressed: false,
                 is_deleted: false,
+                color: Colors::default(),
             }],
             affine,
         }
