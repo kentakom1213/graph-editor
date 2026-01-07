@@ -41,6 +41,7 @@ struct UiState {
     version: u32,
     zero_indexed: bool,
     is_directed: bool,
+    export_format: String,
 }
 
 impl Default for UiState {
@@ -49,8 +50,13 @@ impl Default for UiState {
             version: 1,
             zero_indexed: false,
             is_directed: false,
+            export_format: default_export_format(),
         }
     }
+}
+
+fn default_export_format() -> String {
+    ExportFormat::Png.extension().to_string()
 }
 
 impl GraphEditorApp {
@@ -62,6 +68,10 @@ impl GraphEditorApp {
             .unwrap_or_default();
         app.zero_indexed = state.zero_indexed;
         app.graph.is_directed = state.is_directed;
+        app.export_format = match state.export_format.as_str() {
+            "svg" => ExportFormat::Svg,
+            _ => ExportFormat::Png,
+        };
         app
     }
 
@@ -211,6 +221,7 @@ impl eframe::App for GraphEditorApp {
             version: 1,
             zero_indexed: self.zero_indexed,
             is_directed: self.graph.is_directed,
+            export_format: self.export_format.extension().to_string(),
         };
         eframe::set_value(storage, UI_STATE_STORAGE_KEY, &state);
     }
