@@ -2,6 +2,10 @@
 
 この文書は，現在の構成に合わせて画像出力（PNG など）を追加する際の方針を整理する．
 
+## 要求
+
+- PNG / SVG でのエクスポート
+
 ## 変更箇所
 
 - UI 追加: `src/components/edit_menu.rs`
@@ -37,3 +41,16 @@
 
 - 画面サイズに依存するため，エクスポート時の解像度（例: 1024x1024）を指定できるようにするのが望ましい．
 - UI での座標変換（アフィン変換）を適用した状態で書き出す必要がある．
+
+## wasm 対応の指針
+
+- そのままの実装は wasm では使えない
+  - `rfd::FileDialog::save_file()` は wasm で同期ダイアログを出せないため非対応
+  - ブラウザ上ではファイルパスに直接書き込めない（ユーザー操作のダウンロードになる）
+- 対応方法
+  - 画像生成（`egui::ColorImage` -> PNG bytes）は同じロジックで OK
+  - 保存は `rfd::AsyncFileDialog::new().save_file().await` を使う
+    - wasm ではフィルタは無視され，`save_file` は即座に `FileHandle` を返す
+    - `FileHandle::write(bytes).await` でブラウザの保存ダイアログが出る
+  - async が必要なので `wasm_bindgen_futures::spawn_local` 等で駆動する
+  - 代替案として `web_sys` で `Blob` + `URL.createObjectURL` + `<a download>` を生成してダウンロードさせる方法もある

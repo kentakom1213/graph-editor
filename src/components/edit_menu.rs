@@ -174,6 +174,49 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         {
                             app.confirm_clear_all = true;
                         }
+
+                        ui.separator();
+
+                        // 画像のエクスポート
+                        ui.label(
+                            egui::RichText::new("Export Image")
+                                .size(app.config.menu_font_size_mini),
+                        );
+
+                        let export_button = egui::Button::new(
+                            egui::RichText::new("Export Image")
+                                .size(app.config.menu_font_size_normal),
+                        );
+
+                        let export_response =
+                            ui.add_enabled(!app.export_in_progress, export_button);
+                        if export_response.clicked() {
+                            app.request_export_image(ctx);
+                        }
+
+                        ui.horizontal(|ui| {
+                            ui.label(
+                                egui::RichText::new("Format").size(app.config.menu_font_size_mini),
+                            );
+                            egui::ComboBox::from_id_salt("export_format")
+                                .width(10.0)
+                                .selected_text(match app.export_format {
+                                    crate::app::ExportFormat::Png => "PNG",
+                                    crate::app::ExportFormat::Svg => "SVG",
+                                })
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(
+                                        &mut app.export_format,
+                                        crate::app::ExportFormat::Png,
+                                        "PNG",
+                                    );
+                                    ui.selectable_value(
+                                        &mut app.export_format,
+                                        crate::app::ExportFormat::Svg,
+                                        "SVG",
+                                    );
+                                });
+                        });
                     });
                 });
         });
