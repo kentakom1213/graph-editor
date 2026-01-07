@@ -39,9 +39,7 @@ pub fn build_export_request(format: ExportFormat) -> Option<ExportRequest> {
             .add_filter("SVG Image", &["svg"])
             .set_file_name(&default_name);
 
-        let Some(mut path) = dialog.save_file() else {
-            return None;
-        };
+        let mut path = dialog.save_file()?;
 
         let resolved_format = match path
             .extension()
@@ -57,7 +55,7 @@ pub fn build_export_request(format: ExportFormat) -> Option<ExportRequest> {
             }
         };
 
-        return Some(ExportRequest {
+        Some(ExportRequest {
             format: resolved_format,
             file_name: path
                 .file_name()
@@ -65,7 +63,7 @@ pub fn build_export_request(format: ExportFormat) -> Option<ExportRequest> {
                 .unwrap_or(&default_name)
                 .to_string(),
             path: Some(path),
-        });
+        })
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -85,8 +83,8 @@ pub fn save_export_bytes(export_request: &ExportRequest, bytes: Vec<u8>) -> anyh
             .path
             .as_ref()
             .context("missing export path")?;
-        std::fs::write(path, bytes).with_context(|| format!("failed to save image: {:?}", path))?;
-        return Ok(());
+        std::fs::write(path, bytes).with_context(|| format!("failed to save image: {path:?}"))?;
+        Ok(())
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -428,7 +426,7 @@ fn svg_point(pos: egui::Pos2, bounds: egui::Rect) -> String {
 
 fn color_to_svg(color: egui::Color32) -> (String, Option<f32>) {
     let [r, g, b, a] = color.to_srgba_unmultiplied();
-    let hex = format!("#{:02X}{:02X}{:02X}", r, g, b);
+    let hex = format!("#{r:02X}{g:02X}{b:02X}");
     let alpha = if a < 255 {
         Some(a as f32 / 255.0)
     } else {
