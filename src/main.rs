@@ -20,7 +20,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "Graph Editor",
         native_options,
-        Box::new(|_cc| Ok(Box::new(graph_editor::GraphEditorApp::default()))),
+        Box::new(|cc| Ok(Box::new(graph_editor::GraphEditorApp::new(cc)))),
     )
 }
 
@@ -50,7 +50,7 @@ fn main() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|_cc| Ok(Box::new(graph_editor::GraphEditorApp::default()))),
+                Box::new(|cc| Ok(Box::new(graph_editor::GraphEditorApp::new(cc)))),
             )
             .await;
 

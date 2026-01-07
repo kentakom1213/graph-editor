@@ -1,4 +1,5 @@
 use eframe::egui;
+use serde::{Deserialize, Serialize};
 
 use crate::components::{
     draw_central_panel, draw_color_settings, draw_edit_menu, draw_error_modal, draw_footer,
@@ -24,9 +25,35 @@ pub struct GraphEditorApp {
     pub panel_tab: PanelTabState,
 }
 
+const UI_STATE_STORAGE_KEY: &str = "graph-editor:ui-state";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct UiState {
+    version: u32,
+    zero_indexed: bool,
+    is_directed: bool,
+}
+
+impl Default for UiState {
+    fn default() -> Self {
+        Self {
+            version: 1,
+            zero_indexed: false,
+            is_directed: false,
+        }
+    }
+}
+
 impl GraphEditorApp {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let mut app = Self::default();
+        let state: UiState = cc
+            .storage
+            .and_then(|storage| eframe::get_value(storage, UI_STATE_STORAGE_KEY))
+            .unwrap_or_default();
+        app.zero_indexed = state.zero_indexed;
+        app.graph.is_directed = state.is_directed;
+        app
     }
 
     pub fn deselect_all_vertices_edges(&mut self) {
@@ -85,6 +112,15 @@ impl Default for GraphEditorApp {
 }
 
 impl eframe::App for GraphEditorApp {
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        let state = UiState {
+            version: 1,
+            zero_indexed: self.zero_indexed,
+            is_directed: self.graph.is_directed,
+        };
+        eframe::set_value(storage, UI_STATE_STORAGE_KEY, &state);
+    }
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // トップパネル（タブバー）を描画
         draw_top_panel(self, ctx);
