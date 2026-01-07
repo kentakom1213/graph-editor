@@ -1,6 +1,6 @@
 use egui::Context;
 
-use crate::GraphEditorApp;
+use crate::{mode::EditMode, GraphEditorApp};
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub enum Colors {
@@ -20,14 +20,14 @@ impl Colors {
     fn to_egui_color(self) -> Option<egui::Color32> {
         match self {
             Colors::Default => None,
-            Colors::Red => Some(egui::Color32::from_rgb(255, 0, 0)),
-            Colors::Green => Some(egui::Color32::from_rgb(0, 255, 0)),
-            Colors::Blue => Some(egui::Color32::from_rgb(0, 0, 255)),
+            Colors::Red => Some(egui::Color32::from_rgb(255, 70, 70)),
+            Colors::Green => Some(egui::Color32::from_rgb(70, 255, 70)),
+            Colors::Blue => Some(egui::Color32::from_rgb(70, 70, 255)),
             Colors::Yellow => Some(egui::Color32::from_rgb(255, 255, 0)),
             Colors::Orange => Some(egui::Color32::from_rgb(255, 165, 0)),
             Colors::Violet => Some(egui::Color32::from_rgb(238, 130, 238)),
             Colors::Pink => Some(egui::Color32::from_rgb(255, 192, 203)),
-            Colors::Brown => Some(egui::Color32::from_rgb(165, 42, 42)),
+            Colors::Brown => Some(egui::Color32::from_rgb(181, 101, 29)),
         }
     }
 
@@ -56,6 +56,8 @@ pub fn draw_color_settings(app: &mut GraphEditorApp, ctx: &Context) {
                 .inner_margin(egui::Margin::same(10))
                 .show(ui, |ui| {
                     ui.vertical(|ui| {
+                        let prev_color = app.selected_color;
+
                         // 色の選択
                         ui.radio_value(
                             &mut app.selected_color,
@@ -118,6 +120,11 @@ pub fn draw_color_settings(app: &mut GraphEditorApp, ctx: &Context) {
                                 .color(Colors::Brown.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
+
+                        // 色が変わっていたらモードを切り替え
+                        if app.selected_color != prev_color {
+                            app.edit_mode = EditMode::default_colorize();
+                        }
                     });
                 });
         });
