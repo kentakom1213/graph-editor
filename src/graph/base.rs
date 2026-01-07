@@ -42,7 +42,7 @@ impl BaseGraph {
                         .ok_or_else(|| anyhow::anyhow!("Invalid edge: {} {}", from, to))?;
                 }
 
-                if from > n || to > n {
+                if from > n || to > n || (zero_indexed && (from == n || to == n)) {
                     return Err(anyhow::anyhow!("Invalid edge: {} {}", from, to));
                 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "graph-editor"
-version = "0.5.3"
+version = "0.5.4"
 authors = ["Kenta KOMOTO"]
 edition = "2021"
 include = ["LICENSE-APACHE", "LICENSE-MIT", "**/*.rs", "Cargo.toml"]
@@ -20,6 +20,9 @@ eframe = { version = "0.31", default-features = false, features = [
     "wayland",       # To support Linux (and CI)
 ] }
 log = "0.4"
+base64 = "0.22"
+image = { version = "0.25", default-features = false, features = ["png"] }
+rfd = "0.15"
 
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }

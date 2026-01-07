@@ -290,21 +290,18 @@ impl Graph {
             visualizer.resolve_vertex_position(n, &edges)
         };
 
-        let new_vertices = positions
-            .into_iter()
-            .enumerate()
-            .map(|(id, pos)| Vertex {
-                id,
-                position: adjust_to_window(pos),
-                velocity: egui::Vec2::ZERO,
-                is_pressed: false,
-                drag: Affine2D::one(),
-                is_selected: false,
-                z_index: 0,
-                is_deleted: false,
-                color: Colors::default(),
-                affine: self.affine.clone(),
-            });
+        let new_vertices = positions.into_iter().enumerate().map(|(id, pos)| Vertex {
+            id,
+            position: adjust_to_window(pos),
+            velocity: egui::Vec2::ZERO,
+            is_pressed: false,
+            drag: Affine2D::one(),
+            is_selected: false,
+            z_index: 0,
+            is_deleted: false,
+            color: Colors::default(),
+            affine: self.affine.clone(),
+        });
 
         self.vertices.extend(new_vertices);
 
