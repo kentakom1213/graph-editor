@@ -172,8 +172,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             )
                             .clicked()
                         {
-                            app.graph.clear();
-                            app.next_z_index = 0;
+                            app.confirm_clear_all = true;
                         }
                     });
                 });

@@ -2,8 +2,8 @@ use eframe::egui;
 use serde::{Deserialize, Serialize};
 
 use crate::components::{
-    draw_central_panel, draw_color_settings, draw_edit_menu, draw_error_modal, draw_footer,
-    draw_graph_io, draw_top_panel, Colors, CursorHoverState, PanelTabState,
+    draw_central_panel, draw_clear_all_modal, draw_color_settings, draw_edit_menu, draw_error_modal,
+    draw_footer, draw_graph_io, draw_top_panel, Colors, CursorHoverState, PanelTabState,
 };
 use crate::config::AppConfig;
 use crate::graph::Graph;
@@ -22,6 +22,7 @@ pub struct GraphEditorApp {
     pub config: AppConfig,
     pub input_text: String,
     pub error_message: Option<String>,
+    pub confirm_clear_all: bool,
     pub panel_tab: PanelTabState,
 }
 
@@ -106,6 +107,7 @@ impl Default for GraphEditorApp {
             config: AppConfig::default(),
             input_text: String::new(),
             error_message: None,
+            confirm_clear_all: false,
             panel_tab: PanelTabState::default(),
         }
     }
@@ -147,6 +149,7 @@ impl eframe::App for GraphEditorApp {
 
         // エラーメッセージを描画
         draw_error_modal(self, ctx);
+        draw_clear_all_modal(self, ctx);
 
         // 再描画
         request_repaint(self, ctx);
