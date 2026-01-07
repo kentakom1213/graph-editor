@@ -61,7 +61,7 @@ impl Default for AppConfig {
             scale_max: 3.0,
             scale_min: 0.1,
             scale_delta: 0.002,
-            rotate_delta: 0.05,
+            rotate_delta: 0.03,
             density_threshold: 0.2,
             visualizer: Box::new(visualize_methods::SimulatedAnnealing {
                 max_iter: 1000,
