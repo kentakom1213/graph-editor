@@ -53,10 +53,10 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
     }
 
     // キー入力による回転（{, }）
-    let rotate_dir = if input.key_pressed(egui::Key::OpenBracket) {
-        -5.0
-    } else if input.key_pressed(egui::Key::CloseBracket) {
-        5.0
+    let rotate_dir = if input.key_down(egui::Key::OpenBracket) {
+        -1.0
+    } else if input.key_down(egui::Key::CloseBracket) {
+        1.0
     } else {
         0.0
     };
@@ -71,9 +71,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
                 .applied(&inv);
             let rad = app.config.rotate_delta * rotate_dir;
             let affine = Affine2D::from_center_and_rotation(center, rad);
-            if let Some(res) =
-                cur_affine.try_compose(&affine, app.config.scale_min, app.config.scale_max)
-            {
+            if let Some(res) = cur_affine.try_compose(&affine, f32::MIN, f32::MAX) {
                 *app.graph.affine.borrow_mut() = res;
             }
         }
