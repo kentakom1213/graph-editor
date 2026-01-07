@@ -201,18 +201,18 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             egui::ComboBox::from_id_salt("export_format")
                                 .width(10.0)
                                 .selected_text(match app.export_format {
-                                    crate::app::ExportFormat::Png => "PNG",
-                                    crate::app::ExportFormat::Svg => "SVG",
+                                    crate::export::ExportFormat::Png => "PNG",
+                                    crate::export::ExportFormat::Svg => "SVG",
                                 })
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
                                         &mut app.export_format,
-                                        crate::app::ExportFormat::Png,
+                                        crate::export::ExportFormat::Png,
                                         "PNG",
                                     );
                                     ui.selectable_value(
                                         &mut app.export_format,
-                                        crate::app::ExportFormat::Svg,
+                                        crate::export::ExportFormat::Svg,
                                         "SVG",
                                     );
                                 });

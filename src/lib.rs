@@ -3,6 +3,7 @@
 mod app;
 mod components;
 mod config;
+mod export;
 mod graph;
 mod math;
 mod mode;
