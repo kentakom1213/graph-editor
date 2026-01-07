@@ -15,6 +15,7 @@ Graph Editor は [eframe](https://github.com/emilk/egui/tree/master/crates/efram
 | Normal モード                |    N     | 頂点の移動などを行う              |
 | Add Vertex (頂点追加) モード |    V     | クリックした位置に頂点を追加する  |
 | Add Edge (辺追加) モード     |    E     | 選択した 2 つの頂点の間に辺を張る |
+| Colorize (色付け) モード    |    C     | クリックした頂点/辺の色を変更する     |
 | Delete Edge (辺削除) モード  |    D     | クリックした頂点/辺を削除する     |
 
 ### Indexing
