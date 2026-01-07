@@ -40,6 +40,7 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
                                 .and_then(|base| {
                                     app.graph.rebuild_from_basegraph(
                                         app.config.visualizer.as_ref(),
+                                        app.config.density_threshold,
                                         base,
                                         ctx.used_size(),
                                     )

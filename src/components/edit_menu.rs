@@ -110,6 +110,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             let complement = app.graph.calc_complement();
                             let new_graph_result = app.graph.rebuild_from_basegraph(
                                 app.config.visualizer.as_ref(),
+                                app.config.density_threshold,
                                 complement,
                                 ctx.used_size(),
                             );
@@ -134,6 +135,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             let reverted = app.graph.calc_reverted();
                             let new_graph_result = app.graph.rebuild_from_basegraph(
                                 app.config.visualizer.as_ref(),
+                                app.config.density_threshold,
                                 reverted,
                                 ctx.used_size(),
                             );

@@ -12,7 +12,7 @@ use crate::{
     math::affine::{Affine2D, ApplyAffine},
 };
 
-use super::{BaseGraph, Visualizer};
+use super::{visualize_methods, BaseGraph, Visualizer};
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
@@ -263,6 +263,7 @@ impl Graph {
     pub fn rebuild_from_basegraph(
         &mut self,
         visualizer: &dyn Visualizer,
+        density_threshold: f32,
         BaseGraph { n, edges }: BaseGraph,
         window_size: egui::Vec2,
     ) -> anyhow::Result<()> {
@@ -276,8 +277,20 @@ impl Graph {
         };
 
         // グラフの構築
-        let new_vertices = visualizer
-            .resolve_vertex_position(n, &edges)
+        let density = if n == 0 {
+            0.0
+        } else {
+            edges.len() as f32 / (n as f32 * n as f32)
+        };
+
+        let positions = if density > density_threshold {
+            // 高密度グラフでは最適化を避けてランダム配置にする
+            visualize_methods::Naive.resolve_vertex_position(n, &edges)
+        } else {
+            visualizer.resolve_vertex_position(n, &edges)
+        };
+
+        let new_vertices = positions
             .into_iter()
             .enumerate()
             .map(|(id, pos)| Vertex {

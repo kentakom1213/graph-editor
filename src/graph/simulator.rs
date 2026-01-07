@@ -67,8 +67,8 @@ pub mod simulation_methods {
                     next_velocity = next_velocity.normalized() * max_v;
                 }
 
-                // 位置を更新
-                let next_position = v.position + v.velocity * dt;
+                // 位置を更新（半陰的オイラー）
+                let next_position = v.position + next_velocity * dt;
 
                 graph.vertices[i].velocity = next_velocity;
                 graph.vertices[i].position = next_position;
