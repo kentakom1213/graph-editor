@@ -29,6 +29,8 @@ pub struct AppConfig {
     pub scale_min: f32,
     /// 倍率の刻み
     pub scale_delta: f32,
+    /// 回転の刻み（ラジアン）
+    pub rotate_delta: f32,
     /// 初期配置を省略する密度のしきい値
     pub density_threshold: f32,
     /// 可視化アルゴリズム
@@ -59,6 +61,7 @@ impl Default for AppConfig {
             scale_max: 3.0,
             scale_min: 0.1,
             scale_delta: 0.002,
+            rotate_delta: 0.01,
             density_threshold: 0.2,
             visualizer: Box::new(visualize_methods::SimulatedAnnealing {
                 max_iter: 1000,

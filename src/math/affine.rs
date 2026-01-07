@@ -35,6 +35,17 @@ impl Affine2D {
         ])
     }
 
+    /// アフィン変換の回転
+    /// - `center`: 回転の中心
+    /// - `rad`: 回転角（ラジアン）
+    pub fn from_center_and_rotation(center: egui::Pos2, rad: f32) -> Self {
+        let cos = rad.cos();
+        let sin = rad.sin();
+        let tx = center.x - cos * center.x + sin * center.y;
+        let ty = center.y - sin * center.x - cos * center.y;
+        Self([[cos, -sin, tx], [sin, cos, ty], [0.0, 0.0, 1.0]])
+    }
+
     /// 並行移動成分を取得
     pub fn translation(&self) -> egui::Vec2 {
         egui::vec2(self.0[0][2], self.0[1][2])

@@ -2,8 +2,9 @@ use eframe::egui;
 use serde::{Deserialize, Serialize};
 
 use crate::components::{
-    draw_central_panel, draw_clear_all_modal, draw_color_settings, draw_edit_menu, draw_error_modal,
-    draw_footer, draw_graph_io, draw_top_panel, Colors, CursorHoverState, PanelTabState,
+    draw_central_panel, draw_clear_all_modal, draw_color_settings, draw_edit_menu,
+    draw_error_modal, draw_footer, draw_graph_io, draw_top_panel, Colors, CursorHoverState,
+    PanelTabState,
 };
 use crate::config::AppConfig;
 use crate::graph::Graph;
