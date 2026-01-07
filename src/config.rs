@@ -57,7 +57,12 @@ impl Default for AppConfig {
             scale_max: 3.0,
             scale_min: 0.1,
             scale_delta: 0.002,
-            visualizer: Box::new(visualize_methods::HillClimbing(1_000)),
+            // visualizer: Box::new(visualize_methods::HillClimbing(1000)),
+            visualizer: Box::new(visualize_methods::SimulatedAnnealing {
+                max_iter: 1000,
+                initial_temp: 10.0,
+                cooling_rate: 0.995,
+            }),
             simulator: Box::new(simulation_methods::ForceDirectedModel {
                 config: SimulateConfig::default(),
             }),

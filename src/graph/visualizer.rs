@@ -98,4 +98,69 @@ pub mod visualize_methods {
             best_positions
         }
     }
+
+    /// 焼きなまし法で辺の重なりを減らすように配置する．
+    /// - `max_iter`: 最大反復回数
+    /// - `initial_temp`: 初期温度
+    /// - `cooling_rate`: 温度の減衰率
+    pub struct SimulatedAnnealing {
+        pub max_iter: usize,
+        pub initial_temp: f32,
+        pub cooling_rate: f32,
+    }
+
+    impl super::Visualizer for SimulatedAnnealing {
+        fn resolve_vertex_position(&self, n: usize, edges: &[(usize, usize)]) -> Vec<egui::Vec2> {
+            if n == 0 {
+                return vec![];
+            }
+
+            if self.max_iter == 0 {
+                return (0..n).map(|_| sample_point()).collect();
+            }
+
+            let mut current_positions = (0..n).map(|_| sample_point()).collect::<Vec<_>>();
+            let mut current_crossing = count_edge_crossing(&current_positions, edges);
+
+            let mut best_positions = current_positions.clone();
+            let mut best_crossing = current_crossing;
+
+            let mut temperature = self.initial_temp.max(0.0);
+            let cooling_rate = self.cooling_rate;
+
+            for _ in 0..self.max_iter {
+                let mut new_positions = current_positions.clone();
+
+                // 1 つの頂点をランダムに選択して座標を変更する
+                let i = rand::random::<usize>() % n;
+                new_positions[i] = sample_point();
+
+                let new_crossing = count_edge_crossing(&new_positions, edges);
+                let delta = new_crossing as isize - current_crossing as isize;
+
+                let accept = if delta <= 0 {
+                    true
+                } else if temperature > 0.0 {
+                    let prob = (-(delta as f32) / temperature).exp();
+                    rand::random::<f32>() < prob
+                } else {
+                    false
+                };
+
+                if accept {
+                    current_positions = new_positions;
+                    current_crossing = new_crossing;
+
+                    if current_crossing < best_crossing {
+                        best_positions = current_positions.clone();
+                        best_crossing = current_crossing;
+                    }
+                }
+
+                temperature *= cooling_rate;
+            }
+
+            best_positions
+        }
+    }
 }
