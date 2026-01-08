@@ -180,8 +180,7 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
             .min((mouse_pos - to_pos).length());
         let is_on_vertex = distance_from_vertex < app.config.vertex_radius;
 
-        let distance =
-            if !is_directed || edge_count.get(&(edge.from, edge.to)) == Some(&1) {
+        let distance = if !is_directed || edge_count.get(&(edge.from, edge.to)) == Some(&1) {
             distance_from_edge_line(from_pos, to_pos, mouse_pos)
         } else {
             distance_from_edge_bezier(from_pos, to_pos, app.config.edge_bezier_distance, mouse_pos)
@@ -506,6 +505,26 @@ fn render_vertices(
     ui: &egui::Ui,
     painter: &egui::Painter,
 ) {
+    // 設置途中の辺を描画
+    if let EditMode::AddEdge {
+        from_vertex: Some(from_vertex_inner),
+        confirmed: false,
+    } = app.edit_mode
+    {
+        let from_pos = snapshot
+            .vertices
+            .iter()
+            .find(|v| v.id == from_vertex_inner)
+            .map(|v| v.position);
+
+        if let (Some(from_pos), Some(mouse_pos)) = (from_pos, ui.input(|i| i.pointer.hover_pos())) {
+            painter.line_segment(
+                [from_pos, mouse_pos],
+                egui::Stroke::new(app.config.edge_stroke, Colors::Default.edge()),
+            );
+        }
+    }
+
     for vertex in snapshot.vertices.iter().sorted_by_key(|v| v.z_index) {
         let color = if vertex.is_selected {
             app.config.vertex_color_selected
@@ -534,27 +553,6 @@ fn render_vertices(
                 vertex_show_id,
                 egui::FontId::proportional(app.config.vertex_font_size),
                 app.config.vertex_font_color,
-            );
-        }
-    }
-
-    if let EditMode::AddEdge {
-        from_vertex: Some(from_vertex_inner),
-        confirmed: false,
-    } = app.edit_mode
-    {
-        let from_pos = snapshot
-            .vertices
-            .iter()
-            .find(|v| v.id == from_vertex_inner)
-            .map(|v| v.position);
-
-        if let (Some(from_pos), Some(mouse_pos)) =
-            (from_pos, ui.input(|i| i.pointer.hover_pos()))
-        {
-            painter.line_segment(
-                [from_pos, mouse_pos],
-                egui::Stroke::new(app.config.edge_stroke, Colors::Default.edge()),
             );
         }
     }
