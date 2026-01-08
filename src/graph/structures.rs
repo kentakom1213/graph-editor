@@ -70,6 +70,31 @@ impl Edge {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct VertexSnapshot {
+    pub id: usize,
+    pub position: egui::Pos2,
+    pub is_pressed: bool,
+    pub is_selected: bool,
+    pub z_index: u32,
+    pub color: Colors,
+}
+
+#[derive(Debug, Clone)]
+pub struct EdgeSnapshot {
+    pub from: usize,
+    pub to: usize,
+    pub is_pressed: bool,
+    pub color: Colors,
+}
+
+#[derive(Debug, Clone)]
+pub struct GraphSnapshot {
+    pub is_directed: bool,
+    pub vertices: Vec<VertexSnapshot>,
+    pub edges: Vec<EdgeSnapshot>,
+}
+
 #[derive(Debug)]
 pub struct Graph {
     /// 有向グラフ / 無向グラフ
@@ -83,12 +108,58 @@ pub struct Graph {
 }
 
 impl Graph {
-    /// 削除済みフラグが立っている頂点，辺を削除する
-    pub fn restore_graph(&mut self) {
-        // 削除済みフラグが立っている頂点を削除
-        self.vertices.retain(|vertex| !vertex.is_deleted);
+    pub fn snapshot(&self) -> GraphSnapshot {
+        let vertices: Vec<_> = self
+            .vertices
+            .iter()
+            .filter(|v| !v.is_deleted)
+            .map(|v| VertexSnapshot {
+                id: v.id,
+                position: v.get_position(),
+                is_pressed: v.is_pressed,
+                is_selected: v.is_selected,
+                z_index: v.z_index,
+                color: v.color,
+            })
+            .collect();
 
-        // 頂点番号を振り直す
+        let vertex_ids: HashSet<_> = vertices.iter().map(|v| v.id).collect();
+
+        let edges: Vec<_> = self
+            .edges
+            .iter()
+            .filter(|e| !e.is_deleted)
+            .filter(|e| vertex_ids.contains(&e.from) && vertex_ids.contains(&e.to))
+            .map(|e| EdgeSnapshot {
+                from: e.from,
+                to: e.to,
+                is_pressed: e.is_pressed,
+                color: e.color,
+            })
+            .collect();
+
+        GraphSnapshot {
+            is_directed: self.is_directed,
+            vertices,
+            edges,
+        }
+    }
+
+    /// 削除済みフラグが立っている頂点・辺を反映し、ID を再採番する
+    pub fn apply_deletions(&mut self) {
+        if !self.vertices.iter().any(|vertex| vertex.is_deleted)
+            && !self.edges.iter().any(|edge| edge.is_deleted)
+        {
+            return;
+        }
+
+        self.vertices.retain(|vertex| !vertex.is_deleted);
+        self.edges.retain(|edge| !edge.is_deleted);
+        self.reindex_vertices();
+    }
+
+    /// 頂点 ID を再採番し、辺の参照を補正する
+    pub fn reindex_vertices(&mut self) {
         let mut new_vertex_id = HashMap::new();
 
         for (i, vertex) in self.vertices.iter_mut().enumerate() {
@@ -96,7 +167,6 @@ impl Graph {
             vertex.id = i;
         }
 
-        // 辺の頂点番号を振り直す
         for edge in &mut self.edges {
             if let Some((new_from, new_to)) = new_vertex_id
                 .get(&edge.from)
@@ -105,12 +175,10 @@ impl Graph {
                 edge.from = *new_from;
                 edge.to = *new_to;
             } else {
-                // 辺を削除
                 edge.is_deleted = true;
             }
         }
 
-        // 削除済みフラグが立っている辺を削除
         self.edges.retain(|edge| !edge.is_deleted);
     }
 
@@ -206,12 +274,34 @@ impl Graph {
             .collect()
     }
 
-    pub fn encode(&mut self, zero_indexed: bool) -> String {
-        // 削除済み頂点を削除
-        self.restore_graph();
+    pub fn encode(&self, zero_indexed: bool) -> String {
+        let active_vertices: Vec<_> = self.vertices.iter().filter(|v| !v.is_deleted).collect();
+        let mut id_map = HashMap::new();
 
-        let unique_edges = self.list_unique_edges();
-        let mut res = format!("{} {}", self.vertices.len(), unique_edges.len());
+        for (i, vertex) in active_vertices.iter().enumerate() {
+            id_map.insert(vertex.id, i);
+        }
+
+        let mut seen = HashSet::new();
+        let mut unique_edges = Vec::new();
+
+        for edge in self.edges.iter().filter(|e| !e.is_deleted) {
+            let Some(&from) = id_map.get(&edge.from) else {
+                continue;
+            };
+            let Some(&to) = id_map.get(&edge.to) else {
+                continue;
+            };
+
+            if !self.is_directed && seen.contains(&(to, from)) {
+                continue;
+            }
+
+            seen.insert((from, to));
+            unique_edges.push((from, to));
+        }
+
+        let mut res = format!("{} {}", active_vertices.len(), unique_edges.len());
 
         for (from, to) in unique_edges {
             res.push_str(&format!(

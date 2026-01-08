@@ -229,6 +229,8 @@ impl eframe::App for GraphEditorApp {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.graph.apply_deletions();
+
         // トップパネル（タブバー）を描画
         draw_top_panel(self, ctx);
 
