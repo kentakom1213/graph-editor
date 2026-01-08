@@ -8,7 +8,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
         .min_width(200.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.cursor_hover
+            app.ui.cursor_hover
                 .set_menu_window(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::new()
@@ -21,31 +21,31 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         );
 
                         ui.radio_value(
-                            &mut app.edit_mode,
+                            &mut app.state.edit_mode,
                             EditMode::default_normal(),
                             egui::RichText::new("Normal [Esc]")
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.edit_mode,
+                            &mut app.state.edit_mode,
                             EditMode::default_add_vertex(),
                             egui::RichText::new("Add Vertex [V]")
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.edit_mode,
+                            &mut app.state.edit_mode,
                             EditMode::default_add_edge(),
                             egui::RichText::new("Add Edge [E]")
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.edit_mode,
+                            &mut app.state.edit_mode,
                             EditMode::default_colorize(),
                             egui::RichText::new("Colorize [C]")
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.edit_mode,
+                            &mut app.state.edit_mode,
                             EditMode::default_delete(),
                             egui::RichText::new("Delete [D]")
                                 .size(app.config.menu_font_size_normal),
@@ -60,12 +60,12 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         );
 
                         ui.radio_value(
-                            &mut app.zero_indexed,
+                            &mut app.state.zero_indexed,
                             true,
                             egui::RichText::new("0-indexed").size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.zero_indexed,
+                            &mut app.state.zero_indexed,
                             false,
                             egui::RichText::new("1-indexed").size(app.config.menu_font_size_normal),
                         );
@@ -77,13 +77,13 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                                 .size(app.config.menu_font_size_mini),
                         );
                         ui.radio_value(
-                            &mut app.graph.is_directed,
+                            &mut app.state.graph.is_directed,
                             false,
                             egui::RichText::new("Undirected")
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.graph.is_directed,
+                            &mut app.state.graph.is_directed,
                             true,
                             egui::RichText::new("Directed").size(app.config.menu_font_size_normal),
                         );
@@ -91,7 +91,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         ui.separator();
 
                         ui.checkbox(
-                            &mut app.show_number,
+                            &mut app.state.show_number,
                             egui::RichText::new("Show Numbers")
                                 .size(app.config.menu_font_size_normal),
                         );
@@ -99,7 +99,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         ui.separator();
 
                         ui.checkbox(
-                            &mut app.is_animated,
+                            &mut app.state.is_animated,
                             egui::RichText::new("Animate [A]")
                                 .size(app.config.menu_font_size_normal),
                         );
@@ -116,11 +116,11 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                                 .size(app.config.menu_font_size_normal),
                         );
                         let complement_response =
-                            ui.add_enabled(!app.graph.is_directed, complement_button);
+                            ui.add_enabled(!app.state.graph.is_directed, complement_button);
 
                         if complement_response.clicked() {
-                            let complement = app.graph.calc_complement();
-                            let new_graph_result = app.graph.rebuild_from_basegraph(
+                            let complement = app.state.graph.calc_complement();
+                            let new_graph_result = app.state.graph.rebuild_from_basegraph(
                                 app.config.visualizer.as_ref(),
                                 app.config.density_threshold,
                                 complement,
@@ -128,10 +128,12 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             );
                             match new_graph_result {
                                 Ok(_) => {
-                                    app.is_animated = true;
+                                    app.state.graph_view.reset_for_graph(&app.state.graph);
+                                    app.state.next_z_index = app.state.graph.vertices.len() as u32;
+                                    app.state.is_animated = true;
                                 }
                                 Err(err) => {
-                                    app.error_message = Some(err.to_string());
+                                    app.ui.error_message = Some(err.to_string());
                                 }
                             }
                         }
@@ -141,11 +143,12 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             egui::RichText::new("Revert Edge")
                                 .size(app.config.menu_font_size_normal),
                         );
-                        let revert_response = ui.add_enabled(app.graph.is_directed, revert_button);
+                        let revert_response =
+                            ui.add_enabled(app.state.graph.is_directed, revert_button);
 
                         if revert_response.clicked() {
-                            let reverted = app.graph.calc_reverted();
-                            let new_graph_result = app.graph.rebuild_from_basegraph(
+                            let reverted = app.state.graph.calc_reverted();
+                            let new_graph_result = app.state.graph.rebuild_from_basegraph(
                                 app.config.visualizer.as_ref(),
                                 app.config.density_threshold,
                                 reverted,
@@ -153,10 +156,12 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             );
                             match new_graph_result {
                                 Ok(_) => {
-                                    app.is_animated = true;
+                                    app.state.graph_view.reset_for_graph(&app.state.graph);
+                                    app.state.next_z_index = app.state.graph.vertices.len() as u32;
+                                    app.state.is_animated = true;
                                 }
                                 Err(err) => {
-                                    app.error_message = Some(err.to_string());
+                                    app.ui.error_message = Some(err.to_string());
                                 }
                             }
                         }
@@ -167,7 +172,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                                 .size(app.config.menu_font_size_normal),
                         );
                         if ui.add(reset_color_button).clicked() {
-                            app.graph.reset_colors();
+                            app.state.graph_view.reset_colors();
                         }
 
                         ui.separator();
@@ -184,7 +189,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             )
                             .clicked()
                         {
-                            app.confirm_clear_all = true;
+                            app.ui.confirm_clear_all = true;
                         }
 
                         ui.separator();
@@ -201,7 +206,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                         );
 
                         let export_response =
-                            ui.add_enabled(!app.export_in_progress, export_button);
+                            ui.add_enabled(!app.export.in_progress, export_button);
                         if export_response.clicked() {
                             app.request_export_image(ctx);
                         }
@@ -212,18 +217,18 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             );
                             egui::ComboBox::from_id_salt("export_format")
                                 .width(10.0)
-                                .selected_text(match app.export_format {
+                                .selected_text(match app.export.format {
                                     crate::export::ExportFormat::Png => "PNG",
                                     crate::export::ExportFormat::Svg => "SVG",
                                 })
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
-                                        &mut app.export_format,
+                                        &mut app.export.format,
                                         crate::export::ExportFormat::Png,
                                         "PNG",
                                     );
                                     ui.selectable_value(
-                                        &mut app.export_format,
+                                        &mut app.export.format,
                                         crate::export::ExportFormat::Svg,
                                         "SVG",
                                     );

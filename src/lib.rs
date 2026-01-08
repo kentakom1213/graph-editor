@@ -8,5 +8,6 @@ mod graph;
 mod math;
 mod mode;
 mod update;
+mod view_state;
 
 pub use app::GraphEditorApp;

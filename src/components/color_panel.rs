@@ -49,72 +49,72 @@ pub fn draw_color_settings(app: &mut GraphEditorApp, ctx: &Context) {
         .default_width(150.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.cursor_hover
+            app.ui.cursor_hover
                 .set_color_window(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::new()
                 .inner_margin(egui::Margin::same(10))
                 .show(ui, |ui| {
                     ui.vertical(|ui| {
-                        let prev_color = app.selected_color;
+                        let prev_color = app.state.selected_color;
 
                         // 色の選択
                         ui.radio_value(
-                            &mut app.selected_color,
+                            &mut app.state.selected_color,
                             Colors::Default,
                             egui::RichText::new("Default").size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.selected_color,
+                            &mut app.state.selected_color,
                             Colors::Red,
                             egui::RichText::new("Red")
                                 .color(Colors::Red.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.selected_color,
+                            &mut app.state.selected_color,
                             Colors::Green,
                             egui::RichText::new("Green")
                                 .color(Colors::Green.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.selected_color,
+                            &mut app.state.selected_color,
                             Colors::Blue,
                             egui::RichText::new("Blue")
                                 .color(Colors::Blue.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.selected_color,
+                            &mut app.state.selected_color,
                             Colors::Yellow,
                             egui::RichText::new("Yellow")
                                 .color(Colors::Yellow.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.selected_color,
+                            &mut app.state.selected_color,
                             Colors::Orange,
                             egui::RichText::new("Orange")
                                 .color(Colors::Orange.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.selected_color,
+                            &mut app.state.selected_color,
                             Colors::Violet,
                             egui::RichText::new("Violet")
                                 .color(Colors::Violet.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.selected_color,
+                            &mut app.state.selected_color,
                             Colors::Pink,
                             egui::RichText::new("Pink")
                                 .color(Colors::Pink.vertex())
                                 .size(app.config.menu_font_size_normal),
                         );
                         ui.radio_value(
-                            &mut app.selected_color,
+                            &mut app.state.selected_color,
                             Colors::Brown,
                             egui::RichText::new("Brown")
                                 .color(Colors::Brown.vertex())
@@ -122,8 +122,8 @@ pub fn draw_color_settings(app: &mut GraphEditorApp, ctx: &Context) {
                         );
 
                         // 色が変わっていたらモードを切り替え
-                        if app.selected_color != prev_color {
-                            app.edit_mode = EditMode::default_colorize();
+                        if app.state.selected_color != prev_color {
+                            app.state.edit_mode = EditMode::default_colorize();
                         }
                     });
                 });

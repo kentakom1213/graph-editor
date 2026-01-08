@@ -9,19 +9,19 @@ pub fn drag_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
     // マウス入力の処理
     if response.dragged_by(egui::PointerButton::Primary) {
         if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-            if let Some(last_pos) = app.last_mouse_pos {
-                let cur_affine = app.graph.affine.borrow().to_owned();
+            if let Some(last_pos) = app.state.last_mouse_pos {
+                let cur_affine = app.state.graph.affine.borrow().to_owned();
                 if let Some(inv) = cur_affine.inverse() {
                     let cur_local = mouse_pos.applied(&inv);
                     let last_local = last_pos.applied(&inv);
                     let delta = cur_local - last_local;
-                    *app.graph.affine.borrow_mut() *= Affine2D::from_transition(delta);
+                    *app.state.graph.affine.borrow_mut() *= Affine2D::from_transition(delta);
                 }
             }
-            app.last_mouse_pos = Some(mouse_pos);
+            app.state.last_mouse_pos = Some(mouse_pos);
         }
     } else {
-        app.last_mouse_pos = None;
+        app.state.last_mouse_pos = None;
     }
 }
 
@@ -34,7 +34,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
         let scroll_delta = input.smooth_scroll_delta.y;
 
         // 現在のscaleの逆数倍で変化させる
-        let cur_affine = app.graph.affine.borrow().to_owned();
+        let cur_affine = app.state.graph.affine.borrow().to_owned();
         let cur_scale = cur_affine.scale_x();
 
         if let Some(inv) = cur_affine.inverse() {
@@ -47,7 +47,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
             if let Some(res) =
                 cur_affine.try_compose(&affine, app.config.scale_min, app.config.scale_max)
             {
-                *app.graph.affine.borrow_mut() = res;
+                *app.state.graph.affine.borrow_mut() = res;
             }
         }
     }
@@ -62,7 +62,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
     };
 
     if rotate_dir != 0.0 {
-        let cur_affine = app.graph.affine.borrow().to_owned();
+        let cur_affine = app.state.graph.affine.borrow().to_owned();
         if let Some(inv) = cur_affine.inverse() {
             let center = input
                 .pointer
@@ -72,7 +72,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
             let rad = app.config.rotate_delta * rotate_dir;
             let affine = Affine2D::from_center_and_rotation(center, rad);
             if let Some(res) = cur_affine.try_compose(&affine, f32::MIN, f32::MAX) {
-                *app.graph.affine.borrow_mut() = res;
+                *app.state.graph.affine.borrow_mut() = res;
             }
         }
     }
@@ -81,7 +81,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
     if let Some(multitouch) = input.multi_touch() {
         let scale = multitouch.zoom_delta;
 
-        let cur_affine = app.graph.affine.borrow().to_owned();
+        let cur_affine = app.state.graph.affine.borrow().to_owned();
 
         if let Some(inv) = cur_affine.inverse() {
             // 中心の調整
@@ -93,7 +93,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
             if let Some(res) =
                 cur_affine.try_compose(&affine, app.config.scale_min, app.config.scale_max)
             {
-                *app.graph.affine.borrow_mut() = res;
+                *app.state.graph.affine.borrow_mut() = res;
             }
         }
     }

@@ -161,15 +161,11 @@ pub fn export_svg_bytes(app: &GraphEditorApp) -> anyhow::Result<Vec<u8>> {
         ));
     }
 
-    let mut vertices: Vec<_> = app
-        .graph
-        .vertices
-        .iter()
-        .filter(|v| !v.is_deleted)
-        .collect();
-    let mut edges: Vec<_> = app.graph.edges.iter().filter(|e| !e.is_deleted).collect();
+    let snapshot = app.state.graph_view.snapshot(&app.state.graph);
+    let mut vertices = snapshot.vertices.clone();
+    let mut edges = snapshot.edges.clone();
 
-    let vertex_map: HashMap<usize, _> = vertices.iter().map(|v| (v.id, *v)).collect();
+    let vertex_map: HashMap<usize, _> = vertices.iter().map(|v| (v.id, v.clone())).collect();
 
     let mut edge_count: HashMap<(usize, usize), usize> = HashMap::new();
     for edge in edges.iter() {
@@ -185,8 +181,8 @@ pub fn export_svg_bytes(app: &GraphEditorApp) -> anyhow::Result<Vec<u8>> {
             continue;
         };
 
-        let from_pos = from_vertex.get_position();
-        let to_pos = to_vertex.get_position();
+        let from_pos = from_vertex.position;
+        let to_pos = to_vertex.position;
         let edge_color = edge.color.edge();
         let (stroke_hex, stroke_alpha) = color_to_svg(edge_color);
         let stroke_style = if let Some(alpha) = stroke_alpha {
@@ -200,7 +196,7 @@ pub fn export_svg_bytes(app: &GraphEditorApp) -> anyhow::Result<Vec<u8>> {
         let to_x = to_pos.x - bounds.min.x;
         let to_y = to_pos.y - bounds.min.y;
 
-        if app.graph.is_directed {
+        if snapshot.is_directed {
             if edge_count.get(&(edge.from, edge.to)) == Some(&1) {
                 let dir = (to_pos - from_pos).normalized();
                 let arrowhead = to_pos - dir * app.config.vertex_radius;
@@ -333,7 +329,7 @@ pub fn export_svg_bytes(app: &GraphEditorApp) -> anyhow::Result<Vec<u8>> {
 
     vertices.sort_by_key(|v| v.z_index);
     for vertex in vertices {
-        let pos = vertex.get_position();
+        let pos = vertex.position;
         let x = pos.x - bounds.min.x;
         let y = pos.y - bounds.min.y;
         let fill_color = vertex.color.vertex();
@@ -366,8 +362,8 @@ pub fn export_svg_bytes(app: &GraphEditorApp) -> anyhow::Result<Vec<u8>> {
         }
 
         // show_number が false である場合は書き出さない
-        if app.show_number {
-            let vertex_show_id = if app.zero_indexed {
+        if app.state.show_number {
+            let vertex_show_id = if app.state.zero_indexed {
                 vertex.id
             } else {
                 vertex.id + 1
@@ -395,7 +391,7 @@ pub fn export_svg_bytes(app: &GraphEditorApp) -> anyhow::Result<Vec<u8>> {
 }
 
 pub fn graph_bounds_rect(app: &GraphEditorApp) -> Option<egui::Rect> {
-    let mut iter = app.graph.vertices.iter().filter(|v| !v.is_deleted);
+    let mut iter = app.state.graph.vertices.iter().filter(|v| !v.is_deleted);
     let first = iter.next()?;
     let mut min = first.get_position();
     let mut max = first.get_position();

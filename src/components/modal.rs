@@ -29,7 +29,7 @@ fn draw_modal_window(
 
 /// エラー表示を行うモーダル画面
 pub fn draw_error_modal(app: &mut GraphEditorApp, ctx: &Context) {
-    let Some(message) = app.error_message.to_owned() else {
+    let Some(message) = app.ui.error_message.to_owned() else {
         return;
     };
 
@@ -37,9 +37,9 @@ pub fn draw_error_modal(app: &mut GraphEditorApp, ctx: &Context) {
 
     if ctx.input(|i| {
         i.key_pressed(egui::Key::Escape)
-            || i.pointer.any_released() && !app.cursor_hover.get_input_window()
+            || i.pointer.any_released() && !app.ui.cursor_hover.get_input_window()
     }) {
-        app.error_message = None;
+        app.ui.error_message = None;
         return;
     }
 
@@ -55,14 +55,14 @@ pub fn draw_error_modal(app: &mut GraphEditorApp, ctx: &Context) {
 
 /// グラフの全削除を確認するモーダル画面
 pub fn draw_clear_all_modal(app: &mut GraphEditorApp, ctx: &Context) {
-    if !app.confirm_clear_all {
+    if !app.ui.confirm_clear_all {
         return;
     }
 
     draw_modal_background(ctx);
 
     if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
-        app.confirm_clear_all = false;
+        app.ui.confirm_clear_all = false;
         return;
     }
 
@@ -86,13 +86,14 @@ pub fn draw_clear_all_modal(app: &mut GraphEditorApp, ctx: &Context) {
             );
 
             if ui.add(clear_button).clicked() {
-                app.graph.clear();
-                app.next_z_index = 0;
-                app.confirm_clear_all = false;
+                app.state.graph.clear();
+                app.state.graph_view.reset_for_graph(&app.state.graph);
+                app.state.next_z_index = 0;
+                app.ui.confirm_clear_all = false;
             }
 
             if ui.add(cancel_button).clicked() {
-                app.confirm_clear_all = false;
+                app.ui.confirm_clear_all = false;
             }
         });
     });

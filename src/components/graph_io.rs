@@ -4,8 +4,8 @@ use crate::{graph::BaseGraph, GraphEditorApp};
 
 /// グラフのエンコードを表示する
 pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
-    if !app.cursor_hover.get_input_window() {
-        app.input_text = app.graph.encode(app.zero_indexed)
+    if !app.ui.cursor_hover.get_input_window() {
+        app.ui.input_text = app.state.graph.encode(app.state.zero_indexed)
     }
 
     // テキストの表示
@@ -14,7 +14,7 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
         .default_width(150.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.cursor_hover
+            app.ui.cursor_hover
                 .set_input_window(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::default()
@@ -27,7 +27,7 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
                             )
                             .clicked()
                         {
-                            ctx.copy_text(app.input_text.clone());
+                            ctx.copy_text(app.ui.input_text.clone());
                         }
 
                         if ui
@@ -36,9 +36,10 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
                             )
                             .clicked()
                         {
-                            let new_graph = BaseGraph::parse(&app.input_text, app.zero_indexed)
+                            let new_graph =
+                                BaseGraph::parse(&app.ui.input_text, app.state.zero_indexed)
                                 .and_then(|base| {
-                                    app.graph.rebuild_from_basegraph(
+                                    app.state.graph.rebuild_from_basegraph(
                                         app.config.visualizer.as_ref(),
                                         app.config.density_threshold,
                                         base,
@@ -48,10 +49,12 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
 
                             match new_graph {
                                 Ok(_) => {
-                                    app.is_animated = true;
+                                    app.state.graph_view.reset_for_graph(&app.state.graph);
+                                    app.state.next_z_index = app.state.graph.vertices.len() as u32;
+                                    app.state.is_animated = true;
                                 }
                                 Err(err) => {
-                                    app.error_message = Some(err.to_string());
+                                    app.ui.error_message = Some(err.to_string());
                                 }
                             }
                         }
@@ -59,8 +62,8 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
                     ui.separator();
 
                     // コード形式で表示
-                    if ui.code_editor(&mut app.input_text).has_focus() {
-                        app.cursor_hover.set_input_window(true);
+                    if ui.code_editor(&mut app.ui.input_text).has_focus() {
+                        app.ui.cursor_hover.set_input_window(true);
                     }
                 });
         });

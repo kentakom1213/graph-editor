@@ -4,9 +4,10 @@ use itertools::Itertools;
 
 use super::transition_and_scale::{drag_central_panel, scale_central_panel};
 use crate::{
+    app::AppState,
     components::Colors,
     config::AppConfig,
-    graph::{Graph, GraphSnapshot},
+    graph::Graph,
     math::{
         affine::{Affine2D, ApplyAffine},
         bezier::{
@@ -16,6 +17,7 @@ use crate::{
         newton::newton_method,
     },
     mode::EditMode,
+    view_state::GraphSnapshot,
     GraphEditorApp,
 };
 
@@ -41,12 +43,12 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
             update_vertex_interactions(app, ui);
 
             // シミュレーションがonの場合，位置を更新
-            if app.is_animated {
-                app.config.simulator.simulate_step(&mut app.graph);
+            if app.state.is_animated {
+                app.config.simulator.simulate_step(&mut app.state.graph);
             }
 
             // 描画用スナップショットを作成
-            let snapshot = app.graph.snapshot();
+            let snapshot = app.state.graph_view.snapshot(&app.state.graph);
 
             // ペインターを取得
             let painter = ui.painter();
@@ -62,7 +64,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
 /// モード切替の処理
 fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     // 入力中はモード切替を行わない
-    if app.cursor_hover.get_input_window() {
+    if app.ui.cursor_hover.get_input_window() {
         return;
     }
 
@@ -71,15 +73,10 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
         if let EditMode::AddEdge {
             from_vertex: ref mut from_vertex @ Some(from_vertex_id),
             ..
-        } = app.edit_mode
+        } = app.state.edit_mode
         {
-            if let Some(from_vertex) = app
-                .graph
-                .vertices_mut()
-                .iter_mut()
-                .find(|v| v.id == from_vertex_id)
-            {
-                from_vertex.is_selected = false;
+            if let Some(view) = app.state.graph_view.vertices.get_mut(from_vertex_id) {
+                view.is_selected = false;
             }
             *from_vertex = None;
         } else {
@@ -98,35 +95,37 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     if ui.input(|i| i.key_pressed(egui::Key::D)) {
         // Shift + D で無向グラフ/有向グラフを切り替え
         if ui.input(|i| i.modifiers.shift) {
-            app.graph.is_directed ^= true;
+            app.state.graph.is_directed ^= true;
         } else {
             app.switch_delete_mode();
         }
     }
     if ui.input(|i| i.key_pressed(egui::Key::Num1)) {
-        app.zero_indexed ^= true;
+        app.state.zero_indexed ^= true;
     }
     if ui.input(|i| i.key_pressed(egui::Key::A)) {
         // A でグラフのシミュレーションを切り替え
-        app.is_animated ^= true;
+        app.state.is_animated ^= true;
     }
 }
 
 /// クリックした位置に頂点を追加する
 fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
     // クリックした位置に頂点を追加する
-    if app.edit_mode.is_add_vertex()
+    if app.state.edit_mode.is_add_vertex()
         && ui.input(|i| i.pointer.any_click())
-        && !app.cursor_hover.any()
+        && !app.ui.cursor_hover.any()
     {
         if let Some(mouse_pos) = ui.input(|i| i.pointer.hover_pos()) {
-            let affine = app.graph.affine.borrow().to_owned();
+            let affine = app.state.graph.affine.borrow().to_owned();
             if let Some(inv) = affine.inverse() {
                 let scaled_pos = mouse_pos.applied(&inv);
                 let pos = scaled_pos + affine.translation();
 
-                app.graph.add_vertex(pos, app.next_z_index);
-                app.next_z_index += 1;
+                let z_index = app.state.next_z_index;
+                app.state.graph.add_vertex(pos);
+                app.state.graph_view.add_vertex(z_index);
+                app.state.next_z_index += 1;
             }
         }
     }
@@ -134,14 +133,15 @@ fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
 
 /// 辺の操作を更新する
 fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
-    if !app.edit_mode.is_delete() && !app.edit_mode.is_colorize() {
+    if !app.state.edit_mode.is_delete() && !app.state.edit_mode.is_colorize() {
         return;
     }
 
-    let is_directed = app.graph.is_directed;
+    let is_directed = app.state.graph.is_directed;
     let mouse_pos = ui.input(|i| i.pointer.hover_pos()).unwrap_or_default();
 
     let vertex_positions: HashMap<usize, egui::Pos2> = app
+        .state
         .graph
         .vertices
         .iter()
@@ -150,6 +150,7 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
         .collect();
 
     let edge_count = app
+        .state
         .graph
         .edges()
         .iter()
@@ -162,7 +163,10 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
             map
         });
 
-    for edge in app.graph.edges_mut().iter_mut() {
+    for (index, edge) in app.state.graph.edges_mut().iter_mut().enumerate() {
+        let Some(view) = app.state.graph_view.edges.get_mut(index) else {
+            continue;
+        };
         if edge.is_deleted {
             continue;
         }
@@ -171,7 +175,7 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
             vertex_positions.get(&edge.from),
             vertex_positions.get(&edge.to),
         ) else {
-            edge.is_pressed = false;
+            view.is_pressed = false;
             continue;
         };
 
@@ -190,17 +194,17 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
         let is_on_edge = distance < threshold;
 
         if is_on_edge && !is_on_vertex {
-            edge.is_pressed = true;
+            view.is_pressed = true;
 
             if ui.input(|i| i.pointer.any_click()) {
-                if app.edit_mode.is_colorize() {
-                    edge.color = app.selected_color;
-                } else if app.edit_mode.is_delete() {
+                if app.state.edit_mode.is_colorize() {
+                    view.color = app.state.selected_color;
+                } else if app.state.edit_mode.is_delete() {
                     edge.is_deleted = true;
                 }
             }
         } else {
-            edge.is_pressed = false;
+            view.is_pressed = false;
         }
     }
 }
@@ -357,15 +361,33 @@ fn draw_edge_directed_curved(
 
 /// 頂点の操作を更新する
 fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
-    let is_directed = app.graph.is_directed;
-    {
-        let (vertices_mut, edges_mut) = app.graph.vertices_edges_mut();
+    let AppState {
+        graph,
+        graph_view,
+        edit_mode,
+        selected_color,
+        next_z_index,
+        ..
+    } = &mut app.state;
+    let is_directed = graph.is_directed;
 
-        for vertex in vertices_mut
-            .iter_mut()
-            .filter(|v| !v.is_deleted)
-            .sorted_by_key(|v| v.z_index)
-        {
+    {
+        let mut indices: Vec<usize> = graph
+            .vertices
+            .iter()
+            .enumerate()
+            .filter(|(_, v)| !v.is_deleted)
+            .map(|(idx, _)| idx)
+            .collect();
+        indices.sort_by_key(|idx| graph_view.vertices.get(*idx).map(|v| v.z_index).unwrap_or(0));
+
+        let (vertices_mut, edges_mut) = graph.vertices_edges_mut();
+
+        for idx in indices {
+            let vertex = &mut vertices_mut[idx];
+            let Some(view) = graph_view.vertices.get_mut(idx) else {
+                continue;
+            };
             let rect = egui::Rect::from_center_size(
                 vertex.get_position(),
                 egui::vec2(
@@ -380,56 +402,59 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
             );
 
             if response.drag_started() {
-                vertex.is_pressed = true;
-                vertex.z_index = app.next_z_index;
-                app.next_z_index += 1;
+                view.is_pressed = true;
+                view.z_index = *next_z_index;
+                *next_z_index += 1;
                 if let Some(mouse_pos) = response.hover_pos() {
                     let delta = Affine2D::from_transition(mouse_pos - vertex.get_position());
-                    vertex.drag = delta;
+                    view.drag = delta;
                 }
             } else if response.dragged() {
                 if let Some(mouse_pos) = response.hover_pos() {
-                    vertex.update_position(mouse_pos.applied(&vertex.drag));
+                    vertex.update_position(mouse_pos.applied(&view.drag));
                 }
             } else {
-                vertex.is_pressed = false;
+                view.is_pressed = false;
             }
 
-            if app.edit_mode.is_add_edge() || app.edit_mode.is_delete() {
-                vertex.is_pressed = response.hovered();
+            if edit_mode.is_add_edge() || edit_mode.is_delete() {
+                view.is_pressed = response.hovered();
             }
 
             if response.clicked() && !response.dragged() {
-                vertex.z_index = app.next_z_index;
-                app.next_z_index += 1;
+                view.z_index = *next_z_index;
+                *next_z_index += 1;
 
-                match app.edit_mode {
+                match edit_mode {
                     EditMode::AddEdge {
                         ref mut from_vertex,
                         ref mut confirmed,
                     } => {
                         if let Some(from_vertex_inner) = from_vertex {
                             if *from_vertex_inner == vertex.id {
-                                vertex.is_selected = false;
+                                view.is_selected = false;
                                 *from_vertex = None;
                             } else {
-                                Graph::add_unique_edge(
+                                let added = Graph::add_unique_edge(
                                     is_directed,
                                     edges_mut,
                                     *from_vertex_inner,
                                     vertex.id,
                                 );
+                                if added {
+                                    graph_view.add_edge();
+                                }
                                 *confirmed = true;
                             }
                         } else {
-                            vertex.is_selected = true;
-                            vertex.z_index = app.next_z_index;
-                            app.next_z_index += 1;
+                            view.is_selected = true;
+                            view.z_index = *next_z_index;
+                            *next_z_index += 1;
                             *from_vertex = Some(vertex.id);
                         }
                     }
                     EditMode::Colorize => {
-                        vertex.color = app.selected_color;
+                        view.color = *selected_color;
                     }
                     EditMode::Delete => {
                         vertex.is_deleted = true;
@@ -443,14 +468,9 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
     if let EditMode::AddEdge {
         from_vertex: ref mut from_vertex @ Some(from_vertex_inner),
         confirmed: ref mut confirmed @ true,
-    } = app.edit_mode
+    } = app.state.edit_mode
     {
-        if let Some(vertex) = app
-            .graph
-            .vertices_mut()
-            .iter_mut()
-            .find(|v| v.id == from_vertex_inner)
-        {
+        if let Some(vertex) = app.state.graph_view.vertices.get_mut(from_vertex_inner) {
             vertex.is_selected = false;
         }
         *from_vertex = None;
@@ -509,7 +529,7 @@ fn render_vertices(
     if let EditMode::AddEdge {
         from_vertex: Some(from_vertex_inner),
         confirmed: false,
-    } = app.edit_mode
+    } = app.state.edit_mode
     {
         let from_pos = snapshot
             .vertices
@@ -540,8 +560,8 @@ fn render_vertices(
             app.config.vertex_radius,
             egui::Stroke::new(app.config.vertex_stroke, app.config.vertex_color_outline),
         );
-        if app.show_number {
-            let vertex_show_id = if app.zero_indexed {
+        if app.state.show_number {
+            let vertex_show_id = if app.state.zero_indexed {
                 vertex.id
             } else {
                 vertex.id + 1

@@ -61,20 +61,20 @@ impl CursorHoverState {
 pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
     TopBottomPanel::top("top_panel").show(ctx, |ui| {
         // カーソルがあるか判定
-        app.cursor_hover
+        app.ui.cursor_hover
             .set_top_panel(ui.rect_contains_pointer(ui.max_rect()));
 
         egui::menu::bar(ui, |ui| {
             ui.toggle_value(
-                &mut app.panel_tab.edit_menu,
+                &mut app.ui.panel_tab.edit_menu,
                 egui::RichText::new("Menu").size(app.config.menu_font_size_normal),
             );
             ui.toggle_value(
-                &mut app.panel_tab.color_settings,
+                &mut app.ui.panel_tab.color_settings,
                 egui::RichText::new("Color").size(app.config.menu_font_size_normal),
             );
             ui.toggle_value(
-                &mut app.panel_tab.graph_io,
+                &mut app.ui.panel_tab.graph_io,
                 egui::RichText::new("Input").size(app.config.menu_font_size_normal),
             );
         });
