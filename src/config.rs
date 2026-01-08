@@ -33,10 +33,14 @@ pub struct AppConfig {
     pub rotate_delta: f32,
     /// 初期配置を省略する密度のしきい値
     pub density_threshold: f32,
-    /// 可視化アルゴリズム
-    pub visualizer: Box<dyn Visualizer>,
-    /// シミュレーションアルゴリズム
-    pub simulator: Box<dyn Simulator>,
+    /// 可視化アルゴリズム種別
+    pub visualizer_kind: VisualizerKind,
+    /// 可視化アルゴリズム設定
+    pub visualizer_config: VisualizerConfig,
+    /// シミュレーションアルゴリズム種別
+    pub simulator_kind: SimulatorKind,
+    /// シミュレーション設定
+    pub simulator_config: SimulateConfig,
 }
 
 impl Default for AppConfig {
@@ -63,19 +67,71 @@ impl Default for AppConfig {
             scale_delta: 0.002,
             rotate_delta: 0.03,
             density_threshold: 0.2,
-            visualizer: Box::new(visualize_methods::SimulatedAnnealing {
-                max_iter: 1000,
-                initial_temp: 10.0,
-                cooling_rate: 0.995,
+            visualizer_kind: VisualizerKind::SimulatedAnnealing,
+            visualizer_config: VisualizerConfig::default(),
+            simulator_kind: SimulatorKind::ForceDirected,
+            simulator_config: SimulateConfig::default(),
+        }
+    }
+}
+
+impl AppConfig {
+    pub fn visualizer(&self) -> Box<dyn Visualizer> {
+        match self.visualizer_kind {
+            VisualizerKind::Naive => Box::new(visualize_methods::Naive),
+            VisualizerKind::HillClimbing => Box::new(visualize_methods::HillClimbing(
+                self.visualizer_config.hill_climbing_iter,
+            )),
+            VisualizerKind::SimulatedAnnealing => Box::new(visualize_methods::SimulatedAnnealing {
+                max_iter: self.visualizer_config.simulated_annealing_max_iter,
+                initial_temp: self.visualizer_config.simulated_annealing_initial_temp,
+                cooling_rate: self.visualizer_config.simulated_annealing_cooling_rate,
             }),
-            simulator: Box::new(simulation_methods::ForceDirectedModel {
-                config: SimulateConfig::default(),
+        }
+    }
+
+    pub fn simulator(&self) -> Box<dyn Simulator> {
+        match self.simulator_kind {
+            SimulatorKind::ForceDirected => Box::new(simulation_methods::ForceDirectedModel {
+                config: self.simulator_config,
             }),
         }
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VisualizerKind {
+    Naive,
+    HillClimbing,
+    SimulatedAnnealing,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct VisualizerConfig {
+    pub hill_climbing_iter: usize,
+    pub simulated_annealing_max_iter: usize,
+    pub simulated_annealing_initial_temp: f32,
+    pub simulated_annealing_cooling_rate: f32,
+}
+
+impl Default for VisualizerConfig {
+    fn default() -> Self {
+        Self {
+            hill_climbing_iter: 2000,
+            simulated_annealing_max_iter: 1000,
+            simulated_annealing_initial_temp: 10.0,
+            simulated_annealing_cooling_rate: 0.995,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SimulatorKind {
+    ForceDirected,
+}
+
 /// シミュレーションの設定
+#[derive(Debug, Clone, Copy)]
 pub struct SimulateConfig {
     /// クーロン定数
     pub c: f32,

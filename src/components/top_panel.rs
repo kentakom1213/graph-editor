@@ -61,7 +61,8 @@ impl CursorHoverState {
 pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
     TopBottomPanel::top("top_panel").show(ctx, |ui| {
         // カーソルがあるか判定
-        app.ui.cursor_hover
+        app.ui
+            .cursor_hover
             .set_top_panel(ui.rect_contains_pointer(ui.max_rect()));
 
         egui::menu::bar(ui, |ui| {

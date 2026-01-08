@@ -4,7 +4,6 @@ use itertools::Itertools;
 
 use super::transition_and_scale::{drag_central_panel, scale_central_panel};
 use crate::{
-    app::AppState,
     components::Colors,
     config::AppConfig,
     graph::Graph,
@@ -17,6 +16,7 @@ use crate::{
         newton::newton_method,
     },
     mode::EditMode,
+    state::AppState,
     view_state::GraphSnapshot,
     GraphEditorApp,
 };
@@ -44,7 +44,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
 
             // シミュレーションがonの場合，位置を更新
             if app.state.is_animated {
-                app.config.simulator.simulate_step(&mut app.state.graph);
+                app.config.simulator().simulate_step(&mut app.state.graph);
             }
 
             // 描画用スナップショットを作成
@@ -379,7 +379,13 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
             .filter(|(_, v)| !v.is_deleted)
             .map(|(idx, _)| idx)
             .collect();
-        indices.sort_by_key(|idx| graph_view.vertices.get(*idx).map(|v| v.z_index).unwrap_or(0));
+        indices.sort_by_key(|idx| {
+            graph_view
+                .vertices
+                .get(*idx)
+                .map(|v| v.z_index)
+                .unwrap_or(0)
+        });
 
         let (vertices_mut, edges_mut) = graph.vertices_edges_mut();
 

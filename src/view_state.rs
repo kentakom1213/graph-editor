@@ -2,11 +2,7 @@ use std::collections::HashSet;
 
 use num_traits::One;
 
-use crate::{
-    components::Colors,
-    graph::Graph,
-    math::affine::Affine2D,
-};
+use crate::{components::Colors, graph::Graph, math::affine::Affine2D};
 
 #[derive(Debug, Clone)]
 pub struct VertexViewState {
@@ -29,19 +25,10 @@ impl Default for VertexViewState {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct EdgeViewState {
     pub is_pressed: bool,
     pub color: Colors,
-}
-
-impl Default for EdgeViewState {
-    fn default() -> Self {
-        Self {
-            is_pressed: false,
-            color: Colors::default(),
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -62,7 +49,11 @@ impl GraphViewState {
             })
             .collect();
 
-        let edges = graph.edges.iter().map(|_| EdgeViewState::default()).collect();
+        let edges = graph
+            .edges
+            .iter()
+            .map(|_| EdgeViewState::default())
+            .collect();
 
         Self { vertices, edges }
     }

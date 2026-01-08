@@ -8,7 +8,8 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
         .min_width(200.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.ui.cursor_hover
+            app.ui
+                .cursor_hover
                 .set_menu_window(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::new()
@@ -120,8 +121,9 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
 
                         if complement_response.clicked() {
                             let complement = app.state.graph.calc_complement();
+                            let visualizer = app.config.visualizer();
                             let new_graph_result = app.state.graph.rebuild_from_basegraph(
-                                app.config.visualizer.as_ref(),
+                                visualizer.as_ref(),
                                 app.config.density_threshold,
                                 complement,
                                 ctx.used_size(),
@@ -148,8 +150,9 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
 
                         if revert_response.clicked() {
                             let reverted = app.state.graph.calc_reverted();
+                            let visualizer = app.config.visualizer();
                             let new_graph_result = app.state.graph.rebuild_from_basegraph(
-                                app.config.visualizer.as_ref(),
+                                visualizer.as_ref(),
                                 app.config.density_threshold,
                                 reverted,
                                 ctx.used_size(),
@@ -205,8 +208,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                                 .size(app.config.menu_font_size_normal),
                         );
 
-                        let export_response =
-                            ui.add_enabled(!app.export.in_progress, export_button);
+                        let export_response = ui.add_enabled(!app.export.is_busy(), export_button);
                         if export_response.clicked() {
                             app.request_export_image(ctx);
                         }
@@ -215,24 +217,26 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
                             ui.label(
                                 egui::RichText::new("Format").size(app.config.menu_font_size_mini),
                             );
+                            let mut format = app.export.format();
                             egui::ComboBox::from_id_salt("export_format")
                                 .width(10.0)
-                                .selected_text(match app.export.format {
+                                .selected_text(match format {
                                     crate::export::ExportFormat::Png => "PNG",
                                     crate::export::ExportFormat::Svg => "SVG",
                                 })
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(
-                                        &mut app.export.format,
+                                        &mut format,
                                         crate::export::ExportFormat::Png,
                                         "PNG",
                                     );
                                     ui.selectable_value(
-                                        &mut app.export.format,
+                                        &mut format,
                                         crate::export::ExportFormat::Svg,
                                         "SVG",
                                     );
                                 });
+                            app.export.set_format(format);
                         });
                     });
                 });

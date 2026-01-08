@@ -14,7 +14,8 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
         .default_width(150.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.ui.cursor_hover
+            app.ui
+                .cursor_hover
                 .set_input_window(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::default()
@@ -38,14 +39,15 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
                         {
                             let new_graph =
                                 BaseGraph::parse(&app.ui.input_text, app.state.zero_indexed)
-                                .and_then(|base| {
-                                    app.state.graph.rebuild_from_basegraph(
-                                        app.config.visualizer.as_ref(),
-                                        app.config.density_threshold,
-                                        base,
-                                        ctx.used_size(),
-                                    )
-                                });
+                                    .and_then(|base| {
+                                        let visualizer = app.config.visualizer();
+                                        app.state.graph.rebuild_from_basegraph(
+                                            visualizer.as_ref(),
+                                            app.config.density_threshold,
+                                            base,
+                                            ctx.used_size(),
+                                        )
+                                    });
 
                             match new_graph {
                                 Ok(_) => {

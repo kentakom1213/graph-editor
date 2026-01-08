@@ -49,7 +49,8 @@ pub fn draw_color_settings(app: &mut GraphEditorApp, ctx: &Context) {
         .default_width(150.0)
         .show(ctx, |ui| {
             // カーソルがあるか判定
-            app.ui.cursor_hover
+            app.ui
+                .cursor_hover
                 .set_color_window(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::new()

@@ -34,7 +34,6 @@ impl Vertex {
             self.position = new_position.applied(&inv);
         }
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -313,7 +312,6 @@ impl Graph {
 
         Ok(())
     }
-
 }
 
 impl Default for Graph {

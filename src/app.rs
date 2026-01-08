@@ -7,46 +7,17 @@ use crate::components::{
     PanelTabState,
 };
 use crate::config::AppConfig;
-use crate::export::{
-    build_export_request, export_color_image, export_svg_bytes, graph_bounds_rect,
-    save_export_bytes, ExportFormat, ExportRequest,
-};
-use crate::graph::Graph;
+use crate::export::{ExportFormat, ExportService};
 use crate::mode::EditMode;
+use crate::state::{AppState, UiState};
 use crate::update::request_repaint;
 use crate::view_state::GraphViewState;
 
 pub struct GraphEditorApp {
     pub state: AppState,
     pub ui: UiState,
-    pub export: ExportState,
+    pub export: ExportService,
     pub config: AppConfig,
-}
-
-pub struct AppState {
-    pub graph: Graph,
-    pub graph_view: GraphViewState,
-    pub is_animated: bool,
-    pub last_mouse_pos: Option<egui::Pos2>,
-    pub next_z_index: u32,
-    pub edit_mode: EditMode,
-    pub selected_color: Colors,
-    pub zero_indexed: bool,
-    pub show_number: bool,
-}
-
-pub struct UiState {
-    pub cursor_hover: CursorHoverState,
-    pub input_text: String,
-    pub error_message: Option<String>,
-    pub confirm_clear_all: bool,
-    pub panel_tab: PanelTabState,
-}
-
-pub struct ExportState {
-    pub format: ExportFormat,
-    pub in_progress: bool,
-    pub request: Option<ExportRequest>,
 }
 
 const UI_STATE_STORAGE_KEY: &str = "graph-editor:ui-state";
@@ -82,10 +53,11 @@ impl GraphEditorApp {
         app.state.zero_indexed = state.zero_indexed;
         app.state.show_number = state.show_number;
         app.state.graph.is_directed = state.is_directed;
-        app.export.format = match state.export_format.as_str() {
+        let format = match state.export_format.as_str() {
             "svg" => ExportFormat::Svg,
             _ => ExportFormat::Png,
         };
+        app.export.set_format(format);
         app
     }
 
@@ -125,90 +97,35 @@ impl GraphEditorApp {
     }
 
     pub fn request_export_image(&mut self, ctx: &egui::Context) {
-        if self.export.in_progress {
-            return;
-        }
-
-        let Some(export_request) = build_export_request(self.export.format) else {
-            return;
+        let export_ctx = crate::export::ExportContext {
+            graph: &self.state.graph,
+            view: &self.state.graph_view,
+            config: &self.config,
+            show_number: self.state.show_number,
+            zero_indexed: self.state.zero_indexed,
         };
-
-        if export_request.format == ExportFormat::Svg {
-            self.export.in_progress = true;
-            let result =
-                export_svg_bytes(self).and_then(|bytes| save_export_bytes(&export_request, bytes));
-            self.export.in_progress = false;
-            if let Err(err) = result {
-                self.ui.error_message = Some(err.to_string());
-            }
-            return;
+        if let Some(err) = self.export.request_export(ctx, &export_ctx) {
+            self.ui.error_message = Some(err);
         }
-
-        self.export.in_progress = true;
-        self.export.request = Some(export_request);
-        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
-            "graph-export",
-        )));
-        ctx.request_repaint();
     }
 
     pub fn handle_export_events(&mut self, ctx: &egui::Context) {
-        if self.export.request.is_none() {
-            return;
-        }
-
-        let screenshot = ctx.input(|i| {
-            i.raw.events.iter().find_map(|event| {
-                if let egui::Event::Screenshot { image, .. } = event {
-                    Some(image.clone())
-                } else {
-                    None
-                }
-            })
-        });
-
-        let Some(screenshot) = screenshot else {
-            return;
+        let export_ctx = crate::export::ExportContext {
+            graph: &self.state.graph,
+            view: &self.state.graph_view,
+            config: &self.config,
+            show_number: self.state.show_number,
+            zero_indexed: self.state.zero_indexed,
         };
-
-        let export_request = self.export.request.take();
-        self.export.in_progress = false;
-
-        let Some(export_request) = export_request else {
-            return;
-        };
-
-        let pixels_per_point = ctx.pixels_per_point();
-        let Some(mut region) = graph_bounds_rect(self) else {
-            self.ui.error_message = Some("Export failed: no vertices to capture.".to_string());
-            return;
-        };
-        region = region.intersect(ctx.screen_rect());
-
-        if region.width() <= 0.0 || region.height() <= 0.0 {
-            self.ui.error_message = Some("Export failed: invalid capture region.".to_string());
-            return;
-        }
-
-        let mut color_image = screenshot.region(&region, Some(pixels_per_point));
-
-        if color_image.width() == 0 || color_image.height() == 0 {
-            self.ui.error_message = Some("Export failed: empty capture region.".to_string());
-            return;
-        }
-
-        let result = export_color_image(&mut color_image)
-            .and_then(|bytes| save_export_bytes(&export_request, bytes));
-
-        if let Err(err) = result {
-            self.ui.error_message = Some(err.to_string());
+        if let Some(err) = self.export.handle_events(ctx, &export_ctx) {
+            self.ui.error_message = Some(err);
         }
     }
 }
 
 impl Default for GraphEditorApp {
     fn default() -> Self {
-        let graph = Graph::default();
+        let graph = crate::graph::Graph::default();
         Self {
             state: AppState {
                 graph_view: GraphViewState::new_for_graph(&graph),
@@ -228,11 +145,7 @@ impl Default for GraphEditorApp {
                 confirm_clear_all: false,
                 panel_tab: PanelTabState::default(),
             },
-            export: ExportState {
-                format: ExportFormat::Png,
-                in_progress: false,
-                request: None,
-            },
+            export: ExportService::default(),
             config: AppConfig::default(),
         }
     }
@@ -245,7 +158,7 @@ impl eframe::App for GraphEditorApp {
             zero_indexed: self.state.zero_indexed,
             show_number: self.state.show_number,
             is_directed: self.state.graph.is_directed,
-            export_format: self.export.format.extension().to_string(),
+            export_format: self.export.format().extension().to_string(),
         };
         eframe::set_value(storage, UI_STATE_STORAGE_KEY, &state);
     }

@@ -128,10 +128,6 @@ impl One for Affine2D {
 pub trait ApplyAffine: Sized {
     /// アフィン変換を適用した結果を取得する
     fn applied(&self, affine: &Affine2D) -> Self;
-    /// アフィン変換を適用する
-    fn apply(&mut self, affine: &Affine2D) {
-        *self = self.applied(affine);
-    }
 }
 
 impl ApplyAffine for egui::Vec2 {

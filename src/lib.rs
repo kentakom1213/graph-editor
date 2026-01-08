@@ -7,6 +7,7 @@ mod export;
 mod graph;
 mod math;
 mod mode;
+mod state;
 mod update;
 mod view_state;
 
