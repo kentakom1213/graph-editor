@@ -513,26 +513,27 @@ fn draw_vertices(app: &mut GraphEditorApp, ui: &egui::Ui, painter: &egui::Painte
             vertex.color.vertex()
         };
 
-        // 0-indexed / 1-indexed の選択によってIDを変更
-        let vertex_show_id = if app.zero_indexed {
-            vertex.id
-        } else {
-            vertex.id + 1
-        }
-        .to_string();
-
         painter.circle_filled(vertex.get_position(), app.config.vertex_radius, color);
         painter.circle_stroke(
             vertex.get_position(),
             app.config.vertex_radius,
             egui::Stroke::new(app.config.vertex_stroke, app.config.vertex_color_outline),
         );
-        painter.text(
-            vertex.get_position(),
-            egui::Align2::CENTER_CENTER,
-            vertex_show_id,
-            egui::FontId::proportional(app.config.vertex_font_size),
-            app.config.vertex_font_color,
-        );
+        if app.show_number {
+            // 0-indexed / 1-indexed の選択によってIDを変更
+            let vertex_show_id = if app.zero_indexed {
+                vertex.id
+            } else {
+                vertex.id + 1
+            }
+            .to_string();
+            painter.text(
+                vertex.get_position(),
+                egui::Align2::CENTER_CENTER,
+                vertex_show_id,
+                egui::FontId::proportional(app.config.vertex_font_size),
+                app.config.vertex_font_color,
+            );
+        }
     }
 }

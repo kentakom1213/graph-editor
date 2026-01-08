@@ -365,25 +365,28 @@ pub fn export_svg_bytes(app: &GraphEditorApp) -> anyhow::Result<Vec<u8>> {
             ));
         }
 
-        let vertex_show_id = if app.zero_indexed {
-            vertex.id
-        } else {
-            vertex.id + 1
-        };
-        let (text_hex, text_alpha) = color_to_svg(app.config.vertex_font_color);
-        let text_adjust_y = y + 4.5;
-        if let Some(alpha) = text_alpha {
-            svg.push_str(&format!(
-                "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" fill=\"{text_hex}\" fill-opacity=\"{alpha}\">{}</text>\n",
-                app.config.vertex_font_size,
-                vertex_show_id
-            ));
-        } else {
-            svg.push_str(&format!(
-                "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" fill=\"{text_hex}\">{}</text>\n",
-                app.config.vertex_font_size,
-                vertex_show_id
-            ));
+        // show_number が false である場合は書き出さない
+        if app.show_number {
+            let vertex_show_id = if app.zero_indexed {
+                vertex.id
+            } else {
+                vertex.id + 1
+            };
+            let (text_hex, text_alpha) = color_to_svg(app.config.vertex_font_color);
+            let text_adjust_y = y + 4.5;
+            if let Some(alpha) = text_alpha {
+                svg.push_str(&format!(
+                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" fill=\"{text_hex}\" fill-opacity=\"{alpha}\">{}</text>\n",
+                    app.config.vertex_font_size,
+                    vertex_show_id
+                ));
+            } else {
+                svg.push_str(&format!(
+                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" fill=\"{text_hex}\">{}</text>\n",
+                    app.config.vertex_font_size,
+                    vertex_show_id
+                ));
+            }
         }
     }
 

@@ -23,6 +23,7 @@ pub struct GraphEditorApp {
     pub edit_mode: EditMode,
     pub selected_color: Colors,
     pub zero_indexed: bool,
+    pub show_number: bool,
     pub cursor_hover: CursorHoverState,
     pub config: AppConfig,
     pub input_text: String,
@@ -40,6 +41,7 @@ const UI_STATE_STORAGE_KEY: &str = "graph-editor:ui-state";
 struct UiState {
     version: u32,
     zero_indexed: bool,
+    show_number: bool,
     is_directed: bool,
     export_format: String,
 }
@@ -49,14 +51,11 @@ impl Default for UiState {
         Self {
             version: 1,
             zero_indexed: false,
+            show_number: true,
             is_directed: false,
-            export_format: default_export_format(),
+            export_format: ExportFormat::Png.extension().to_string(),
         }
     }
-}
-
-fn default_export_format() -> String {
-    ExportFormat::Png.extension().to_string()
 }
 
 impl GraphEditorApp {
@@ -67,6 +66,7 @@ impl GraphEditorApp {
             .and_then(|storage| eframe::get_value(storage, UI_STATE_STORAGE_KEY))
             .unwrap_or_default();
         app.zero_indexed = state.zero_indexed;
+        app.show_number = state.show_number;
         app.graph.is_directed = state.is_directed;
         app.export_format = match state.export_format.as_str() {
             "svg" => ExportFormat::Svg,
@@ -202,6 +202,7 @@ impl Default for GraphEditorApp {
             edit_mode: EditMode::default_normal(),
             selected_color: Colors::Default,
             zero_indexed: false,
+            show_number: true,
             cursor_hover: CursorHoverState::default(),
             config: AppConfig::default(),
             input_text: String::new(),
@@ -220,6 +221,7 @@ impl eframe::App for GraphEditorApp {
         let state = UiState {
             version: 1,
             zero_indexed: self.zero_indexed,
+            show_number: self.show_number,
             is_directed: self.graph.is_directed,
             export_format: self.export_format.extension().to_string(),
         };
