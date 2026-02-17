@@ -31,12 +31,6 @@ pub mod simulation_methods {
                 dt,
             } = &self.config;
 
-            // ドラッグ差分を解消
-            graph
-                .vertices_mut()
-                .iter_mut()
-                .for_each(|v| v.solve_drag_offset());
-
             let n = graph.vertices.len();
 
             for i in 0..n {

@@ -7,10 +7,7 @@ use std::{
 use egui::Vec2;
 use num_traits::One;
 
-use crate::{
-    components::Colors,
-    math::affine::{Affine2D, ApplyAffine},
-};
+use crate::math::affine::{Affine2D, ApplyAffine};
 
 use super::{visualize_methods, BaseGraph, Visualizer};
 
@@ -19,12 +16,7 @@ pub struct Vertex {
     pub id: usize,
     pub position: egui::Pos2,
     pub velocity: egui::Vec2,
-    pub drag: Affine2D,
-    pub is_pressed: bool,
-    pub is_selected: bool,
-    pub z_index: u32,
     pub is_deleted: bool,
-    pub color: Colors,
     pub affine: Rc<RefCell<Affine2D>>,
 }
 
@@ -42,20 +34,13 @@ impl Vertex {
             self.position = new_position.applied(&inv);
         }
     }
-
-    pub fn solve_drag_offset(&mut self) {
-        self.position.apply(&self.drag);
-        self.drag = Affine2D::one();
-    }
 }
 
 #[derive(Debug, Clone)]
 pub struct Edge {
     pub from: usize,
     pub to: usize,
-    pub is_pressed: bool,
     pub is_deleted: bool,
-    pub color: Colors,
 }
 
 impl Edge {
@@ -63,9 +48,7 @@ impl Edge {
         Self {
             from,
             to,
-            is_pressed: false,
             is_deleted: false,
-            color: Colors::default(),
         }
     }
 }
@@ -83,12 +66,21 @@ pub struct Graph {
 }
 
 impl Graph {
-    /// 削除済みフラグが立っている頂点，辺を削除する
-    pub fn restore_graph(&mut self) {
-        // 削除済みフラグが立っている頂点を削除
-        self.vertices.retain(|vertex| !vertex.is_deleted);
+    /// 削除済みフラグが立っている頂点・辺を反映し、ID を再採番する
+    pub fn apply_deletions(&mut self) {
+        if !self.vertices.iter().any(|vertex| vertex.is_deleted)
+            && !self.edges.iter().any(|edge| edge.is_deleted)
+        {
+            return;
+        }
 
-        // 頂点番号を振り直す
+        self.vertices.retain(|vertex| !vertex.is_deleted);
+        self.edges.retain(|edge| !edge.is_deleted);
+        self.reindex_vertices();
+    }
+
+    /// 頂点 ID を再採番し、辺の参照を補正する
+    pub fn reindex_vertices(&mut self) {
         let mut new_vertex_id = HashMap::new();
 
         for (i, vertex) in self.vertices.iter_mut().enumerate() {
@@ -96,7 +88,6 @@ impl Graph {
             vertex.id = i;
         }
 
-        // 辺の頂点番号を振り直す
         for edge in &mut self.edges {
             if let Some((new_from, new_to)) = new_vertex_id
                 .get(&edge.from)
@@ -105,12 +96,10 @@ impl Graph {
                 edge.from = *new_from;
                 edge.to = *new_to;
             } else {
-                // 辺を削除
                 edge.is_deleted = true;
             }
         }
 
-        // 削除済みフラグが立っている辺を削除
         self.edges.retain(|edge| !edge.is_deleted);
     }
 
@@ -130,19 +119,14 @@ impl Graph {
         (&mut self.vertices, &mut self.edges)
     }
 
-    pub fn add_vertex(&mut self, position: egui::Pos2, z_index: u32) {
+    pub fn add_vertex(&mut self, position: egui::Pos2) {
         let position = position - self.affine.borrow().translation();
 
         self.vertices.push(Vertex {
             id: self.vertices.len(),
             position,
             velocity: Vec2::ZERO,
-            is_pressed: false,
-            drag: Affine2D::one(),
-            is_selected: false,
-            z_index,
             is_deleted: false,
-            color: Colors::default(),
             affine: self.affine.clone(),
         });
     }
@@ -206,12 +190,34 @@ impl Graph {
             .collect()
     }
 
-    pub fn encode(&mut self, zero_indexed: bool) -> String {
-        // 削除済み頂点を削除
-        self.restore_graph();
+    pub fn encode(&self, zero_indexed: bool) -> String {
+        let active_vertices: Vec<_> = self.vertices.iter().filter(|v| !v.is_deleted).collect();
+        let mut id_map = HashMap::new();
 
-        let unique_edges = self.list_unique_edges();
-        let mut res = format!("{} {}", self.vertices.len(), unique_edges.len());
+        for (i, vertex) in active_vertices.iter().enumerate() {
+            id_map.insert(vertex.id, i);
+        }
+
+        let mut seen = HashSet::new();
+        let mut unique_edges = Vec::new();
+
+        for edge in self.edges.iter().filter(|e| !e.is_deleted) {
+            let Some(&from) = id_map.get(&edge.from) else {
+                continue;
+            };
+            let Some(&to) = id_map.get(&edge.to) else {
+                continue;
+            };
+
+            if !self.is_directed && seen.contains(&(to, from)) {
+                continue;
+            }
+
+            seen.insert((from, to));
+            unique_edges.push((from, to));
+        }
+
+        let mut res = format!("{} {}", active_vertices.len(), unique_edges.len());
 
         for (from, to) in unique_edges {
             res.push_str(&format!(
@@ -294,12 +300,7 @@ impl Graph {
             id,
             position: adjust_to_window(pos),
             velocity: egui::Vec2::ZERO,
-            is_pressed: false,
-            drag: Affine2D::one(),
-            is_selected: false,
-            z_index: 0,
             is_deleted: false,
-            color: Colors::default(),
             affine: self.affine.clone(),
         });
 
@@ -310,15 +311,6 @@ impl Graph {
         self.edges.extend(new_edges);
 
         Ok(())
-    }
-
-    pub fn reset_colors(&mut self) {
-        for vertex in &mut self.vertices {
-            vertex.color = Colors::default();
-        }
-        for edge in &mut self.edges {
-            edge.color = Colors::default();
-        }
     }
 }
 
@@ -333,33 +325,21 @@ impl Default for Graph {
                     id: 0,
                     position: egui::pos2(400.0, 400.0),
                     velocity: egui::Vec2::ZERO,
-                    is_pressed: false,
-                    drag: Affine2D::one(),
-                    is_selected: false,
-                    z_index: 0,
                     is_deleted: false,
-                    color: Colors::default(),
                     affine: affine.clone(),
                 },
                 Vertex {
                     id: 1,
                     position: egui::pos2(600.0, 400.0),
                     velocity: egui::Vec2::ZERO,
-                    is_pressed: false,
-                    drag: Affine2D::one(),
-                    is_selected: false,
-                    z_index: 1,
                     is_deleted: false,
-                    color: Colors::default(),
                     affine: affine.clone(),
                 },
             ],
             edges: vec![Edge {
                 from: 0,
                 to: 1,
-                is_pressed: false,
                 is_deleted: false,
-                color: Colors::default(),
             }],
             affine,
         }
