@@ -67,7 +67,7 @@ impl Default for AppConfig {
             scale_delta: 0.002,
             rotate_delta: 0.03,
             density_threshold: 0.2,
-            visualizer_kind: VisualizerKind::SimulatedAnnealing,
+            visualizer_kind: VisualizerKind::Spectral,
             visualizer_config: VisualizerConfig::default(),
             simulator_kind: SimulatorKind::ForceDirected,
             simulator_config: SimulateConfig::default(),
@@ -79,6 +79,7 @@ impl AppConfig {
     pub fn visualizer(&self) -> Box<dyn Visualizer> {
         match self.visualizer_kind {
             VisualizerKind::Naive => Box::new(visualize_methods::Naive),
+            VisualizerKind::Spectral => Box::new(visualize_methods::Spectral),
             VisualizerKind::HillClimbing => Box::new(visualize_methods::HillClimbing(
                 self.visualizer_config.hill_climbing_iter,
             )),
@@ -102,6 +103,7 @@ impl AppConfig {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VisualizerKind {
     Naive,
+    Spectral,
     HillClimbing,
     SimulatedAnnealing,
 }
