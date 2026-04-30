@@ -21,6 +21,7 @@ pub struct UiState {
     pub cursor_hover: CursorHoverState,
     pub input_text: String,
     pub input_has_focus: bool,
+    pub show_settings: bool,
     pub error_message: Option<String>,
     pub confirm_clear_all: bool,
     pub inspector_tab: InspectorTab,

@@ -8,6 +8,7 @@ pub struct CursorHoverState {
     top_panel: bool,
     tool_bar: bool,
     inspector_panel: bool,
+    settings_window: bool,
 }
 
 impl CursorHoverState {
@@ -20,6 +21,9 @@ impl CursorHoverState {
     pub fn set_inspector_panel(&mut self, hovered: bool) {
         self.inspector_panel = hovered;
     }
+    pub fn set_settings_window(&mut self, hovered: bool) {
+        self.settings_window = hovered;
+    }
     pub fn get_top_panel(&self) -> bool {
         self.top_panel
     }
@@ -29,9 +33,12 @@ impl CursorHoverState {
     pub fn get_inspector_panel(&self) -> bool {
         self.inspector_panel
     }
+    pub fn get_settings_window(&self) -> bool {
+        self.settings_window
+    }
     /// いずれかのパネルにカーソルが乗っているか
     pub fn any(&self) -> bool {
-        self.top_panel || self.tool_bar || self.inspector_panel
+        self.top_panel || self.tool_bar || self.inspector_panel || self.settings_window
     }
 }
 
@@ -51,16 +58,76 @@ pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Settings").clicked() {
-                    // TODO: settings panel
-                }
-
-                if ui
-                    .add_enabled(!app.export.is_busy(), egui::Button::new("Export"))
-                    .clicked()
-                {
-                    app.request_export_image(ctx);
+                    app.ui.show_settings = true;
                 }
             });
         });
     });
+
+    draw_settings_window(app, ctx);
+}
+
+fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
+    app.ui.cursor_hover.set_settings_window(false);
+
+    if !app.ui.show_settings {
+        return;
+    }
+
+    let mut open = app.ui.show_settings;
+    egui::Window::new("Settings")
+        .open(&mut open)
+        .default_width(320.0)
+        .resizable(true)
+        .show(ctx, |ui| {
+            app.ui
+                .cursor_hover
+                .set_settings_window(ui.rect_contains_pointer(ui.max_rect()));
+
+            ui.label(egui::RichText::new("Typography").size(app.config.menu_font_size_mini));
+            ui.add(
+                egui::Slider::new(&mut app.config.menu_font_size_normal, 12.0..=32.0)
+                    .text("Menu font"),
+            );
+            ui.add(
+                egui::Slider::new(&mut app.config.menu_font_size_mini, 10.0..=24.0)
+                    .text("Mini font"),
+            );
+            ui.add(
+                egui::Slider::new(&mut app.config.footer_font_size, 10.0..=24.0)
+                    .text("Footer font"),
+            );
+            ui.add(
+                egui::Slider::new(&mut app.config.vertex_font_size, 16.0..=64.0)
+                    .text("Vertex font"),
+            );
+
+            ui.separator();
+            ui.label(egui::RichText::new("Canvas").size(app.config.menu_font_size_mini));
+            ui.add(
+                egui::Slider::new(&mut app.config.vertex_radius, 16.0..=72.0).text("Vertex size"),
+            );
+            ui.add(
+                egui::Slider::new(&mut app.config.vertex_stroke, 1.0..=8.0).text("Vertex stroke"),
+            );
+            ui.add(egui::Slider::new(&mut app.config.edge_stroke, 1.0..=12.0).text("Edge stroke"));
+            ui.add(
+                egui::Slider::new(&mut app.config.edge_bezier_distance, 0.0..=120.0)
+                    .text("Bezier distance"),
+            );
+
+            ui.separator();
+            ui.label(egui::RichText::new("Interaction").size(app.config.menu_font_size_mini));
+            ui.add(egui::Slider::new(&mut app.config.scale_min, 0.05..=1.0).text("Min zoom"));
+            ui.add(egui::Slider::new(&mut app.config.scale_max, 1.0..=6.0).text("Max zoom"));
+            ui.add(
+                egui::Slider::new(&mut app.config.scale_delta, 0.0005..=0.01).text("Zoom speed"),
+            );
+
+            if ui.button("Reset Defaults").clicked() {
+                let defaults = crate::config::AppConfig::default();
+                app.config = defaults;
+            }
+        });
+    app.ui.show_settings = open;
 }

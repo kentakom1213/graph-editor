@@ -162,6 +162,7 @@ impl Default for GraphEditorApp {
                 cursor_hover: CursorHoverState::default(),
                 input_text: String::new(),
                 input_has_focus: false,
+                show_settings: false,
                 error_message: None,
                 confirm_clear_all: false,
                 inspector_tab: InspectorTab::default(),
