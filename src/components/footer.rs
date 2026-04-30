@@ -40,17 +40,17 @@ pub fn draw_footer(app: &mut GraphEditorApp, ctx: &Context) {
                     vertex_count,
                     edge_count
                 ))
-                .size(app.config.footer_font_size),
+                .size(app.config.footer_font_size()),
             );
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.hyperlink_to(
-                    egui::RichText::new("GitHub").size(app.config.footer_font_size),
+                    egui::RichText::new("GitHub").size(app.config.footer_font_size()),
                     "https://github.com/kentakom1213/graph-editor",
                 );
                 ui.label(
                     egui::RichText::new(format!("Graph Editor v{APP_VERSION}"))
-                        .size(app.config.footer_font_size),
+                        .size(app.config.footer_font_size()),
                 );
             });
         });

@@ -20,13 +20,8 @@ pub struct AppConfig {
     pub edge_arrow_width: f32,
     pub edge_bezier_distance: f32,
     pub edge_stroke: f32,
-    pub menu_font_size_normal: f32,
-    pub section_font_size: f32,
-    pub tab_font_size: f32,
-    pub button_font_size: f32,
-    pub body_font_size: f32,
-    pub input_font_size: f32,
-    pub footer_font_size: f32,
+    pub title_font_size: f32,
+    pub ui_font_size: f32,
     /// 最大倍率
     pub scale_max: f32,
     /// 最小倍率
@@ -63,13 +58,8 @@ impl Default for AppConfig {
             edge_arrow_length: 18.0,
             edge_arrow_width: 9.0,
             edge_bezier_distance: 50.0,
-            menu_font_size_normal: 20.0,
-            section_font_size: 15.0,
-            tab_font_size: 18.0,
-            button_font_size: 18.0,
-            body_font_size: 16.0,
-            input_font_size: 16.0,
-            footer_font_size: 13.0,
+            title_font_size: 20.0,
+            ui_font_size: 16.0,
             scale_max: 3.0,
             scale_min: 0.1,
             scale_delta: 0.002,
@@ -84,6 +74,30 @@ impl Default for AppConfig {
 }
 
 impl AppConfig {
+    pub fn section_font_size(&self) -> f32 {
+        self.ui_font_size * 0.94
+    }
+
+    pub fn tab_font_size(&self) -> f32 {
+        self.ui_font_size * 1.125
+    }
+
+    pub fn button_font_size(&self) -> f32 {
+        self.ui_font_size * 1.125
+    }
+
+    pub fn body_font_size(&self) -> f32 {
+        self.ui_font_size
+    }
+
+    pub fn input_font_size(&self) -> f32 {
+        self.ui_font_size
+    }
+
+    pub fn footer_font_size(&self) -> f32 {
+        self.ui_font_size * 0.8125
+    }
+
     pub fn visualizer(&self) -> Box<dyn Visualizer> {
         match self.visualizer_kind {
             VisualizerKind::Naive => Box::new(visualize_methods::Naive),

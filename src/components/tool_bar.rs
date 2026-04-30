@@ -16,41 +16,41 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
                     ui,
                     app.state.edit_mode == EditMode::default_normal(),
                     "Normal [Esc]",
-                    app.config.button_font_size,
+                    app.config.button_font_size(),
                     || app.switch_normal_mode(),
                 );
                 draw_mode_button(
                     ui,
                     app.state.edit_mode == EditMode::default_add_vertex(),
                     "Add Vertex [V]",
-                    app.config.button_font_size,
+                    app.config.button_font_size(),
                     || app.switch_add_vertex_mode(),
                 );
                 draw_mode_button(
                     ui,
                     app.state.edit_mode.is_add_edge(),
                     "Add Edge [E]",
-                    app.config.button_font_size,
+                    app.config.button_font_size(),
                     || app.switch_add_edge_mode(),
                 );
                 draw_mode_button(
                     ui,
                     app.state.edit_mode.is_colorize(),
                     "Colorize [C]",
-                    app.config.button_font_size,
+                    app.config.button_font_size(),
                     || app.switch_colorize_mode(),
                 );
                 draw_mode_button(
                     ui,
                     app.state.edit_mode.is_delete(),
                     "Delete [D]",
-                    app.config.button_font_size,
+                    app.config.button_font_size(),
                     || app.switch_delete_mode(),
                 );
             });
 
             ui.separator();
-            ui.label(egui::RichText::new("Color").size(app.config.section_font_size));
+            ui.label(egui::RichText::new("Color").size(app.config.section_font_size()));
 
             let prev_color = app.state.selected_color;
             for (label, color) in [
@@ -65,11 +65,11 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
                 ("Brown", Colors::Brown),
             ] {
                 let text = if color == Colors::Default {
-                    egui::RichText::new(label).size(app.config.button_font_size)
+                    egui::RichText::new(label).size(app.config.button_font_size())
                 } else {
                     egui::RichText::new(label)
                         .color(color.vertex())
-                        .size(app.config.button_font_size)
+                        .size(app.config.button_font_size())
                 };
                 if ui
                     .selectable_label(app.state.selected_color == color, text)

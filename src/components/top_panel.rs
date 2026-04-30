@@ -53,12 +53,12 @@ pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
             ui.label(
                 egui::RichText::new("Graph Editor")
                     .strong()
-                    .size(app.config.menu_font_size_normal),
+                    .size(app.config.title_font_size),
             );
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui
-                    .button(egui::RichText::new("Settings").size(app.config.button_font_size))
+                    .button(egui::RichText::new("Settings").size(app.config.button_font_size()))
                     .clicked()
                 {
                     app.ui.show_settings = true;
@@ -87,37 +87,18 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
                 .cursor_hover
                 .set_settings_window(ui.rect_contains_pointer(ui.max_rect()));
 
-            ui.label(egui::RichText::new("Typography").size(app.config.section_font_size));
+            ui.label(egui::RichText::new("Typography").size(app.config.section_font_size()));
             ui.add(
-                egui::Slider::new(&mut app.config.menu_font_size_normal, 12.0..=32.0)
-                    .text("Title font"),
+                egui::Slider::new(&mut app.config.title_font_size, 12.0..=32.0).text("Title font"),
             );
-            ui.add(
-                egui::Slider::new(&mut app.config.section_font_size, 10.0..=24.0)
-                    .text("Section heading font"),
-            );
-            ui.add(egui::Slider::new(&mut app.config.tab_font_size, 10.0..=28.0).text("Tab font"));
-            ui.add(
-                egui::Slider::new(&mut app.config.button_font_size, 10.0..=28.0)
-                    .text("Button font"),
-            );
-            ui.add(
-                egui::Slider::new(&mut app.config.body_font_size, 10.0..=28.0).text("Body font"),
-            );
-            ui.add(
-                egui::Slider::new(&mut app.config.input_font_size, 10.0..=28.0).text("Input font"),
-            );
-            ui.add(
-                egui::Slider::new(&mut app.config.footer_font_size, 10.0..=24.0)
-                    .text("Footer font"),
-            );
+            ui.add(egui::Slider::new(&mut app.config.ui_font_size, 10.0..=28.0).text("UI font"));
             ui.add(
                 egui::Slider::new(&mut app.config.vertex_font_size, 16.0..=64.0)
                     .text("Vertex font"),
             );
 
             ui.separator();
-            ui.label(egui::RichText::new("Canvas").size(app.config.section_font_size));
+            ui.label(egui::RichText::new("Canvas").size(app.config.section_font_size()));
             ui.add(
                 egui::Slider::new(&mut app.config.vertex_radius, 16.0..=72.0).text("Vertex size"),
             );
@@ -131,7 +112,7 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
             );
 
             ui.separator();
-            ui.label(egui::RichText::new("Interaction").size(app.config.section_font_size));
+            ui.label(egui::RichText::new("Interaction").size(app.config.section_font_size()));
             ui.add(egui::Slider::new(&mut app.config.scale_min, 0.05..=1.0).text("Min zoom"));
             ui.add(egui::Slider::new(&mut app.config.scale_max, 1.0..=6.0).text("Max zoom"));
             ui.add(
@@ -139,7 +120,7 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
             );
 
             if ui
-                .button(egui::RichText::new("Reset Defaults").size(app.config.button_font_size))
+                .button(egui::RichText::new("Reset Defaults").size(app.config.button_font_size()))
                 .clicked()
             {
                 let defaults = crate::config::AppConfig::default();
