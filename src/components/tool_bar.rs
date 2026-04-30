@@ -5,7 +5,7 @@ use crate::{components::Colors, mode::EditMode, GraphEditorApp};
 pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
     egui::SidePanel::left("tool_bar")
         .resizable(false)
-        .exact_width(190.0)
+        .exact_width(220.0)
         .show(ctx, |ui| {
             app.ui
                 .cursor_hover
@@ -54,15 +54,15 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
 
             let prev_color = app.state.selected_color;
             for (label, color) in [
-                ("Def", Colors::Default),
+                ("Default", Colors::Default),
                 ("Red", Colors::Red),
-                ("Grn", Colors::Green),
-                ("Blu", Colors::Blue),
-                ("Yel", Colors::Yellow),
-                ("Org", Colors::Orange),
-                ("Vio", Colors::Violet),
-                ("Pnk", Colors::Pink),
-                ("Brn", Colors::Brown),
+                ("Green", Colors::Green),
+                ("Blue", Colors::Blue),
+                ("Yellow", Colors::Yellow),
+                ("Orange", Colors::Orange),
+                ("Violet", Colors::Violet),
+                ("Pink", Colors::Pink),
+                ("Brown", Colors::Brown),
             ] {
                 let text = if color == Colors::Default {
                     egui::RichText::new(label).size(app.config.button_font_size)
@@ -95,7 +95,7 @@ fn draw_mode_button(
 ) {
     if ui
         .add_sized(
-            [170.0, 28.0],
+            [170.0, 32.0],
             egui::SelectableLabel::new(selected, egui::RichText::new(label).size(font_size)),
         )
         .clicked()
