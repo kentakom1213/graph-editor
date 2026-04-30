@@ -21,6 +21,7 @@ pub struct GraphEditorApp {
 }
 
 const UI_STATE_STORAGE_KEY: &str = "graph-editor:ui-state";
+const GRAPH_LAYOUT_SETTLE_STEPS: usize = 120;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -28,6 +29,7 @@ struct StoredUiState {
     version: u32,
     zero_indexed: bool,
     show_number: bool,
+    is_animated: bool,
     is_directed: bool,
     export_format: String,
     title_font_size: f32,
@@ -49,6 +51,7 @@ impl Default for StoredUiState {
             version: 2,
             zero_indexed: false,
             show_number: true,
+            is_animated: true,
             is_directed: false,
             export_format: ExportFormat::Png.extension().to_string(),
             title_font_size: defaults.title_font_size,
@@ -74,6 +77,7 @@ impl GraphEditorApp {
             .unwrap_or_default();
         app.state.zero_indexed = state.zero_indexed;
         app.state.show_number = state.show_number;
+        app.state.is_animated = state.is_animated;
         app.state.graph.is_directed = state.is_directed;
         app.config.title_font_size = state.title_font_size;
         app.config.ui_font_size = state.ui_font_size;
@@ -162,6 +166,17 @@ impl GraphEditorApp {
         self.ui.input_is_dirty = false;
     }
 
+    fn settle_graph_layout(&mut self) {
+        let simulator = self.config.simulator();
+        for _ in 0..GRAPH_LAYOUT_SETTLE_STEPS {
+            simulator.simulate_step(&mut self.state.graph);
+        }
+
+        for vertex in &mut self.state.graph.vertices {
+            vertex.velocity = egui::Vec2::ZERO;
+        }
+    }
+
     pub fn rebuild_from_base_graph(&mut self, ctx: &egui::Context, base_graph: BaseGraph) {
         let canvas_rect = self.ui.canvas_rect.unwrap_or_else(|| ctx.available_rect());
         let visualizer = self.config.visualizer();
@@ -173,9 +188,10 @@ impl GraphEditorApp {
         );
         match new_graph_result {
             Ok(_) => {
+                self.settle_graph_layout();
                 self.state.graph_view.reset_for_graph(&self.state.graph);
                 self.state.next_z_index = self.state.graph.vertices.len() as u32;
-                self.state.is_animated = true;
+                self.state.is_animated = false;
                 self.sync_input_text_from_graph();
             }
             Err(err) => {
@@ -224,6 +240,7 @@ impl eframe::App for GraphEditorApp {
             version: 2,
             zero_indexed: self.state.zero_indexed,
             show_number: self.state.show_number,
+            is_animated: self.state.is_animated,
             is_directed: self.state.graph.is_directed,
             export_format: self.export.format().extension().to_string(),
             title_font_size: self.config.title_font_size,
