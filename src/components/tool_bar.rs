@@ -5,7 +5,7 @@ use crate::{components::Colors, mode::EditMode, GraphEditorApp};
 pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
     egui::SidePanel::left("tool_bar")
         .resizable(false)
-        .exact_width(220.0)
+        .exact_width(198.0)
         .show(ctx, |ui| {
             app.ui
                 .cursor_hover
