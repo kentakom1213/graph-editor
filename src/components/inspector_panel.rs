@@ -13,8 +13,8 @@ pub enum InspectorTab {
 pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &Context) {
     egui::SidePanel::right("inspector_panel")
         .resizable(true)
-        .default_width(260.0)
-        .min_width(220.0)
+        .default_width(236.0)
+        .min_width(208.0)
         .show(ctx, |ui| {
             app.ui
                 .cursor_hover
