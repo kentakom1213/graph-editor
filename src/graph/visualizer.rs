@@ -1,3 +1,5 @@
+#![allow(clippy::needless_range_loop)]
+
 /// 可視化を行う
 pub trait Visualizer {
     /// グラフ G = (V,E) が与えられたとき，
