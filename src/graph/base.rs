@@ -42,7 +42,7 @@ impl BaseGraph {
                         .ok_or_else(|| anyhow::anyhow!("Invalid edge: {} {}", from, to))?;
                 }
 
-                if from > n || to > n || (zero_indexed && (from == n || to == n)) {
+                if from >= n || to >= n {
                     return Err(anyhow::anyhow!("Invalid edge: {} {}", from, to));
                 }
 
@@ -55,5 +55,24 @@ impl BaseGraph {
         }
 
         Ok(Self { n, edges })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BaseGraph;
+
+    #[test]
+    fn parse_rejects_out_of_range_vertex_for_one_indexed_input() {
+        let input = "3 1\n4 1\n";
+        let err = BaseGraph::parse(input, false).unwrap_err();
+        assert!(err.to_string().contains("Invalid edge"));
+    }
+
+    #[test]
+    fn parse_rejects_out_of_range_vertex_for_zero_indexed_input() {
+        let input = "3 1\n3 0\n";
+        let err = BaseGraph::parse(input, true).unwrap_err();
+        assert!(err.to_string().contains("Invalid edge"));
     }
 }

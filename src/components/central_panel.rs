@@ -26,6 +26,8 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
     egui::CentralPanel::default()
         .frame(egui::Frame::new().fill(app.config.bg_color))
         .show(ctx, |ui| {
+            app.ui.canvas_rect = Some(ui.max_rect());
+
             // モード切替を行う
             change_edit_mode(app, ui);
 

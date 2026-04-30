@@ -19,8 +19,11 @@ pub struct AppState {
 
 pub struct UiState {
     pub cursor_hover: CursorHoverState,
+    pub canvas_rect: Option<egui::Rect>,
     pub input_text: String,
+    pub input_synced_text: String,
     pub input_has_focus: bool,
+    pub input_is_dirty: bool,
     pub show_settings: bool,
     pub error_message: Option<String>,
     pub confirm_clear_all: bool,

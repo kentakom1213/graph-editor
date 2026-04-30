@@ -58,6 +58,7 @@ impl GraphEditorApp {
             _ => ExportFormat::Png,
         };
         app.export.set_format(format);
+        app.sync_input_text_from_graph();
         app
     }
 
@@ -122,19 +123,28 @@ impl GraphEditorApp {
         }
     }
 
+    pub fn sync_input_text_from_graph(&mut self) {
+        let encoded = self.state.graph.encode(self.state.zero_indexed);
+        self.ui.input_text = encoded.clone();
+        self.ui.input_synced_text = encoded;
+        self.ui.input_is_dirty = false;
+    }
+
     pub fn rebuild_from_base_graph(&mut self, ctx: &egui::Context, base_graph: BaseGraph) {
+        let canvas_rect = self.ui.canvas_rect.unwrap_or_else(|| ctx.available_rect());
         let visualizer = self.config.visualizer();
         let new_graph_result = self.state.graph.rebuild_from_basegraph(
             visualizer.as_ref(),
             self.config.density_threshold,
             base_graph,
-            ctx.used_size(),
+            canvas_rect,
         );
         match new_graph_result {
             Ok(_) => {
                 self.state.graph_view.reset_for_graph(&self.state.graph);
                 self.state.next_z_index = self.state.graph.vertices.len() as u32;
                 self.state.is_animated = true;
+                self.sync_input_text_from_graph();
             }
             Err(err) => {
                 self.ui.error_message = Some(err.to_string());
@@ -160,8 +170,11 @@ impl Default for GraphEditorApp {
             },
             ui: UiState {
                 cursor_hover: CursorHoverState::default(),
+                canvas_rect: None,
                 input_text: String::new(),
+                input_synced_text: String::new(),
                 input_has_focus: false,
+                input_is_dirty: false,
                 show_settings: false,
                 error_message: None,
                 confirm_clear_all: false,
