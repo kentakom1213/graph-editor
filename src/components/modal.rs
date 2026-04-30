@@ -77,12 +77,11 @@ pub fn draw_clear_all_modal(app: &mut GraphEditorApp, ctx: &Context) {
         ui.horizontal(|ui| {
             let clear_button = egui::Button::new(
                 egui::RichText::new("Clear")
-                    .size(app.config.menu_font_size_normal)
+                    .size(app.config.button_font_size)
                     .color(egui::Color32::from_rgb(200, 60, 60)),
             );
-            let cancel_button = egui::Button::new(
-                egui::RichText::new("Cancel").size(app.config.menu_font_size_normal),
-            );
+            let cancel_button =
+                egui::Button::new(egui::RichText::new("Cancel").size(app.config.button_font_size));
 
             if ui.add(clear_button).clicked() {
                 app.state.graph.clear();

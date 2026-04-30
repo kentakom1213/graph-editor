@@ -36,22 +36,22 @@ pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &Context) {
 }
 
 fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
-    ui.label(egui::RichText::new("Indexing").size(app.config.menu_font_size_mini));
+    ui.label(egui::RichText::new("Indexing").size(app.config.section_font_size));
     ui.radio_value(&mut app.state.zero_indexed, true, "0-indexed");
     ui.radio_value(&mut app.state.zero_indexed, false, "1-indexed");
 
     ui.separator();
-    ui.label(egui::RichText::new("Direction").size(app.config.menu_font_size_mini));
+    ui.label(egui::RichText::new("Direction").size(app.config.section_font_size));
     ui.radio_value(&mut app.state.graph.is_directed, false, "Undirected");
     ui.radio_value(&mut app.state.graph.is_directed, true, "Directed");
 
     ui.separator();
-    ui.label(egui::RichText::new("Operations").size(app.config.menu_font_size_mini));
+    ui.label(egui::RichText::new("Operations").size(app.config.section_font_size));
 
     if ui
         .add_enabled(
             !app.state.graph.is_directed,
-            egui::Button::new("Complement"),
+            egui::Button::new(egui::RichText::new("Complement").size(app.config.button_font_size)),
         )
         .clicked()
     {
@@ -61,30 +61,36 @@ fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     if ui
         .add_enabled(
             app.state.graph.is_directed,
-            egui::Button::new("Revert Edge"),
+            egui::Button::new(egui::RichText::new("Revert Edge").size(app.config.button_font_size)),
         )
         .clicked()
     {
         app.rebuild_from_base_graph(ctx, app.state.graph.calc_reverted());
     }
 
-    if ui.button("Reset Colors").clicked() {
+    if ui
+        .button(egui::RichText::new("Reset Colors").size(app.config.button_font_size))
+        .clicked()
+    {
         app.state.graph_view.reset_colors();
     }
 
     ui.separator();
-    ui.label(egui::RichText::new("Danger Zone").size(app.config.menu_font_size_mini));
-    if ui.button("Clear All").clicked() {
+    ui.label(egui::RichText::new("Danger Zone").size(app.config.section_font_size));
+    if ui
+        .button(egui::RichText::new("Clear All").size(app.config.button_font_size))
+        .clicked()
+    {
         app.ui.confirm_clear_all = true;
     }
 }
 
 fn draw_view_tab(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
-    ui.label(egui::RichText::new("Display").size(app.config.menu_font_size_mini));
+    ui.label(egui::RichText::new("Display").size(app.config.section_font_size));
     ui.checkbox(&mut app.state.show_number, "Show Numbers");
 
     ui.separator();
-    ui.label(egui::RichText::new("Simulation").size(app.config.menu_font_size_mini));
+    ui.label(egui::RichText::new("Simulation").size(app.config.section_font_size));
     ui.checkbox(&mut app.state.is_animated, "Animate");
 }
 
@@ -93,13 +99,19 @@ fn draw_io_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
         app.ui.input_text = app.state.graph.encode(app.state.zero_indexed);
     }
 
-    ui.label(egui::RichText::new("Graph Text").size(app.config.menu_font_size_mini));
+    ui.label(egui::RichText::new("Graph Text").size(app.config.section_font_size));
     ui.horizontal(|ui| {
-        if ui.button("Copy").clicked() {
+        if ui
+            .button(egui::RichText::new("Copy").size(app.config.button_font_size))
+            .clicked()
+        {
             ctx.copy_text(app.ui.input_text.clone());
         }
 
-        if ui.button("Apply").clicked() {
+        if ui
+            .button(egui::RichText::new("Apply").size(app.config.button_font_size))
+            .clicked()
+        {
             let new_graph = BaseGraph::parse(&app.ui.input_text, app.state.zero_indexed);
             match new_graph {
                 Ok(base_graph) => app.rebuild_from_base_graph(ctx, base_graph),
@@ -117,7 +129,7 @@ fn draw_io_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     app.ui.input_has_focus = response.has_focus();
 
     ui.separator();
-    ui.label(egui::RichText::new("Export Image").size(app.config.menu_font_size_mini));
+    ui.label(egui::RichText::new("Export Image").size(app.config.section_font_size));
     ui.horizontal(|ui| {
         ui.label("Format");
         let mut format = app.export.format();
@@ -134,7 +146,10 @@ fn draw_io_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     });
 
     if ui
-        .add_enabled(!app.export.is_busy(), egui::Button::new("Export"))
+        .add_enabled(
+            !app.export.is_busy(),
+            egui::Button::new(egui::RichText::new("Export").size(app.config.button_font_size)),
+        )
         .clicked()
     {
         app.request_export_image(ctx);
