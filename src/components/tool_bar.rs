@@ -5,42 +5,38 @@ use crate::{components::Colors, mode::EditMode, GraphEditorApp};
 pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
     egui::SidePanel::left("tool_bar")
         .resizable(false)
-        .exact_width(72.0)
+        .exact_width(190.0)
         .show(ctx, |ui| {
             app.ui
                 .cursor_hover
                 .set_tool_bar(ui.rect_contains_pointer(ui.max_rect()));
 
-            ui.vertical_centered(|ui| {
+            ui.vertical(|ui| {
                 draw_mode_button(
                     ui,
                     app.state.edit_mode == EditMode::default_normal(),
-                    "N",
-                    "Normal",
+                    "Normal [Esc]",
                     || app.switch_normal_mode(),
                 );
                 draw_mode_button(
                     ui,
                     app.state.edit_mode == EditMode::default_add_vertex(),
-                    "V",
-                    "Add Vertex",
+                    "Add Vertex [V]",
                     || app.switch_add_vertex_mode(),
                 );
                 draw_mode_button(
                     ui,
                     app.state.edit_mode.is_add_edge(),
-                    "E",
-                    "Add Edge",
+                    "Add Edge [E]",
                     || app.switch_add_edge_mode(),
                 );
                 draw_mode_button(
                     ui,
                     app.state.edit_mode.is_colorize(),
-                    "C",
-                    "Colorize",
+                    "Colorize [C]",
                     || app.switch_colorize_mode(),
                 );
-                draw_mode_button(ui, app.state.edit_mode.is_delete(), "D", "Delete", || {
+                draw_mode_button(ui, app.state.edit_mode.is_delete(), "Delete [D]", || {
                     app.switch_delete_mode()
                 });
             });
@@ -80,19 +76,9 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
         });
 }
 
-fn draw_mode_button(
-    ui: &mut egui::Ui,
-    selected: bool,
-    short_label: &str,
-    hover_label: &str,
-    on_click: impl FnOnce(),
-) {
+fn draw_mode_button(ui: &mut egui::Ui, selected: bool, label: &str, on_click: impl FnOnce()) {
     if ui
-        .add_sized(
-            [44.0, 28.0],
-            egui::SelectableLabel::new(selected, short_label),
-        )
-        .on_hover_text(hover_label)
+        .add_sized([170.0, 28.0], egui::SelectableLabel::new(selected, label))
         .clicked()
     {
         on_click();
