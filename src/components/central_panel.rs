@@ -46,7 +46,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
 
             // シミュレーションがonの場合，位置を更新
             if app.state.is_animated {
-                app.config.simulator().simulate_step(&mut app.state.graph);
+                app.current_simulator().simulate_step(&mut app.state.graph);
             }
 
             // 描画用スナップショットを作成

@@ -5,9 +5,10 @@ use crate::components::{
     draw_central_panel, draw_clear_all_modal, draw_error_modal, draw_footer, draw_inspector_panel,
     draw_tool_bar, draw_top_panel, Colors, CursorHoverState, InspectorTab,
 };
-use crate::config::AppConfig;
+use crate::config::{AppConfig, SimulatorKind};
 use crate::export::{ExportFormat, ExportService};
-use crate::graph::BaseGraph;
+use crate::graph::{simulation_methods, BaseGraph, Simulator};
+use crate::math::affine::Affine2D;
 use crate::mode::EditMode;
 use crate::state::{AppState, UiState};
 use crate::update::request_repaint;
@@ -22,6 +23,8 @@ pub struct GraphEditorApp {
 
 const UI_STATE_STORAGE_KEY: &str = "graph-editor:ui-state";
 const GRAPH_LAYOUT_SETTLE_STEPS: usize = 120;
+const AUTO_FIT_DIAMETER_THRESHOLD: usize = 12;
+const EDGE_LENGTH_SHRINK_DIAMETER_THRESHOLD: usize = 10;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -89,6 +92,7 @@ impl GraphEditorApp {
         app.config.scale_min = state.scale_min;
         app.config.scale_max = state.scale_max;
         app.config.scale_delta = state.scale_delta;
+        app.state.simulation_edge_length = app.config.simulator_config.l;
         let format = match state.export_format.as_str() {
             "svg" => ExportFormat::Svg,
             _ => ExportFormat::Png,
@@ -166,8 +170,33 @@ impl GraphEditorApp {
         self.ui.input_is_dirty = false;
     }
 
-    fn settle_graph_layout(&mut self) {
-        let simulator = self.config.simulator();
+    fn effective_layout_edge_length(&self) -> f32 {
+        let diameter = self.state.graph.approx_diameter_lower_bound();
+        if diameter < EDGE_LENGTH_SHRINK_DIAMETER_THRESHOLD {
+            return self.config.simulator_config.l;
+        }
+
+        let shrink = 1.0 + (diameter as f32).sqrt() * 0.35;
+        (self.config.simulator_config.l / shrink).max(self.config.vertex_radius * 2.4)
+    }
+
+    fn simulator_with_edge_length(&self, edge_length: f32) -> Box<dyn Simulator> {
+        match self.config.simulator_kind {
+            SimulatorKind::ForceDirected => {
+                let mut config = self.config.simulator_config;
+                config.l = edge_length;
+                Box::new(simulation_methods::ForceDirectedModel { config })
+            }
+        }
+    }
+
+    pub fn current_simulator(&self) -> Box<dyn Simulator> {
+        self.simulator_with_edge_length(self.state.simulation_edge_length)
+    }
+
+    fn settle_graph_layout(&mut self, edge_length: f32) {
+        self.state.simulation_edge_length = edge_length;
+        let simulator = self.simulator_with_edge_length(edge_length);
         for _ in 0..GRAPH_LAYOUT_SETTLE_STEPS {
             simulator.simulate_step(&mut self.state.graph);
         }
@@ -175,6 +204,49 @@ impl GraphEditorApp {
         for vertex in &mut self.state.graph.vertices {
             vertex.velocity = egui::Vec2::ZERO;
         }
+    }
+
+    fn auto_fit_graph_to_canvas(&mut self, canvas_rect: egui::Rect) {
+        let should_fit =
+            self.state.graph.approx_diameter_lower_bound() >= AUTO_FIT_DIAMETER_THRESHOLD;
+        if !should_fit || self.state.graph.vertices.is_empty() {
+            return;
+        }
+
+        let mut min = self.state.graph.vertices[0].position;
+        let mut max = self.state.graph.vertices[0].position;
+        for vertex in &self.state.graph.vertices[1..] {
+            min.x = min.x.min(vertex.position.x);
+            min.y = min.y.min(vertex.position.y);
+            max.x = max.x.max(vertex.position.x);
+            max.y = max.y.max(vertex.position.y);
+        }
+
+        let graph_rect = egui::Rect::from_min_max(min, max);
+        let target_rect = canvas_rect.shrink2(canvas_rect.size() * 0.08);
+        let graph_size = graph_rect.size();
+        let target_size = target_rect.size();
+
+        let scale_x = if graph_size.x <= f32::EPSILON {
+            1.0
+        } else {
+            target_size.x / graph_size.x
+        };
+        let scale_y = if graph_size.y <= f32::EPSILON {
+            1.0
+        } else {
+            target_size.y / graph_size.y
+        };
+        let scale = scale_x.min(scale_y).min(1.0);
+        let graph_center = graph_rect.center().to_vec2();
+        let target_center = target_rect.center().to_vec2();
+        let translation = target_center - graph_center * scale;
+
+        *self.state.graph.affine.borrow_mut() = Affine2D([
+            [scale, 0.0, translation.x],
+            [0.0, scale, translation.y],
+            [0.0, 0.0, 1.0],
+        ]);
     }
 
     pub fn rebuild_from_base_graph(&mut self, ctx: &egui::Context, base_graph: BaseGraph) {
@@ -188,7 +260,9 @@ impl GraphEditorApp {
         );
         match new_graph_result {
             Ok(_) => {
-                self.settle_graph_layout();
+                let edge_length = self.effective_layout_edge_length();
+                self.settle_graph_layout(edge_length);
+                self.auto_fit_graph_to_canvas(canvas_rect);
                 self.state.graph_view.reset_for_graph(&self.state.graph);
                 self.state.next_z_index = self.state.graph.vertices.len() as u32;
                 self.state.is_animated = false;
@@ -203,12 +277,14 @@ impl GraphEditorApp {
 
 impl Default for GraphEditorApp {
     fn default() -> Self {
+        let config = AppConfig::default();
         let graph = crate::graph::Graph::default();
         Self {
             state: AppState {
                 graph_view: GraphViewState::new_for_graph(&graph),
                 graph,
                 is_animated: true,
+                simulation_edge_length: config.simulator_config.l,
                 last_mouse_pos: None,
                 next_z_index: 2,
                 edit_mode: EditMode::default_normal(),
@@ -229,7 +305,7 @@ impl Default for GraphEditorApp {
                 inspector_tab: InspectorTab::default(),
             },
             export: ExportService::default(),
-            config: AppConfig::default(),
+            config,
         }
     }
 }
