@@ -170,6 +170,13 @@ impl GraphEditorApp {
         self.ui.input_is_dirty = false;
     }
 
+    pub fn set_animation_enabled(&mut self, enabled: bool) {
+        self.state.is_animated = enabled;
+        if enabled {
+            self.state.simulation_edge_length = self.effective_layout_edge_length();
+        }
+    }
+
     fn effective_layout_edge_length(&self) -> f32 {
         let diameter = self.state.graph.approx_diameter_lower_bound();
         if diameter < EDGE_LENGTH_SHRINK_DIAMETER_THRESHOLD {
@@ -251,6 +258,7 @@ impl GraphEditorApp {
 
     pub fn rebuild_from_base_graph(&mut self, ctx: &egui::Context, base_graph: BaseGraph) {
         let canvas_rect = self.ui.canvas_rect.unwrap_or_else(|| ctx.available_rect());
+        let was_animated = self.state.is_animated;
         let visualizer = self.config.visualizer();
         let new_graph_result = self.state.graph.rebuild_from_basegraph(
             visualizer.as_ref(),
@@ -260,12 +268,17 @@ impl GraphEditorApp {
         );
         match new_graph_result {
             Ok(_) => {
-                let edge_length = self.effective_layout_edge_length();
-                self.settle_graph_layout(edge_length);
-                self.auto_fit_graph_to_canvas(canvas_rect);
+                if was_animated {
+                    self.state.simulation_edge_length = self.effective_layout_edge_length();
+                    self.state.is_animated = true;
+                } else {
+                    let edge_length = self.effective_layout_edge_length();
+                    self.settle_graph_layout(edge_length);
+                    self.auto_fit_graph_to_canvas(canvas_rect);
+                    self.state.is_animated = false;
+                }
                 self.state.graph_view.reset_for_graph(&self.state.graph);
                 self.state.next_z_index = self.state.graph.vertices.len() as u32;
-                self.state.is_animated = false;
                 self.sync_input_text_from_graph();
             }
             Err(err) => {

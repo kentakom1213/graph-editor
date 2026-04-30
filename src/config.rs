@@ -98,6 +98,24 @@ impl AppConfig {
         self.ui_font_size * 0.8125
     }
 
+    pub fn effective_vertex_radius(&self, vertex_count: usize) -> f32 {
+        if vertex_count <= 24 {
+            return self.vertex_radius;
+        }
+
+        let scale = (24.0 / vertex_count as f32).sqrt().clamp(0.32, 1.0);
+        (self.vertex_radius * scale).max(10.0)
+    }
+
+    pub fn effective_vertex_font_size(&self, vertex_count: usize) -> f32 {
+        if vertex_count <= 24 {
+            return self.vertex_font_size;
+        }
+
+        let scale = (24.0 / vertex_count as f32).sqrt().clamp(0.3, 1.0);
+        (self.vertex_font_size * scale).max(8.0)
+    }
+
     pub fn visualizer(&self) -> Box<dyn Visualizer> {
         match self.visualizer_kind {
             VisualizerKind::Naive => Box::new(visualize_methods::Naive),

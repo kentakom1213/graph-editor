@@ -107,7 +107,7 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     }
     if ui.input(|i| i.key_pressed(egui::Key::A)) {
         // A でグラフのシミュレーションを切り替え
-        app.state.is_animated ^= true;
+        app.set_animation_enabled(!app.state.is_animated);
     }
 }
 
@@ -141,6 +141,9 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
 
     let is_directed = app.state.graph.is_directed;
     let mouse_pos = ui.input(|i| i.pointer.hover_pos()).unwrap_or_default();
+    let vertex_radius = app
+        .config
+        .effective_vertex_radius(app.state.graph.vertices.len());
 
     let vertex_positions: HashMap<usize, egui::Pos2> = app
         .state
@@ -184,7 +187,7 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
         let distance_from_vertex = (mouse_pos - from_pos)
             .length()
             .min((mouse_pos - to_pos).length());
-        let is_on_vertex = distance_from_vertex < app.config.vertex_radius;
+        let is_on_vertex = distance_from_vertex < vertex_radius;
 
         let distance = if !is_directed || edge_count.get(&(edge.from, edge.to)) == Some(&1) {
             distance_from_edge_line(from_pos, to_pos, mouse_pos)
@@ -363,6 +366,9 @@ fn draw_edge_directed_curved(
 
 /// 頂点の操作を更新する
 fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
+    let vertex_radius = app
+        .config
+        .effective_vertex_radius(app.state.graph.vertices.len());
     let AppState {
         graph,
         graph_view,
@@ -398,10 +404,7 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
             };
             let rect = egui::Rect::from_center_size(
                 vertex.get_position(),
-                egui::vec2(
-                    app.config.vertex_radius * 2.0,
-                    app.config.vertex_radius * 2.0,
-                ),
+                egui::vec2(vertex_radius * 2.0, vertex_radius * 2.0),
             );
             let response = ui.interact(
                 rect,
@@ -533,6 +536,11 @@ fn render_vertices(
     ui: &egui::Ui,
     painter: &egui::Painter,
 ) {
+    let vertex_radius = app.config.effective_vertex_radius(snapshot.vertices.len());
+    let vertex_font_size = app
+        .config
+        .effective_vertex_font_size(snapshot.vertices.len());
+
     // 設置途中の辺を描画
     if let EditMode::AddEdge {
         from_vertex: Some(from_vertex_inner),
@@ -562,10 +570,10 @@ fn render_vertices(
             vertex.color.vertex()
         };
 
-        painter.circle_filled(vertex.position, app.config.vertex_radius, color);
+        painter.circle_filled(vertex.position, vertex_radius, color);
         painter.circle_stroke(
             vertex.position,
-            app.config.vertex_radius,
+            vertex_radius,
             egui::Stroke::new(app.config.vertex_stroke, app.config.vertex_color_outline),
         );
         if app.state.show_number {
@@ -579,7 +587,7 @@ fn render_vertices(
                 vertex.position,
                 egui::Align2::CENTER_CENTER,
                 vertex_show_id,
-                egui::FontId::proportional(app.config.vertex_font_size),
+                egui::FontId::proportional(vertex_font_size),
                 app.config.vertex_font_color,
             );
         }
