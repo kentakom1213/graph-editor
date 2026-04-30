@@ -1,7 +1,8 @@
 name: Github Pages
 
 # By default, runs if you push to main. keeps your deployed app in sync with main branch.
-# Pull requests are deployed under /pr-<number>/ as beta preview pages.
+# Pull requests from this repository are deployed under /pr-<number>/ as beta preview pages.
+# Pull requests from forks are not deployed for security reasons.
 on:
   push:
     branches:
@@ -29,7 +30,13 @@ concurrency:
 
 jobs:
   build-github-pages:
-    if: github.event_name == 'push' || github.event.action != 'closed'
+    if: >
+      github.event_name == 'push' ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.action != 'closed' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4 # repo checkout
@@ -67,14 +74,18 @@ jobs:
           folder: dist
           clean: false
       - name: Deploy pull request preview
-        if: github.event_name == 'pull_request'
+        if: >
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: dist
           target-folder: pr-${{ github.event.pull_request.number }}
           clean: false
       - name: Comment preview URL
-        if: github.event_name == 'pull_request'
+        if: >
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
         continue-on-error: true
         uses: actions/github-script@v7
         with:
@@ -112,7 +123,10 @@ jobs:
             }
 
   cleanup-pull-request-preview:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
