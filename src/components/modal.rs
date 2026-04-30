@@ -48,7 +48,7 @@ pub fn draw_error_modal(app: &mut GraphEditorApp, ctx: &Context) {
         .color(egui::Color32::from_rgb(255, 100, 80));
 
     draw_modal_window(ctx, title, |ui| {
-        ui.label(egui::RichText::new(message).size(app.config.menu_font_size_normal));
+        ui.label(egui::RichText::new(message).size(app.config.body_font_size));
     });
 }
 
@@ -71,8 +71,7 @@ pub fn draw_clear_all_modal(app: &mut GraphEditorApp, ctx: &Context) {
 
     draw_modal_window(ctx, title, |ui| {
         ui.label(
-            egui::RichText::new("Clear all vertices and edges?\n")
-                .size(app.config.menu_font_size_normal),
+            egui::RichText::new("Clear all vertices and edges?\n").size(app.config.body_font_size),
         );
         ui.horizontal(|ui| {
             let clear_button = egui::Button::new(

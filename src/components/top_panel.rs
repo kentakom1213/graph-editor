@@ -96,9 +96,16 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
                 egui::Slider::new(&mut app.config.section_font_size, 10.0..=24.0)
                     .text("Section heading font"),
             );
+            ui.add(egui::Slider::new(&mut app.config.tab_font_size, 10.0..=28.0).text("Tab font"));
             ui.add(
                 egui::Slider::new(&mut app.config.button_font_size, 10.0..=28.0)
                     .text("Button font"),
+            );
+            ui.add(
+                egui::Slider::new(&mut app.config.body_font_size, 10.0..=28.0).text("Body font"),
+            );
+            ui.add(
+                egui::Slider::new(&mut app.config.input_font_size, 10.0..=28.0).text("Input font"),
             );
             ui.add(
                 egui::Slider::new(&mut app.config.footer_font_size, 10.0..=24.0)
