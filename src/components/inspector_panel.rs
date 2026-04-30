@@ -12,9 +12,8 @@ pub enum InspectorTab {
 
 pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &Context) {
     egui::SidePanel::right("inspector_panel")
-        .resizable(true)
-        .default_width(236.0)
-        .min_width(208.0)
+        .resizable(false)
+        .exact_width(196.0)
         .show(ctx, |ui| {
             app.ui
                 .cursor_hover
@@ -263,7 +262,7 @@ fn draw_tab_button(
 ) {
     if ui
         .add_sized(
-            [72.0, 30.0],
+            [56.0, 30.0],
             egui::SelectableLabel::new(selected, egui::RichText::new(label).size(font_size)),
         )
         .clicked()
