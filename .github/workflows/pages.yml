@@ -1,10 +1,17 @@
 name: Github Pages
 
 # By default, runs if you push to main. keeps your deployed app in sync with main branch.
+# Pull requests are deployed under /pr-<number>/ as beta preview pages.
 on:
   push:
     branches:
       - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 # to only run when you do a new github release, comment out above part and uncomment the below trigger.
 # on:
 #   release:
@@ -13,9 +20,16 @@ on:
 
 permissions:
   contents: write # for committing to gh-pages branch.
+  issues: write # for posting/updating preview URL comments on pull requests.
+  pull-requests: read
+
+concurrency:
+  group: github-pages-deploy
+  cancel-in-progress: false
 
 jobs:
   build-github-pages:
+    if: github.event_name == 'push' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4 # repo checkout
@@ -29,6 +43,15 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Download and install Trunk binary
         run: wget -qO- https://github.com/thedodd/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+      - name: Resolve public URL
+        id: pages
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "public_url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+            echo "preview_url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number }}/" >> "$GITHUB_OUTPUT"
+          else
+            echo "public_url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build # build
         # Environment $public_url resolves to the github project page.
         # If using a user/organization page, remove the `${{ github.event.repository.name }}` part.
@@ -36,13 +59,75 @@ jobs:
         # this is necessary for github pages where the site is deployed to username.github.io/repo_name and all files must be requested
         # relatively as eframe_template/favicon.ico. if we skip public-url option, the href paths will instead request username.github.io/favicon.ico which
         # will obviously return error 404 not found.
-        run: ./trunk build --release --public-url $public_url
-        env:
-          public_url: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
-      - name: Deploy
+        run: ./trunk build --release --public-url "${{ steps.pages.outputs.public_url }}"
+      - name: Deploy production
+        if: github.event_name == 'push'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: dist
-          # this option will not maintain any history of your previous pages deployment
-          # set to false if you want all page build to be committed to your gh-pages branch history
-          single-commit: true
+          clean: false
+      - name: Deploy pull request preview
+        if: github.event_name == 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          target-folder: pr-${{ github.event.pull_request.number }}
+          clean: false
+      - name: Comment preview URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- graph-editor-pr-preview -->';
+            const previewUrl = '${{ steps.pages.outputs.preview_url }}';
+            const body = `${marker}\nPreview: ${previewUrl}`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) =>
+              comment.user.type === 'Bot' && comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+  cleanup-pull-request-preview:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+      - name: Remove pull request preview
+        run: |
+          rm -rf "pr-${{ github.event.pull_request.number }}"
+
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+
+          git add .
+          if git diff --cached --quiet; then
+            echo "No preview directory to remove."
+          else
+            git commit -m "Remove preview for PR #${{ github.event.pull_request.number }}"
+            git push
+          fi
