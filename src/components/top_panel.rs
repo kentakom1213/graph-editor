@@ -3,58 +3,35 @@ use egui::{Context, TopBottomPanel};
 
 use crate::GraphEditorApp;
 
-pub struct PanelTabState {
-    pub edit_menu: bool,
-    pub color_settings: bool,
-    pub graph_io: bool,
-}
-
-impl Default for PanelTabState {
-    fn default() -> Self {
-        Self {
-            edit_menu: true,
-            color_settings: true,
-            graph_io: true,
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct CursorHoverState {
     top_panel: bool,
-    color_window: bool,
-    menu_window: bool,
-    input_window: bool,
+    tool_bar: bool,
+    inspector_panel: bool,
 }
 
 impl CursorHoverState {
     pub fn set_top_panel(&mut self, hovered: bool) {
         self.top_panel = hovered;
     }
-    pub fn set_color_window(&mut self, hovered: bool) {
-        self.color_window = hovered;
+    pub fn set_tool_bar(&mut self, hovered: bool) {
+        self.tool_bar = hovered;
     }
-    pub fn set_menu_window(&mut self, hovered: bool) {
-        self.menu_window = hovered;
-    }
-    pub fn set_input_window(&mut self, hovered: bool) {
-        self.input_window = hovered;
+    pub fn set_inspector_panel(&mut self, hovered: bool) {
+        self.inspector_panel = hovered;
     }
     pub fn get_top_panel(&self) -> bool {
         self.top_panel
     }
-    pub fn get_color_window(&self) -> bool {
-        self.color_window
+    pub fn get_tool_bar(&self) -> bool {
+        self.tool_bar
     }
-    pub fn get_menu_window(&self) -> bool {
-        self.menu_window
-    }
-    pub fn get_input_window(&self) -> bool {
-        self.input_window
+    pub fn get_inspector_panel(&self) -> bool {
+        self.inspector_panel
     }
     /// いずれかのパネルにカーソルが乗っているか
     pub fn any(&self) -> bool {
-        self.top_panel || self.color_window || self.menu_window || self.input_window
+        self.top_panel || self.tool_bar || self.inspector_panel
     }
 }
 
@@ -65,19 +42,25 @@ pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
             .cursor_hover
             .set_top_panel(ui.rect_contains_pointer(ui.max_rect()));
 
-        egui::menu::bar(ui, |ui| {
-            ui.toggle_value(
-                &mut app.ui.panel_tab.edit_menu,
-                egui::RichText::new("Menu").size(app.config.menu_font_size_normal),
+        ui.horizontal(|ui| {
+            ui.label(
+                egui::RichText::new("Graph Editor")
+                    .strong()
+                    .size(app.config.menu_font_size_normal),
             );
-            ui.toggle_value(
-                &mut app.ui.panel_tab.color_settings,
-                egui::RichText::new("Color").size(app.config.menu_font_size_normal),
-            );
-            ui.toggle_value(
-                &mut app.ui.panel_tab.graph_io,
-                egui::RichText::new("Input").size(app.config.menu_font_size_normal),
-            );
+
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.button("Settings").clicked() {
+                    // TODO: settings panel
+                }
+
+                if ui
+                    .add_enabled(!app.export.is_busy(), egui::Button::new("Export"))
+                    .clicked()
+                {
+                    app.request_export_image(ctx);
+                }
+            });
         });
     });
 }

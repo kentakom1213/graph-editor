@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::components::{Colors, CursorHoverState, PanelTabState};
+use crate::components::{Colors, CursorHoverState, InspectorTab};
 use crate::graph::Graph;
 use crate::mode::EditMode;
 use crate::view_state::GraphViewState;
@@ -20,7 +20,8 @@ pub struct AppState {
 pub struct UiState {
     pub cursor_hover: CursorHoverState,
     pub input_text: String,
+    pub input_has_focus: bool,
     pub error_message: Option<String>,
     pub confirm_clear_all: bool,
-    pub panel_tab: PanelTabState,
+    pub inspector_tab: InspectorTab,
 }

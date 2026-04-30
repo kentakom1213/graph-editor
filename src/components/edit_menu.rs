@@ -10,7 +10,7 @@ pub fn draw_edit_menu(app: &mut GraphEditorApp, ctx: &Context) {
             // カーソルがあるか判定
             app.ui
                 .cursor_hover
-                .set_menu_window(ui.rect_contains_pointer(ui.max_rect()));
+                .set_tool_bar(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::new()
                 .inner_margin(egui::Margin::same(10))

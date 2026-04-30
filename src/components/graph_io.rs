@@ -4,7 +4,7 @@ use crate::{graph::BaseGraph, GraphEditorApp};
 
 /// グラフのエンコードを表示する
 pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
-    if !app.ui.cursor_hover.get_input_window() {
+    if !app.ui.input_has_focus {
         app.ui.input_text = app.state.graph.encode(app.state.zero_indexed)
     }
 
@@ -16,7 +16,7 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
             // カーソルがあるか判定
             app.ui
                 .cursor_hover
-                .set_input_window(ui.rect_contains_pointer(ui.max_rect()));
+                .set_inspector_panel(ui.rect_contains_pointer(ui.max_rect()));
 
             egui::Frame::default()
                 .inner_margin(egui::Margin::same(10))
@@ -64,9 +64,7 @@ pub fn draw_graph_io(app: &mut GraphEditorApp, ctx: &Context) {
                     ui.separator();
 
                     // コード形式で表示
-                    if ui.code_editor(&mut app.ui.input_text).has_focus() {
-                        app.ui.cursor_hover.set_input_window(true);
-                    }
+                    app.ui.input_has_focus = ui.code_editor(&mut app.ui.input_text).has_focus();
                 });
         });
 }
