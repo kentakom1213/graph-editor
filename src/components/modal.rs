@@ -35,9 +35,7 @@ pub fn draw_error_modal(app: &mut GraphEditorApp, ctx: &Context) {
 
     draw_modal_background(ctx);
 
-    if ctx.input(|i| {
-        i.key_pressed(egui::Key::Escape) || i.pointer.any_released() && !app.ui.input_has_focus
-    }) {
+    if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
         app.ui.error_message = None;
         return;
     }
@@ -49,6 +47,13 @@ pub fn draw_error_modal(app: &mut GraphEditorApp, ctx: &Context) {
 
     draw_modal_window(ctx, title, |ui| {
         ui.label(egui::RichText::new(message).size(app.config.body_font_size()));
+        ui.separator();
+        if ui
+            .button(egui::RichText::new("Close").size(app.config.button_font_size()))
+            .clicked()
+        {
+            app.ui.error_message = None;
+        }
     });
 }
 

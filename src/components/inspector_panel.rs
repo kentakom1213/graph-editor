@@ -147,8 +147,10 @@ fn draw_view_tab(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
 }
 
 fn draw_io_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
-    if !app.ui.input_has_focus {
-        app.ui.input_text = app.state.graph.encode(app.state.zero_indexed);
+    const GRAPH_TEXT_EDITOR_HEIGHT: f32 = 280.0;
+
+    if !app.ui.input_has_focus && !app.ui.input_is_dirty {
+        app.sync_input_text_from_graph();
     }
 
     ui.label(egui::RichText::new("Graph Text").size(app.config.section_font_size()));
@@ -171,14 +173,22 @@ fn draw_io_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
             }
         }
     });
+
     ui.separator();
 
     let editor = egui::TextEdit::multiline(&mut app.ui.input_text)
         .font(egui::FontId::monospace(app.config.input_font_size()))
-        .desired_rows(12)
+        .desired_rows(10)
         .desired_width(f32::INFINITY);
-    let response = ui.add(editor);
+    let response = egui::ScrollArea::vertical()
+        .id_salt("graph_text_editor_scroll")
+        .max_height(GRAPH_TEXT_EDITOR_HEIGHT)
+        .show(ui, |ui| {
+            ui.add_sized([ui.available_width(), GRAPH_TEXT_EDITOR_HEIGHT], editor)
+        })
+        .inner;
     app.ui.input_has_focus = response.has_focus();
+    app.ui.input_is_dirty = app.ui.input_text != app.ui.input_synced_text;
 
     ui.separator();
     ui.label(egui::RichText::new("Export Image").size(app.config.section_font_size()));

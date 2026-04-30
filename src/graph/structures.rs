@@ -271,7 +271,7 @@ impl Graph {
         visualizer: &dyn Visualizer,
         density_threshold: f32,
         BaseGraph { n, edges }: BaseGraph,
-        window_size: egui::Vec2,
+        canvas_rect: egui::Rect,
     ) -> anyhow::Result<()> {
         // グラフの初期化
         self.clear();
@@ -279,7 +279,9 @@ impl Graph {
 
         // 頂点座標を適切な位置に（上下左右 10% の余白をもたせる）
         let adjust_to_window = |pos: egui::Vec2| -> egui::Pos2 {
-            (pos * window_size * 0.8 + window_size * 0.1).to_pos2()
+            let size = canvas_rect.size();
+            let margin = size * 0.1;
+            canvas_rect.min + margin + pos * size * 0.8
         };
 
         // グラフの構築
