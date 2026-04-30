@@ -150,6 +150,9 @@ pub fn export_color_image(color_image: &mut egui::ColorImage) -> anyhow::Result<
 }
 
 pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
+    let active_vertex_count = ctx.graph.vertices.iter().filter(|v| !v.is_deleted).count();
+    let vertex_radius = ctx.config.effective_vertex_radius(active_vertex_count);
+    let vertex_font_size = ctx.config.effective_vertex_font_size(active_vertex_count);
     let bounds = graph_bounds_rect(ctx).context("missing graph bounds")?;
     let width = bounds.width().max(1.0);
     let height = bounds.height().max(1.0);
@@ -209,7 +212,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         if snapshot.is_directed {
             if edge_count.get(&(edge.from, edge.to)) == Some(&1) {
                 let dir = (to_pos - from_pos).normalized();
-                let arrowhead = to_pos - dir * ctx.config.vertex_radius;
+                let arrowhead = to_pos - dir * vertex_radius;
                 let endpoint = arrowhead - dir * ctx.config.edge_arrow_length;
                 let arrow_dir = dir * ctx.config.edge_arrow_length;
                 let left = egui::Pos2::new(
@@ -266,7 +269,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                     control,
                     to_pos,
                     to_pos,
-                    ctx.config.vertex_radius,
+                    vertex_radius,
                 ) {
                     let control_x = control.x - bounds.min.x;
                     let control_y = control.y - bounds.min.y;
@@ -347,12 +350,12 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         if let Some(alpha) = fill_alpha {
             svg.push_str(&format!(
                 "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{}\" fill=\"{fill_hex}\" fill-opacity=\"{alpha}\" />\n",
-                ctx.config.vertex_radius
+                vertex_radius
             ));
         } else {
             svg.push_str(&format!(
                 "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{}\" fill=\"{fill_hex}\" />\n",
-                ctx.config.vertex_radius
+                vertex_radius
             ));
         }
 
@@ -360,13 +363,13 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         if let Some(alpha) = stroke_alpha {
             svg.push_str(&format!(
                 "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\" stroke-width=\"{}\" />\n",
-                ctx.config.vertex_radius,
+                vertex_radius,
                 ctx.config.vertex_stroke
             ));
         } else {
             svg.push_str(&format!(
                 "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-width=\"{}\" />\n",
-                ctx.config.vertex_radius,
+                vertex_radius,
                 ctx.config.vertex_stroke
             ));
         }
@@ -382,13 +385,13 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
             if let Some(alpha) = text_alpha {
                 svg.push_str(&format!(
                     "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" fill=\"{text_hex}\" fill-opacity=\"{alpha}\">{}</text>\n",
-                    ctx.config.vertex_font_size,
+                    vertex_font_size,
                     vertex_show_id
                 ));
             } else {
                 svg.push_str(&format!(
                     "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" fill=\"{text_hex}\">{}</text>\n",
-                    ctx.config.vertex_font_size,
+                    vertex_font_size,
                     vertex_show_id
                 ));
             }
@@ -400,6 +403,8 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
 }
 
 pub fn graph_bounds_rect(ctx: &ExportContext<'_>) -> Option<egui::Rect> {
+    let active_vertex_count = ctx.graph.vertices.iter().filter(|v| !v.is_deleted).count();
+    let vertex_radius = ctx.config.effective_vertex_radius(active_vertex_count);
     let mut iter = ctx.graph.vertices.iter().filter(|v| !v.is_deleted);
     let first = iter.next()?;
     let mut min = first.get_position();
@@ -413,7 +418,7 @@ pub fn graph_bounds_rect(ctx: &ExportContext<'_>) -> Option<egui::Rect> {
         max.y = max.y.max(pos.y);
     }
 
-    let padding = ctx.config.vertex_radius
+    let padding = vertex_radius
         + ctx.config.edge_stroke
         + ctx
             .config

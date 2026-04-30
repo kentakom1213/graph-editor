@@ -140,10 +140,16 @@ fn draw_view_tab(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
 
     ui.separator();
     ui.label(egui::RichText::new("Simulation").size(app.config.section_font_size()));
-    ui.checkbox(
-        &mut app.state.is_animated,
-        egui::RichText::new("Animate").size(app.config.body_font_size()),
-    );
+    let mut is_animated = app.state.is_animated;
+    if ui
+        .checkbox(
+            &mut is_animated,
+            egui::RichText::new("Animate").size(app.config.body_font_size()),
+        )
+        .changed()
+    {
+        app.set_animation_enabled(is_animated);
+    }
 }
 
 fn draw_io_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
