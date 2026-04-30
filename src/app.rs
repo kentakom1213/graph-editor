@@ -23,22 +23,44 @@ pub struct GraphEditorApp {
 const UI_STATE_STORAGE_KEY: &str = "graph-editor:ui-state";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 struct StoredUiState {
     version: u32,
     zero_indexed: bool,
     show_number: bool,
     is_directed: bool,
     export_format: String,
+    title_font_size: f32,
+    ui_font_size: f32,
+    vertex_font_size: f32,
+    vertex_radius: f32,
+    vertex_stroke: f32,
+    edge_stroke: f32,
+    edge_bezier_distance: f32,
+    scale_min: f32,
+    scale_max: f32,
+    scale_delta: f32,
 }
 
 impl Default for StoredUiState {
     fn default() -> Self {
+        let defaults = AppConfig::default();
         Self {
-            version: 1,
+            version: 2,
             zero_indexed: false,
             show_number: true,
             is_directed: false,
             export_format: ExportFormat::Png.extension().to_string(),
+            title_font_size: defaults.title_font_size,
+            ui_font_size: defaults.ui_font_size,
+            vertex_font_size: defaults.vertex_font_size,
+            vertex_radius: defaults.vertex_radius,
+            vertex_stroke: defaults.vertex_stroke,
+            edge_stroke: defaults.edge_stroke,
+            edge_bezier_distance: defaults.edge_bezier_distance,
+            scale_min: defaults.scale_min,
+            scale_max: defaults.scale_max,
+            scale_delta: defaults.scale_delta,
         }
     }
 }
@@ -53,6 +75,16 @@ impl GraphEditorApp {
         app.state.zero_indexed = state.zero_indexed;
         app.state.show_number = state.show_number;
         app.state.graph.is_directed = state.is_directed;
+        app.config.title_font_size = state.title_font_size;
+        app.config.ui_font_size = state.ui_font_size;
+        app.config.vertex_font_size = state.vertex_font_size;
+        app.config.vertex_radius = state.vertex_radius;
+        app.config.vertex_stroke = state.vertex_stroke;
+        app.config.edge_stroke = state.edge_stroke;
+        app.config.edge_bezier_distance = state.edge_bezier_distance;
+        app.config.scale_min = state.scale_min;
+        app.config.scale_max = state.scale_max;
+        app.config.scale_delta = state.scale_delta;
         let format = match state.export_format.as_str() {
             "svg" => ExportFormat::Svg,
             _ => ExportFormat::Png,
@@ -189,11 +221,21 @@ impl Default for GraphEditorApp {
 impl eframe::App for GraphEditorApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         let state = StoredUiState {
-            version: 1,
+            version: 2,
             zero_indexed: self.state.zero_indexed,
             show_number: self.state.show_number,
             is_directed: self.state.graph.is_directed,
             export_format: self.export.format().extension().to_string(),
+            title_font_size: self.config.title_font_size,
+            ui_font_size: self.config.ui_font_size,
+            vertex_font_size: self.config.vertex_font_size,
+            vertex_radius: self.config.vertex_radius,
+            vertex_stroke: self.config.vertex_stroke,
+            edge_stroke: self.config.edge_stroke,
+            edge_bezier_distance: self.config.edge_bezier_distance,
+            scale_min: self.config.scale_min,
+            scale_max: self.config.scale_max,
+            scale_delta: self.config.scale_delta,
         };
         eframe::set_value(storage, UI_STATE_STORAGE_KEY, &state);
     }
