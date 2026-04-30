@@ -36,8 +36,7 @@ pub fn draw_error_modal(app: &mut GraphEditorApp, ctx: &Context) {
     draw_modal_background(ctx);
 
     if ctx.input(|i| {
-        i.key_pressed(egui::Key::Escape)
-            || i.pointer.any_released() && !app.ui.cursor_hover.get_input_window()
+        i.key_pressed(egui::Key::Escape) || i.pointer.any_released() && !app.ui.input_has_focus
     }) {
         app.ui.error_message = None;
         return;

@@ -2,12 +2,12 @@ use eframe::egui;
 use serde::{Deserialize, Serialize};
 
 use crate::components::{
-    draw_central_panel, draw_clear_all_modal, draw_color_settings, draw_edit_menu,
-    draw_error_modal, draw_footer, draw_graph_io, draw_top_panel, Colors, CursorHoverState,
-    PanelTabState,
+    draw_central_panel, draw_clear_all_modal, draw_error_modal, draw_footer, draw_inspector_panel,
+    draw_tool_bar, draw_top_panel, Colors, CursorHoverState, InspectorTab,
 };
 use crate::config::AppConfig;
 use crate::export::{ExportFormat, ExportService};
+use crate::graph::BaseGraph;
 use crate::mode::EditMode;
 use crate::state::{AppState, UiState};
 use crate::update::request_repaint;
@@ -121,6 +121,26 @@ impl GraphEditorApp {
             self.ui.error_message = Some(err);
         }
     }
+
+    pub fn rebuild_from_base_graph(&mut self, ctx: &egui::Context, base_graph: BaseGraph) {
+        let visualizer = self.config.visualizer();
+        let new_graph_result = self.state.graph.rebuild_from_basegraph(
+            visualizer.as_ref(),
+            self.config.density_threshold,
+            base_graph,
+            ctx.used_size(),
+        );
+        match new_graph_result {
+            Ok(_) => {
+                self.state.graph_view.reset_for_graph(&self.state.graph);
+                self.state.next_z_index = self.state.graph.vertices.len() as u32;
+                self.state.is_animated = true;
+            }
+            Err(err) => {
+                self.ui.error_message = Some(err.to_string());
+            }
+        }
+    }
 }
 
 impl Default for GraphEditorApp {
@@ -141,9 +161,10 @@ impl Default for GraphEditorApp {
             ui: UiState {
                 cursor_hover: CursorHoverState::default(),
                 input_text: String::new(),
+                input_has_focus: false,
                 error_message: None,
                 confirm_clear_all: false,
-                panel_tab: PanelTabState::default(),
+                inspector_tab: InspectorTab::default(),
             },
             export: ExportService::default(),
             config: AppConfig::default(),
@@ -167,30 +188,11 @@ impl eframe::App for GraphEditorApp {
         self.state.graph_view.apply_deletions(&self.state.graph);
         self.state.graph.apply_deletions();
 
-        // トップパネル（タブバー）を描画
         draw_top_panel(self, ctx);
-
-        // メイン領域を描画
+        draw_tool_bar(self, ctx);
+        draw_inspector_panel(self, ctx);
         draw_central_panel(self, ctx);
-
-        // 現在選択されているタブに応じてサイドパネルの内容を切り替える
-        if self.ui.panel_tab.edit_menu {
-            // 編集メニューを描画
-            draw_edit_menu(self, ctx);
-        }
-        if self.ui.panel_tab.color_settings {
-            // 色の設定を描画
-            draw_color_settings(self, ctx);
-        }
-        if self.ui.panel_tab.graph_io {
-            // グラフの入力を描画
-            draw_graph_io(self, ctx);
-        }
-
-        // フッターを描画
         draw_footer(self, ctx);
-
-        // エラーメッセージを描画
         draw_error_modal(self, ctx);
         draw_clear_all_modal(self, ctx);
 
