@@ -9,6 +9,7 @@ pub struct AppState {
     pub graph: Graph,
     pub graph_view: GraphViewState,
     pub is_animated: bool,
+    pub simulation_edge_length: f32,
     pub last_mouse_pos: Option<egui::Pos2>,
     pub next_z_index: u32,
     pub edit_mode: EditMode,

@@ -1,6 +1,6 @@
 use std::{
     cell::{Ref, RefCell},
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     rc::Rc,
 };
 
@@ -169,6 +169,40 @@ impl Graph {
             .filter_map(|id| self.vertices.iter().find(|v| v.id == id))
     }
 
+    pub fn approx_diameter_lower_bound(&self) -> usize {
+        let n = self.vertices.len();
+        if n <= 1 {
+            return 0;
+        }
+
+        let mut adjacency = vec![Vec::new(); n];
+        for edge in &self.edges {
+            if edge.from < n && edge.to < n {
+                adjacency[edge.from].push(edge.to);
+                adjacency[edge.to].push(edge.from);
+            }
+        }
+
+        let mut seen_components = vec![false; n];
+        let mut best = 0;
+
+        for start in 0..n {
+            if seen_components[start] {
+                continue;
+            }
+
+            let (first_far, _, component_nodes) = bfs_farthest(start, &adjacency);
+            for node in component_nodes {
+                seen_components[node] = true;
+            }
+
+            let (_, dist, _) = bfs_farthest(first_far, &adjacency);
+            best = best.max(dist);
+        }
+
+        best
+    }
+
     pub fn clear(&mut self) {
         self.vertices.clear();
         self.edges.clear();
@@ -314,6 +348,33 @@ impl Graph {
 
         Ok(())
     }
+}
+
+fn bfs_farthest(start: usize, adjacency: &[Vec<usize>]) -> (usize, usize, Vec<usize>) {
+    let mut dist = vec![usize::MAX; adjacency.len()];
+    let mut queue = VecDeque::new();
+    let mut visited = Vec::new();
+    let mut farthest = start;
+
+    dist[start] = 0;
+    queue.push_back(start);
+
+    while let Some(node) = queue.pop_front() {
+        visited.push(node);
+        if dist[node] > dist[farthest] {
+            farthest = node;
+        }
+
+        for &next in &adjacency[node] {
+            if dist[next] != usize::MAX {
+                continue;
+            }
+            dist[next] = dist[node] + 1;
+            queue.push_back(next);
+        }
+    }
+
+    (farthest, dist[farthest], visited)
 }
 
 impl Default for Graph {
