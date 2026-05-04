@@ -36,7 +36,6 @@ struct StoredUiState {
     is_animated: bool,
     is_directed: bool,
     export_format: String,
-    title_font_size: f32,
     ui_font_size: f32,
     vertex_font_size: f32,
     vertex_radius: f32,
@@ -58,7 +57,6 @@ impl Default for StoredUiState {
             is_animated: true,
             is_directed: false,
             export_format: ExportFormat::Png.extension().to_string(),
-            title_font_size: defaults.title_font_size,
             ui_font_size: defaults.ui_font_size,
             vertex_font_size: defaults.vertex_font_size,
             vertex_radius: defaults.vertex_radius,
@@ -83,7 +81,6 @@ impl GraphEditorApp {
         app.state.show_number = state.show_number;
         app.state.is_animated = state.is_animated;
         app.state.graph.is_directed = state.is_directed;
-        app.config.title_font_size = state.title_font_size;
         app.config.ui_font_size = state.ui_font_size;
         app.config.vertex_font_size = state.vertex_font_size;
         app.config.vertex_radius = state.vertex_radius;
@@ -400,7 +397,6 @@ impl eframe::App for GraphEditorApp {
             is_animated: self.state.is_animated,
             is_directed: self.state.graph.is_directed,
             export_format: self.export.format().extension().to_string(),
-            title_font_size: self.config.title_font_size,
             ui_font_size: self.config.ui_font_size,
             vertex_font_size: self.config.vertex_font_size,
             vertex_radius: self.config.vertex_radius,

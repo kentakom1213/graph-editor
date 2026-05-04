@@ -61,7 +61,7 @@ pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
             ui.label(
                 egui::RichText::new("Graph Editor")
                     .strong()
-                    .size(app.config.title_font_size),
+                    .size(app.config.title_font_size()),
             );
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -95,9 +95,10 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
                 .cursor_hover
                 .set_settings_window(ui.rect_contains_pointer(ui.max_rect()));
 
-            ui.label(egui::RichText::new("Typography").size(app.config.section_font_size()));
-            ui.add(
-                egui::Slider::new(&mut app.config.title_font_size, 12.0..=32.0).text("Title font"),
+            ui.label(
+                egui::RichText::new("Typography")
+                    .strong()
+                    .size(app.config.section_font_size()),
             );
             ui.add(egui::Slider::new(&mut app.config.ui_font_size, 10.0..=28.0).text("UI font"));
             ui.add(
@@ -106,7 +107,11 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
             );
 
             ui.separator();
-            ui.label(egui::RichText::new("Canvas").size(app.config.section_font_size()));
+            ui.label(
+                egui::RichText::new("Canvas")
+                    .strong()
+                    .size(app.config.section_font_size()),
+            );
             ui.add(
                 egui::Slider::new(&mut app.config.vertex_radius, 16.0..=72.0).text("Vertex size"),
             );
@@ -120,7 +125,11 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
             );
 
             ui.separator();
-            ui.label(egui::RichText::new("Interaction").size(app.config.section_font_size()));
+            ui.label(
+                egui::RichText::new("Interaction")
+                    .strong()
+                    .size(app.config.section_font_size()),
+            );
             ui.add(egui::Slider::new(&mut app.config.scale_min, 0.05..=1.0).text("Min zoom"));
             ui.add(egui::Slider::new(&mut app.config.scale_max, 1.0..=6.0).text("Max zoom"));
             ui.add(

@@ -47,7 +47,11 @@ pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &Context) {
 }
 
 fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
-    ui.label(egui::RichText::new("Indexing").size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Indexing")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     draw_toggle_button(
         ui,
         app.state.zero_indexed,
@@ -64,7 +68,11 @@ fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     );
 
     ui.separator();
-    ui.label(egui::RichText::new("Direction").size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Direction")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     draw_toggle_button(
         ui,
         !app.state.graph.is_directed,
@@ -81,7 +89,11 @@ fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     );
 
     ui.separator();
-    ui.label(egui::RichText::new("Operations").size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Operations")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
 
     if ui
         .add_enabled(
@@ -115,7 +127,11 @@ fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     }
 
     ui.separator();
-    ui.label(egui::RichText::new("Danger Zone").size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Danger Zone")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     if ui
         .button(egui::RichText::new("Clear All").size(app.config.button_font_size()))
         .clicked()
@@ -161,7 +177,11 @@ fn draw_io_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     }
 
     ui.separator();
-    ui.label(egui::RichText::new("Export Image").size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Export Image")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new("Format").size(app.config.body_font_size()));
         let mut format = app.export.format();
@@ -210,7 +230,11 @@ fn draw_edge_list_io(
         app.sync_input_text_from_graph();
     }
 
-    ui.label(egui::RichText::new("Graph Text").size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Graph Text")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     ui.horizontal(|ui| {
         if ui
             .button(egui::RichText::new("Copy").size(app.config.button_font_size()))
@@ -252,7 +276,11 @@ fn draw_json_io(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui, edit
         app.sync_json_text_from_graph();
     }
 
-    ui.label(egui::RichText::new("Graph JSON").size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Graph JSON")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     ui.checkbox(
         &mut app.ui.save_vertex_position,
         egui::RichText::new("Save vertex positions").size(app.config.body_font_size()),
