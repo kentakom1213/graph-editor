@@ -30,7 +30,19 @@ pub fn draw_footer(app: &mut GraphEditorApp, ctx: &Context) {
     };
 
     egui::TopBottomPanel::bottom("footer_panel").show(ctx, |ui| {
+        app.ui
+            .cursor_hover
+            .set_footer_panel(ui.rect_contains_pointer(ui.max_rect()));
+
         ui.horizontal(|ui| {
+            if ui
+                .button(egui::RichText::new("⚙").size(app.config.footer_font_size()))
+                .on_hover_text("Toggle settings")
+                .clicked()
+            {
+                app.ui.show_settings = !app.ui.show_settings;
+            }
+            ui.separator();
             ui.label(
                 egui::RichText::new(format!(
                     "Mode: {} | {} | {} | vertices: {} | edges: {}",
@@ -52,6 +64,19 @@ pub fn draw_footer(app: &mut GraphEditorApp, ctx: &Context) {
                     egui::RichText::new(format!("Graph Editor v{APP_VERSION}"))
                         .size(app.config.footer_font_size()),
                 );
+                ui.separator();
+                let animate = ui
+                    .selectable_label(app.state.is_animated, "Animate")
+                    .on_hover_text("Toggle force-directed layout animation");
+                if animate.clicked() {
+                    app.set_animation_enabled(!app.state.is_animated);
+                }
+                let show_numbers = ui
+                    .selectable_label(app.state.show_number, "Number")
+                    .on_hover_text("Toggle vertex number labels");
+                if show_numbers.clicked() {
+                    app.state.show_number = !app.state.show_number;
+                }
             });
         });
     });
