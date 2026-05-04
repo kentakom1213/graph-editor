@@ -54,7 +54,8 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
             ui.label(egui::RichText::new("Color").size(app.config.section_font_size()));
 
             let prev_color = app.state.selected_color;
-            for (label, color) in [
+            ui.horizontal_wrapped(|ui| {
+                for (label, color) in [
                 ("Default", Colors::Default),
                 ("Red", Colors::Red),
                 ("Green", Colors::Green),
@@ -64,22 +65,33 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
                 ("Violet", Colors::Violet),
                 ("Pink", Colors::Pink),
                 ("Brown", Colors::Brown),
+                ("Cyan", Colors::Cyan),
+                ("Indigo", Colors::Indigo),
+                ("Gray", Colors::Gray),
             ] {
-                let text = if color == Colors::Default {
-                    egui::RichText::new(label).size(app.config.button_font_size())
-                } else {
-                    egui::RichText::new(label)
-                        .color(color.vertex())
-                        .size(app.config.button_font_size())
-                };
-                if ui
-                    .selectable_label(app.state.selected_color == color, text)
-                    .on_hover_text(color_label(color))
-                    .clicked()
-                {
-                    app.state.selected_color = color;
+                    let fill = if color == Colors::Default {
+                        egui::Color32::WHITE
+                    } else {
+                        color.vertex()
+                    };
+                    let stroke_color = if app.state.selected_color == color {
+                        egui::Color32::BLACK
+                    } else {
+                        egui::Color32::from_gray(120)
+                    };
+                    let response = ui
+                        .add(
+                            egui::Button::new("")
+                                .min_size(egui::vec2(28.0, 28.0))
+                                .fill(fill)
+                                .stroke(egui::Stroke::new(2.0, stroke_color)),
+                        )
+                        .on_hover_text(label);
+                    if response.clicked() {
+                        app.state.selected_color = color;
+                    }
                 }
-            }
+            });
 
             if app.state.selected_color != prev_color {
                 app.state.edit_mode = EditMode::default_colorize();
@@ -102,19 +114,5 @@ fn draw_mode_button(
         .clicked()
     {
         on_click();
-    }
-}
-
-fn color_label(color: Colors) -> &'static str {
-    match color {
-        Colors::Default => "Default",
-        Colors::Red => "Red",
-        Colors::Green => "Green",
-        Colors::Blue => "Blue",
-        Colors::Yellow => "Yellow",
-        Colors::Orange => "Orange",
-        Colors::Violet => "Violet",
-        Colors::Pink => "Pink",
-        Colors::Brown => "Brown",
     }
 }
