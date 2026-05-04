@@ -1,6 +1,10 @@
 use egui::Context;
 
-use crate::{components::Colors, state::EditTarget, GraphEditorApp};
+use crate::{
+    components::{default_vertex_text_color, Colors},
+    state::EditTarget,
+    GraphEditorApp,
+};
 
 fn draw_modal_background(ctx: &Context) {
     let screen_rect = ctx.screen_rect();
@@ -111,7 +115,10 @@ pub fn draw_entity_editor(app: &mut GraphEditorApp, ctx: &Context) {
     };
 
     let mut open = true;
-    let pos = app.ui.edit_window_pos.unwrap_or_else(|| ctx.screen_rect().center());
+    let pos = app
+        .ui
+        .edit_window_pos
+        .unwrap_or_else(|| ctx.screen_rect().center());
     egui::Window::new(match target {
         EditTarget::Vertex(_) => "Vertex",
         EditTarget::Edge(_) => "Edge",
@@ -149,7 +156,11 @@ fn draw_vertex_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize)
     ui.label(format!("id: {}", vertex.id));
     ui.separator();
 
-    ui.label(egui::RichText::new("Label").strong().size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Label")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     let default_label = if app.state.zero_indexed {
         vertex.id.to_string()
     } else {
@@ -159,20 +170,38 @@ fn draw_vertex_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize)
     ui.text_edit_singleline(label);
 
     ui.separator();
-    ui.label(egui::RichText::new("Fill").strong().size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Fill")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     draw_color_palette(ui, &mut view.color);
 
     ui.separator();
-    ui.label(egui::RichText::new("Text").strong().size(app.config.section_font_size()));
-    let mut text_color = view.text_color.unwrap_or(app.config.vertex_font_color);
+    ui.label(
+        egui::RichText::new("Text")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
+    let mut text_color = view
+        .text_color
+        .unwrap_or_else(|| default_vertex_text_color(view.color.vertex()));
     if ui.color_edit_button_srgba(&mut text_color).changed() {
         view.text_color = Some(text_color);
     }
 
     ui.separator();
-    ui.label(egui::RichText::new("Geometry").strong().size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Geometry")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     let mut use_default_radius = view.radius.is_none();
-    if ui.checkbox(&mut use_default_radius, "Use default size").changed() && use_default_radius {
+    if ui
+        .checkbox(&mut use_default_radius, "Use default size")
+        .changed()
+        && use_default_radius
+    {
         view.radius = None;
     }
     if !use_default_radius {
@@ -208,7 +237,11 @@ fn draw_edge_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize) {
     ui.label(format!("to: {}", edge.to));
     ui.separator();
 
-    ui.label(egui::RichText::new("Stroke").strong().size(app.config.section_font_size()));
+    ui.label(
+        egui::RichText::new("Stroke")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
     draw_color_palette(ui, &mut view.color);
 
     let mut use_default_stroke = view.stroke_width.is_none();

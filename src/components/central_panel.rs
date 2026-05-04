@@ -4,7 +4,7 @@ use itertools::Itertools;
 
 use super::transition_and_scale::{drag_central_panel, scale_central_panel};
 use crate::{
-    components::Colors,
+    components::{default_vertex_text_color, Colors},
     config::AppConfig,
     graph::Graph,
     math::{
@@ -61,13 +61,12 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
             // 頂点の描画
             render_vertices(&snapshot, app, ui, painter);
         });
-
 }
 
 /// モード切替の処理
 fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     // 入力中はモード切替を行わない
-    if app.ui.input_has_focus {
+    if app.ui.input_has_focus || ui.ctx().wants_keyboard_input() {
         return;
     }
 
@@ -105,10 +104,6 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     }
     if ui.input(|i| i.key_pressed(egui::Key::Num1)) {
         app.state.zero_indexed ^= true;
-    }
-    if ui.input(|i| i.key_pressed(egui::Key::A)) {
-        // A でグラフのシミュレーションを切り替え
-        app.set_animation_enabled(!app.state.is_animated);
     }
 }
 
@@ -620,7 +615,9 @@ fn render_vertices(
                 egui::Align2::CENTER_CENTER,
                 vertex_show_id,
                 egui::FontId::proportional(vertex_font_size),
-                vertex.text_color.unwrap_or(app.config.vertex_font_color),
+                vertex
+                    .text_color
+                    .unwrap_or_else(|| default_vertex_text_color(color)),
             );
         }
     }

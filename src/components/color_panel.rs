@@ -42,3 +42,12 @@ impl Colors {
             .unwrap_or(egui::Color32::from_rgb(100, 100, 100))
     }
 }
+
+pub fn default_vertex_text_color(fill: egui::Color32) -> egui::Color32 {
+    let luma = 0.2126 * fill.r() as f32 + 0.7152 * fill.g() as f32 + 0.0722 * fill.b() as f32;
+    if luma < 140.0 {
+        egui::Color32::WHITE
+    } else {
+        egui::Color32::BLACK
+    }
+}
