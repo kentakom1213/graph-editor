@@ -12,6 +12,7 @@ pub enum InspectorTab {
 
 pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &Context) {
     egui::SidePanel::right("inspector_panel")
+        .show_separator_line(false)
         .resizable(false)
         .exact_width(196.0)
         .show(ctx, |ui| {

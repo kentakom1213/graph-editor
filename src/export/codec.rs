@@ -349,27 +349,23 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         let (fill_hex, fill_alpha) = color_to_svg(fill_color);
         if let Some(alpha) = fill_alpha {
             svg.push_str(&format!(
-                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{}\" fill=\"{fill_hex}\" fill-opacity=\"{alpha}\" />\n",
-                vertex_radius
+                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"{fill_hex}\" fill-opacity=\"{alpha}\" />\n",
             ));
         } else {
             svg.push_str(&format!(
-                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{}\" fill=\"{fill_hex}\" />\n",
-                vertex_radius
+                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"{fill_hex}\" />\n",
             ));
         }
 
         let (stroke_hex, stroke_alpha) = color_to_svg(ctx.config.vertex_color_outline);
         if let Some(alpha) = stroke_alpha {
             svg.push_str(&format!(
-                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\" stroke-width=\"{}\" />\n",
-                vertex_radius,
+                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\" stroke-width=\"{}\" />\n",
                 ctx.config.vertex_stroke
             ));
         } else {
             svg.push_str(&format!(
-                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-width=\"{}\" />\n",
-                vertex_radius,
+                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-width=\"{}\" />\n",
                 ctx.config.vertex_stroke
             ));
         }
@@ -384,15 +380,11 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
             let text_adjust_y = y + 4.5;
             if let Some(alpha) = text_alpha {
                 svg.push_str(&format!(
-                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" fill=\"{text_hex}\" fill-opacity=\"{alpha}\">{}</text>\n",
-                    vertex_font_size,
-                    vertex_show_id
+                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\" fill-opacity=\"{alpha}\">{vertex_show_id}</text>\n",
                 ));
             } else {
                 svg.push_str(&format!(
-                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" fill=\"{text_hex}\">{}</text>\n",
-                    vertex_font_size,
-                    vertex_show_id
+                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\">{vertex_show_id}</text>\n",
                 ));
             }
         }
