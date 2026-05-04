@@ -4,8 +4,9 @@ use crate::{components::Colors, mode::EditMode, GraphEditorApp};
 
 pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
     egui::SidePanel::left("tool_bar")
+        .show_separator_line(false)
         .resizable(false)
-        .exact_width(182.0)
+        .exact_width(166.0)
         .show(ctx, |ui| {
             app.ui
                 .cursor_hover
@@ -95,7 +96,7 @@ fn draw_mode_button(
 ) {
     if ui
         .add_sized(
-            [170.0, 32.0],
+            [150.0, 32.0],
             egui::SelectableLabel::new(selected, egui::RichText::new(label).size(font_size)),
         )
         .clicked()
