@@ -57,22 +57,26 @@ pub fn draw_footer(app: &mut GraphEditorApp, ctx: &Context) {
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.hyperlink_to(
-                    egui::RichText::new("GitHub").size(app.config.footer_font_size()),
-                    "https://github.com/kentakom1213/graph-editor",
-                );
-                ui.label(
                     egui::RichText::new(format!("Graph Editor v{APP_VERSION}"))
-                        .size(app.config.footer_font_size()),
+                        .size(app.config.footer_font_size())
+                        .color(ui.visuals().text_color()),
+                    "https://github.com/kentakom1213/graph-editor",
                 );
                 ui.separator();
                 let animate = ui
-                    .selectable_label(app.state.is_animated, "Animate")
+                    .selectable_label(
+                        app.state.is_animated,
+                        egui::RichText::new("Animate").size(app.config.footer_font_size()),
+                    )
                     .on_hover_text("Toggle force-directed layout animation");
                 if animate.clicked() {
                     app.set_animation_enabled(!app.state.is_animated);
                 }
                 let show_numbers = ui
-                    .selectable_label(app.state.show_number, "Number")
+                    .selectable_label(
+                        app.state.show_number,
+                        egui::RichText::new("Number").size(app.config.footer_font_size()),
+                    )
                     .on_hover_text("Toggle vertex number labels");
                 if show_numbers.clicked() {
                     app.state.show_number = !app.state.show_number;
