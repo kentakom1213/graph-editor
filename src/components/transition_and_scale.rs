@@ -27,6 +27,10 @@ pub fn drag_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
 
 /// グラフのスケールを行う
 pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
+    if app.ui.cursor_hover.any() {
+        return;
+    }
+
     let input = ui.input(|i| i.clone());
 
     // スクロールに対応

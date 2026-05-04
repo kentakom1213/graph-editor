@@ -10,7 +10,8 @@ use crate::export::{ExportFormat, ExportService};
 use crate::graph::{simulation_methods, BaseGraph, Simulator};
 use crate::math::affine::Affine2D;
 use crate::mode::EditMode;
-use crate::state::{AppState, UiState};
+use crate::project_io::{ImportedGraph, SaveOptions};
+use crate::state::{AppState, IoFormat, UiState};
 use crate::update::request_repaint;
 use crate::view_state::GraphViewState;
 
@@ -98,7 +99,7 @@ impl GraphEditorApp {
             _ => ExportFormat::Png,
         };
         app.export.set_format(format);
-        app.sync_input_text_from_graph();
+        app.sync_io_texts_from_graph();
         app
     }
 
@@ -168,6 +169,37 @@ impl GraphEditorApp {
         self.ui.input_text = encoded.clone();
         self.ui.input_synced_text = encoded;
         self.ui.input_is_dirty = false;
+    }
+
+    pub fn json_save_options(&self) -> SaveOptions {
+        SaveOptions {
+            include_vertex_position: self.ui.save_vertex_position,
+            include_vertex_style: self.ui.save_vertex_style,
+            include_edge_style: self.ui.save_edge_style,
+        }
+    }
+
+    pub fn sync_json_text_from_graph(&mut self) {
+        match crate::project_io::export_graph_to_json(
+            &self.state.graph,
+            &self.state.graph_view,
+            self.state.zero_indexed,
+            self.json_save_options(),
+        ) {
+            Ok(json) => {
+                self.ui.json_text = json.clone();
+                self.ui.json_synced_text = json;
+                self.ui.json_is_dirty = false;
+            }
+            Err(err) => {
+                self.ui.error_message = Some(err.to_string());
+            }
+        }
+    }
+
+    pub fn sync_io_texts_from_graph(&mut self) {
+        self.sync_input_text_from_graph();
+        self.sync_json_text_from_graph();
     }
 
     pub fn set_animation_enabled(&mut self, enabled: bool) {
@@ -279,12 +311,41 @@ impl GraphEditorApp {
                 }
                 self.state.graph_view.reset_for_graph(&self.state.graph);
                 self.state.next_z_index = self.state.graph.vertices.len() as u32;
-                self.sync_input_text_from_graph();
+                self.sync_io_texts_from_graph();
             }
             Err(err) => {
                 self.ui.error_message = Some(err.to_string());
             }
         }
+    }
+
+    pub fn apply_imported_graph(&mut self, ctx: &egui::Context, imported: ImportedGraph) {
+        let canvas_rect = self.ui.canvas_rect.unwrap_or_else(|| ctx.available_rect());
+        let was_animated = self.state.is_animated;
+
+        self.state.graph = imported.graph;
+        self.state.graph_view = imported.view;
+        self.state.zero_indexed = imported.zero_indexed;
+        self.state.next_z_index = self.state.graph.vertices.len() as u32;
+        self.state.selected_color = Colors::Default;
+        self.switch_normal_mode();
+
+        if imported.used_generated_positions {
+            if was_animated {
+                self.state.simulation_edge_length = self.effective_layout_edge_length();
+                self.state.is_animated = true;
+            } else {
+                let edge_length = self.effective_layout_edge_length();
+                self.settle_graph_layout(edge_length);
+                self.auto_fit_graph_to_canvas(canvas_rect);
+                self.state.is_animated = false;
+            }
+        } else {
+            self.state.simulation_edge_length = self.effective_layout_edge_length();
+            self.state.is_animated = was_animated;
+        }
+
+        self.sync_io_texts_from_graph();
     }
 }
 
@@ -310,8 +371,15 @@ impl Default for GraphEditorApp {
                 canvas_rect: None,
                 input_text: String::new(),
                 input_synced_text: String::new(),
+                io_format: IoFormat::default(),
+                json_text: String::new(),
+                json_synced_text: String::new(),
                 input_has_focus: false,
                 input_is_dirty: false,
+                json_is_dirty: false,
+                save_vertex_position: true,
+                save_vertex_style: true,
+                save_edge_style: true,
                 show_settings: false,
                 error_message: None,
                 confirm_clear_all: false,
