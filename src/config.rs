@@ -97,7 +97,7 @@ impl AppConfig {
     }
 
     pub fn footer_font_size(&self) -> f32 {
-        self.ui_font_size * 0.8125
+        self.ui_font_size
     }
 
     pub fn effective_vertex_radius(&self, vertex_count: usize) -> f32 {
