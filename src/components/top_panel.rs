@@ -66,10 +66,10 @@ pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui
-                    .button(egui::RichText::new("Settings").size(app.config.button_font_size()))
+                    .button(egui::RichText::new("⚙").size(app.config.button_font_size()))
                     .clicked()
                 {
-                    app.ui.show_settings = true;
+                    app.ui.show_settings = !app.ui.show_settings;
                 }
             });
         });

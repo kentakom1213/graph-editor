@@ -450,6 +450,9 @@ fn match_color(color: Option<egui::Color32>, vertex: bool) -> Colors {
         Colors::Violet,
         Colors::Pink,
         Colors::Brown,
+        Colors::Cyan,
+        Colors::Indigo,
+        Colors::Gray,
     ] {
         let expected = if vertex {
             candidate.vertex()

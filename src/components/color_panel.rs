@@ -10,6 +10,9 @@ pub enum Colors {
     Violet,
     Pink,
     Brown,
+    Cyan,
+    Indigo,
+    Gray,
 }
 
 impl Colors {
@@ -24,6 +27,9 @@ impl Colors {
             Colors::Violet => Some(egui::Color32::from_rgb(238, 130, 238)),
             Colors::Pink => Some(egui::Color32::from_rgb(255, 192, 203)),
             Colors::Brown => Some(egui::Color32::from_rgb(181, 101, 29)),
+            Colors::Cyan => Some(egui::Color32::from_rgb(64, 200, 224)),
+            Colors::Indigo => Some(egui::Color32::from_rgb(92, 72, 186)),
+            Colors::Gray => Some(egui::Color32::from_rgb(130, 130, 130)),
         }
     }
 
