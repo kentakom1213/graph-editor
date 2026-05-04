@@ -1,6 +1,8 @@
-use egui::Context;
+use egui::{text::LayoutJob, Color32, Context, FontId, TextFormat};
 
-use crate::{graph::BaseGraph, GraphEditorApp};
+use crate::{
+    graph::BaseGraph, project_io::import_graph_from_json, state::IoFormat, GraphEditorApp,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum InspectorTab {
@@ -13,8 +15,8 @@ pub enum InspectorTab {
 pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &Context) {
     egui::SidePanel::right("inspector_panel")
         .show_separator_line(false)
-        .resizable(false)
-        .exact_width(196.0)
+        .resizable(true)
+        .min_width(196.0)
         .show(ctx, |ui| {
             app.ui
                 .cursor_hover
@@ -155,46 +157,38 @@ fn draw_view_tab(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
 fn draw_io_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     const GRAPH_TEXT_EDITOR_HEIGHT: f32 = 280.0;
 
-    if !app.ui.input_has_focus && !app.ui.input_is_dirty {
-        app.sync_input_text_from_graph();
-    }
-
-    ui.label(egui::RichText::new("Graph Text").size(app.config.section_font_size()));
     ui.horizontal(|ui| {
-        if ui
-            .button(egui::RichText::new("Copy").size(app.config.button_font_size()))
-            .clicked()
-        {
-            ctx.copy_text(app.ui.input_text.clone());
-        }
-
-        if ui
-            .button(egui::RichText::new("Apply").size(app.config.button_font_size()))
-            .clicked()
-        {
-            let new_graph = BaseGraph::parse(&app.ui.input_text, app.state.zero_indexed);
-            match new_graph {
-                Ok(base_graph) => app.rebuild_from_base_graph(ctx, base_graph),
-                Err(err) => app.ui.error_message = Some(err.to_string()),
-            }
-        }
+        draw_text_mode_button(
+            ui,
+            app.ui.io_format == IoFormat::EdgeList,
+            "Edge List",
+            app.config.body_font_size(),
+            || {
+                app.ui.io_format = IoFormat::EdgeList;
+                if !app.ui.input_is_dirty {
+                    app.sync_input_text_from_graph();
+                }
+            },
+        );
+        draw_text_mode_button(
+            ui,
+            app.ui.io_format == IoFormat::Json,
+            "JSON",
+            app.config.body_font_size(),
+            || {
+                app.ui.io_format = IoFormat::Json;
+                if !app.ui.json_is_dirty {
+                    app.sync_json_text_from_graph();
+                }
+            },
+        );
     });
-
     ui.separator();
 
-    let editor = egui::TextEdit::multiline(&mut app.ui.input_text)
-        .font(egui::FontId::monospace(app.config.input_font_size()))
-        .desired_rows(10)
-        .desired_width(f32::INFINITY);
-    let response = egui::ScrollArea::vertical()
-        .id_salt("graph_text_editor_scroll")
-        .max_height(GRAPH_TEXT_EDITOR_HEIGHT)
-        .show(ui, |ui| {
-            ui.add_sized([ui.available_width(), GRAPH_TEXT_EDITOR_HEIGHT], editor)
-        })
-        .inner;
-    app.ui.input_has_focus = response.has_focus();
-    app.ui.input_is_dirty = app.ui.input_text != app.ui.input_synced_text;
+    match app.ui.io_format {
+        IoFormat::EdgeList => draw_edge_list_io(app, ctx, ui, GRAPH_TEXT_EDITOR_HEIGHT),
+        IoFormat::Json => draw_json_io(app, ctx, ui, GRAPH_TEXT_EDITOR_HEIGHT),
+    }
 
     ui.separator();
     ui.label(egui::RichText::new("Export Image").size(app.config.section_font_size()));
@@ -236,6 +230,119 @@ fn draw_io_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     }
 }
 
+fn draw_edge_list_io(
+    app: &mut GraphEditorApp,
+    ctx: &Context,
+    ui: &mut egui::Ui,
+    editor_height: f32,
+) {
+    if !app.ui.input_has_focus && !app.ui.input_is_dirty {
+        app.sync_input_text_from_graph();
+    }
+
+    ui.label(egui::RichText::new("Graph Text").size(app.config.section_font_size()));
+    ui.horizontal(|ui| {
+        if ui
+            .button(egui::RichText::new("Copy").size(app.config.button_font_size()))
+            .clicked()
+        {
+            ctx.copy_text(app.ui.input_text.clone());
+        }
+
+        if ui
+            .button(egui::RichText::new("Apply").size(app.config.button_font_size()))
+            .clicked()
+        {
+            let new_graph = BaseGraph::parse(&app.ui.input_text, app.state.zero_indexed);
+            match new_graph {
+                Ok(base_graph) => app.rebuild_from_base_graph(ctx, base_graph),
+                Err(err) => app.ui.error_message = Some(err.to_string()),
+            }
+        }
+    });
+
+    ui.separator();
+    let editor = egui::TextEdit::multiline(&mut app.ui.input_text)
+        .font(egui::FontId::monospace(app.config.input_font_size()))
+        .desired_rows(10)
+        .desired_width(f32::INFINITY);
+    let response = egui::ScrollArea::vertical()
+        .id_salt("graph_text_editor_scroll")
+        .max_height(editor_height)
+        .show(ui, |ui| {
+            ui.add_sized([ui.available_width(), editor_height], editor)
+        })
+        .inner;
+    app.ui.input_has_focus = response.has_focus();
+    app.ui.input_is_dirty = app.ui.input_text != app.ui.input_synced_text;
+}
+
+fn draw_json_io(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui, editor_height: f32) {
+    if !app.ui.input_has_focus && !app.ui.json_is_dirty {
+        app.sync_json_text_from_graph();
+    }
+
+    ui.label(egui::RichText::new("Graph JSON").size(app.config.section_font_size()));
+    ui.checkbox(
+        &mut app.ui.save_vertex_position,
+        egui::RichText::new("Save vertex positions").size(app.config.body_font_size()),
+    );
+    ui.checkbox(
+        &mut app.ui.save_vertex_style,
+        egui::RichText::new("Save vertex colors").size(app.config.body_font_size()),
+    );
+    ui.checkbox(
+        &mut app.ui.save_edge_style,
+        egui::RichText::new("Save edge colors").size(app.config.body_font_size()),
+    );
+
+    if !app.ui.json_is_dirty {
+        app.sync_json_text_from_graph();
+    }
+
+    ui.horizontal_wrapped(|ui| {
+        if ui
+            .button(egui::RichText::new("Copy").size(app.config.button_font_size()))
+            .clicked()
+        {
+            ctx.copy_text(app.ui.json_text.clone());
+        }
+
+        if ui
+            .button(egui::RichText::new("Apply").size(app.config.button_font_size()))
+            .clicked()
+        {
+            match import_graph_from_json(&app.ui.json_text) {
+                Ok(imported) => app.apply_imported_graph(ctx, imported),
+                Err(err) => app.ui.error_message = Some(err.to_string()),
+            }
+        }
+    });
+
+    ui.separator();
+    let font_size = app.config.input_font_size();
+    let mut layouter = move |ui: &egui::Ui, string: &str, wrap_width: f32| {
+        let mut layout_job = json_highlight_layout_job(string, font_size);
+        let _ = wrap_width;
+        layout_job.wrap.max_width = f32::INFINITY;
+        ui.fonts(|fonts| fonts.layout_job(layout_job))
+    };
+    let editor = egui::TextEdit::multiline(&mut app.ui.json_text)
+        .font(egui::FontId::monospace(app.config.input_font_size()))
+        .desired_rows(10)
+        .desired_width(f32::INFINITY)
+        .layouter(&mut layouter);
+    let response = egui::ScrollArea::vertical()
+        .id_salt("graph_json_editor_scroll")
+        .max_height(editor_height)
+        .show(ui, |ui| {
+            ui.add_sized([ui.available_width(), editor_height], editor)
+        })
+        .inner;
+    app.ui.input_has_focus = response.has_focus();
+    app.ui.json_is_dirty = app.ui.json_text != app.ui.json_synced_text;
+}
+
 fn draw_toggle_button(
     ui: &mut egui::Ui,
     selected: bool,
@@ -270,4 +377,129 @@ fn draw_tab_button(
     {
         on_click();
     }
+}
+
+fn draw_text_mode_button(
+    ui: &mut egui::Ui,
+    selected: bool,
+    label: &str,
+    font_size: f32,
+    on_click: impl FnOnce(),
+) {
+    if ui
+        .add_sized(
+            [80.0, 28.0],
+            egui::SelectableLabel::new(selected, egui::RichText::new(label).size(font_size)),
+        )
+        .clicked()
+    {
+        on_click();
+    }
+}
+
+fn json_highlight_layout_job(text: &str, font_size: f32) -> LayoutJob {
+    let mut job = LayoutJob::default();
+    let mut chars = text.chars().peekable();
+    let default = TextFormat {
+        font_id: FontId::monospace(font_size),
+        color: Color32::from_gray(220),
+        ..Default::default()
+    };
+    let key = TextFormat {
+        font_id: FontId::monospace(font_size),
+        color: Color32::from_rgb(120, 190, 255),
+        ..Default::default()
+    };
+    let string = TextFormat {
+        font_id: FontId::monospace(font_size),
+        color: Color32::from_rgb(170, 220, 140),
+        ..Default::default()
+    };
+    let number = TextFormat {
+        font_id: FontId::monospace(font_size),
+        color: Color32::from_rgb(255, 200, 120),
+        ..Default::default()
+    };
+    let keyword = TextFormat {
+        font_id: FontId::monospace(font_size),
+        color: Color32::from_rgb(255, 140, 140),
+        ..Default::default()
+    };
+    let punctuation = TextFormat {
+        font_id: FontId::monospace(font_size),
+        color: Color32::from_rgb(180, 180, 180),
+        ..Default::default()
+    };
+
+    while let Some(ch) = chars.next() {
+        if ch == '"' {
+            let mut token = String::from(ch);
+            let mut escaped = false;
+            for next in chars.by_ref() {
+                token.push(next);
+                if escaped {
+                    escaped = false;
+                    continue;
+                }
+                if next == '\\' {
+                    escaped = true;
+                    continue;
+                }
+                if next == '"' {
+                    break;
+                }
+            }
+
+            let format = if matches!(chars.peek(), Some(':')) {
+                key.clone()
+            } else {
+                string.clone()
+            };
+            job.append(&token, 0.0, format);
+            continue;
+        }
+
+        if ch.is_ascii_digit() || ch == '-' {
+            let mut token = String::from(ch);
+            while let Some(next) = chars.peek() {
+                if next.is_ascii_digit() || matches!(next, '.' | 'e' | 'E' | '+' | '-') {
+                    token.push(*next);
+                    chars.next();
+                } else {
+                    break;
+                }
+            }
+            job.append(&token, 0.0, number.clone());
+            continue;
+        }
+
+        if ch.is_ascii_alphabetic() {
+            let mut token = String::from(ch);
+            while let Some(next) = chars.peek() {
+                if next.is_ascii_alphabetic() {
+                    token.push(*next);
+                    chars.next();
+                } else {
+                    break;
+                }
+            }
+            let format = match token.as_str() {
+                "true" | "false" | "null" => keyword.clone(),
+                _ => default.clone(),
+            };
+            job.append(&token, 0.0, format);
+            continue;
+        }
+
+        let format = if matches!(ch, '{' | '}' | '[' | ']' | ':' | ',') {
+            punctuation.clone()
+        } else {
+            default.clone()
+        };
+        let mut token = String::new();
+        token.push(ch);
+        job.append(&token, 0.0, format);
+    }
+
+    job
 }

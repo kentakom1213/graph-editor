@@ -5,6 +5,13 @@ use crate::graph::Graph;
 use crate::mode::EditMode;
 use crate::view_state::GraphViewState;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum IoFormat {
+    #[default]
+    EdgeList,
+    Json,
+}
+
 pub struct AppState {
     pub graph: Graph,
     pub graph_view: GraphViewState,
@@ -23,8 +30,15 @@ pub struct UiState {
     pub canvas_rect: Option<egui::Rect>,
     pub input_text: String,
     pub input_synced_text: String,
+    pub io_format: IoFormat,
+    pub json_text: String,
+    pub json_synced_text: String,
     pub input_has_focus: bool,
     pub input_is_dirty: bool,
+    pub json_is_dirty: bool,
+    pub save_vertex_position: bool,
+    pub save_vertex_style: bool,
+    pub save_edge_style: bool,
     pub show_settings: bool,
     pub error_message: Option<String>,
     pub confirm_clear_all: bool,
