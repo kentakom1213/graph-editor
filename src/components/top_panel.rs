@@ -1,5 +1,5 @@
 // src/components/top_panel.rs
-use egui::{Context, TopBottomPanel};
+use egui::Context;
 
 use crate::GraphEditorApp;
 
@@ -51,30 +51,7 @@ impl CursorHoverState {
 }
 
 pub fn draw_top_panel(app: &mut GraphEditorApp, ctx: &Context) {
-    TopBottomPanel::top("top_panel").show(ctx, |ui| {
-        // カーソルがあるか判定
-        app.ui
-            .cursor_hover
-            .set_top_panel(ui.rect_contains_pointer(ui.max_rect()));
-
-        ui.horizontal(|ui| {
-            ui.label(
-                egui::RichText::new("Graph Editor")
-                    .strong()
-                    .size(app.config.title_font_size()),
-            );
-
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui
-                    .button(egui::RichText::new("⚙").size(app.config.button_font_size()))
-                    .clicked()
-                {
-                    app.ui.show_settings = !app.ui.show_settings;
-                }
-            });
-        });
-    });
-
+    app.ui.cursor_hover.set_top_panel(false);
     draw_settings_window(app, ctx);
 }
 
@@ -136,6 +113,7 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
                 egui::Slider::new(&mut app.config.scale_delta, 0.0005..=0.01).text("Zoom speed"),
             );
 
+            ui.add_space(8.0);
             if ui
                 .button(egui::RichText::new("Reset Defaults").size(app.config.button_font_size()))
                 .clicked()

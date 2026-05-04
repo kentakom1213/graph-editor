@@ -96,6 +96,16 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
             if app.state.selected_color != prev_color {
                 app.state.edit_mode = EditMode::default_colorize();
             }
+
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                if ui
+                    .button(egui::RichText::new("⚙").size(app.config.button_font_size()))
+                    .on_hover_text("Toggle settings")
+                    .clicked()
+                {
+                    app.ui.show_settings = !app.ui.show_settings;
+                }
+            });
         });
 }
 
