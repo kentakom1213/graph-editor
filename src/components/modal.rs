@@ -42,7 +42,7 @@ pub fn draw_error_modal(app: &mut GraphEditorApp, ctx: &Context) {
 
     let title = egui::RichText::new("Error")
         .strong()
-        .size(app.config.title_font_size)
+        .size(app.config.title_font_size())
         .color(egui::Color32::from_rgb(255, 100, 80));
 
     draw_modal_window(ctx, title, |ui| {
@@ -72,7 +72,7 @@ pub fn draw_clear_all_modal(app: &mut GraphEditorApp, ctx: &Context) {
 
     let title = egui::RichText::new("Confirm")
         .strong()
-        .size(app.config.title_font_size);
+        .size(app.config.title_font_size());
 
     draw_modal_window(ctx, title, |ui| {
         ui.label(
