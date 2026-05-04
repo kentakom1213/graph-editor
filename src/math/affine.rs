@@ -51,16 +51,18 @@ impl Affine2D {
         egui::vec2(self.0[0][2], self.0[1][2])
     }
 
-    /// スケールを取得
-    pub fn scale_x(&self) -> f32 {
-        self.0[0][0]
+    /// 等方スケールを取得
+    ///
+    /// 回転を含む場合でも，線形変換の列ベクトル長から実スケールを求める．
+    pub fn scale(&self) -> f32 {
+        self.0[0][0].hypot(self.0[1][0])
     }
 
     /// アフィン変換を合成する
     /// - scale の最小値，最大値の範囲を超えない操作のみ行う
     pub fn try_compose(&self, rhs: &Affine2D, scale_min: f32, scale_max: f32) -> Option<Affine2D> {
         let composed = *self * *rhs;
-        let scale = composed.scale_x();
+        let scale = composed.scale();
 
         (scale_min <= scale && scale <= scale_max).then_some(composed)
     }
