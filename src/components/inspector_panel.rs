@@ -8,7 +8,6 @@ use crate::{
 pub enum InspectorTab {
     #[default]
     Graph,
-    View,
     Io,
 }
 
@@ -22,23 +21,16 @@ pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &Context) {
                 .cursor_hover
                 .set_inspector_panel(ui.rect_contains_pointer(ui.max_rect()));
 
-            ui.horizontal(|ui| {
+            ui.columns(2, |columns| {
                 draw_tab_button(
-                    ui,
+                    &mut columns[0],
                     app.ui.inspector_tab == InspectorTab::Graph,
                     "Graph",
                     app.config.tab_font_size(),
                     || app.ui.inspector_tab = InspectorTab::Graph,
                 );
                 draw_tab_button(
-                    ui,
-                    app.ui.inspector_tab == InspectorTab::View,
-                    "View",
-                    app.config.tab_font_size(),
-                    || app.ui.inspector_tab = InspectorTab::View,
-                );
-                draw_tab_button(
-                    ui,
+                    &mut columns[1],
                     app.ui.inspector_tab == InspectorTab::Io,
                     "I/O",
                     app.config.tab_font_size(),
@@ -49,7 +41,6 @@ pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &Context) {
 
             match app.ui.inspector_tab {
                 InspectorTab::Graph => draw_graph_tab(app, ctx, ui),
-                InspectorTab::View => draw_view_tab(app, ui),
                 InspectorTab::Io => draw_io_tab(app, ctx, ui),
             }
         });
@@ -130,27 +121,6 @@ fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
         .clicked()
     {
         app.ui.confirm_clear_all = true;
-    }
-}
-
-fn draw_view_tab(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
-    ui.label(egui::RichText::new("Display").size(app.config.section_font_size()));
-    ui.checkbox(
-        &mut app.state.show_number,
-        egui::RichText::new("Show Numbers").size(app.config.body_font_size()),
-    );
-
-    ui.separator();
-    ui.label(egui::RichText::new("Simulation").size(app.config.section_font_size()));
-    let mut is_animated = app.state.is_animated;
-    if ui
-        .checkbox(
-            &mut is_animated,
-            egui::RichText::new("Animate").size(app.config.body_font_size()),
-        )
-        .changed()
-    {
-        app.set_animation_enabled(is_animated);
     }
 }
 
@@ -370,7 +340,7 @@ fn draw_tab_button(
 ) {
     if ui
         .add_sized(
-            [56.0, 30.0],
+            [ui.available_width(), 30.0],
             egui::SelectableLabel::new(selected, egui::RichText::new(label).size(font_size)),
         )
         .clicked()

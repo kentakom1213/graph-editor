@@ -9,6 +9,7 @@ pub struct CursorHoverState {
     tool_bar: bool,
     inspector_panel: bool,
     settings_window: bool,
+    canvas_controls: bool,
 }
 
 impl CursorHoverState {
@@ -24,6 +25,9 @@ impl CursorHoverState {
     pub fn set_settings_window(&mut self, hovered: bool) {
         self.settings_window = hovered;
     }
+    pub fn set_canvas_controls(&mut self, hovered: bool) {
+        self.canvas_controls = hovered;
+    }
     pub fn get_top_panel(&self) -> bool {
         self.top_panel
     }
@@ -38,7 +42,11 @@ impl CursorHoverState {
     }
     /// いずれかのパネルにカーソルが乗っているか
     pub fn any(&self) -> bool {
-        self.top_panel || self.tool_bar || self.inspector_panel || self.settings_window
+        self.top_panel
+            || self.tool_bar
+            || self.inspector_panel
+            || self.settings_window
+            || self.canvas_controls
     }
 }
 
