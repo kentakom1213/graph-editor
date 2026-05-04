@@ -1,7 +1,9 @@
 use egui::Context;
 
 use crate::{
-    components::{Colors, PaletteTheme, VertexPattern, COLOR_SLOTS, VERTEX_PATTERNS},
+    components::{
+        Colors, PaletteTheme, VertexPattern, COLOR_SLOTS, EDGE_LINE_STYLES, VERTEX_PATTERNS,
+    },
     mode::EditMode,
     GraphEditorApp,
 };
@@ -139,6 +141,24 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
             if app.state.selected_pattern != prev_pattern {
                 app.state.edit_mode = EditMode::default_colorize();
             }
+
+            ui.add_space(4.0);
+            ui.label(egui::RichText::new("Line").size(app.config.section_font_size()));
+            egui::ComboBox::from_id_salt("tool_bar_line_style")
+                .width(150.0)
+                .selected_text(
+                    egui::RichText::new(app.state.selected_line_style.label())
+                        .size(app.config.body_font_size()),
+                )
+                .show_ui(ui, |ui| {
+                    for style in EDGE_LINE_STYLES {
+                        ui.selectable_value(
+                            &mut app.state.selected_line_style,
+                            style,
+                            egui::RichText::new(style.label()).size(app.config.body_font_size()),
+                        );
+                    }
+                });
         });
 }
 

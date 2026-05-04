@@ -102,6 +102,10 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
                     .strong()
                     .size(app.config.section_font_size()),
             );
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("Background").size(app.config.body_font_size()));
+                ui.color_edit_button_srgba(&mut app.config.bg_color);
+            });
             ui.add(
                 egui::Slider::new(&mut app.config.vertex_radius, 16.0..=72.0).text("Vertex size"),
             );

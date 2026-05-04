@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::components::{
     draw_central_panel, draw_clear_all_modal, draw_entity_editor, draw_error_modal, draw_footer,
-    draw_inspector_panel, draw_tool_bar, draw_top_panel, Colors, CursorHoverState, InspectorTab,
-    PaletteTheme, VertexPattern,
+    draw_inspector_panel, draw_tool_bar, draw_top_panel, Colors, CursorHoverState, EdgeLineStyle,
+    InspectorTab, PaletteTheme, VertexPattern,
 };
 use crate::config::{AppConfig, SimulatorKind};
 use crate::export::{ExportFormat, ExportService};
@@ -39,7 +39,9 @@ struct StoredUiState {
     is_directed: bool,
     palette_theme: String,
     selected_pattern: String,
+    selected_line_style: String,
     export_format: String,
+    bg_color: [u8; 4],
     ui_font_size: f32,
     vertex_font_size: f32,
     vertex_radius: f32,
@@ -63,7 +65,9 @@ impl Default for StoredUiState {
             is_directed: false,
             palette_theme: PaletteTheme::default().storage_key().to_string(),
             selected_pattern: VertexPattern::default().storage_key().to_string(),
+            selected_line_style: EdgeLineStyle::default().storage_key().to_string(),
             export_format: ExportFormat::Png.extension().to_string(),
+            bg_color: AppConfig::default().bg_color.to_srgba_unmultiplied(),
             ui_font_size: defaults.ui_font_size,
             vertex_font_size: defaults.vertex_font_size,
             vertex_radius: defaults.vertex_radius,
@@ -96,6 +100,13 @@ impl GraphEditorApp {
         app.state.graph.is_directed = state.is_directed;
         app.state.palette_theme = PaletteTheme::from_storage_key(&state.palette_theme);
         app.state.selected_pattern = VertexPattern::from_storage_key(&state.selected_pattern);
+        app.state.selected_line_style = EdgeLineStyle::from_storage_key(&state.selected_line_style);
+        app.config.bg_color = egui::Color32::from_rgba_unmultiplied(
+            state.bg_color[0],
+            state.bg_color[1],
+            state.bg_color[2],
+            state.bg_color[3],
+        );
         app.config.ui_font_size = state.ui_font_size;
         app.config.vertex_font_size = state.vertex_font_size;
         app.config.vertex_radius = state.vertex_radius;
@@ -243,10 +254,12 @@ impl GraphEditorApp {
     fn restore_imported_graph(&mut self, imported: ImportedGraph) {
         self.state.graph = imported.graph;
         self.state.graph_view = imported.view;
+        self.state.palette_theme = imported.palette_theme;
         self.state.zero_indexed = imported.zero_indexed;
         self.state.next_z_index = self.state.graph.vertices.len() as u32;
         self.state.selected_color = Colors::Default;
         self.state.selected_pattern = VertexPattern::None;
+        self.state.selected_line_style = EdgeLineStyle::Solid;
         self.switch_normal_mode();
         self.state.simulation_edge_length = self.effective_layout_edge_length();
     }
@@ -390,6 +403,8 @@ impl GraphEditorApp {
         self.state.next_z_index = self.state.graph.vertices.len() as u32;
         self.state.selected_color = Colors::Default;
         self.state.selected_pattern = VertexPattern::None;
+        self.state.selected_line_style = EdgeLineStyle::Solid;
+        self.state.palette_theme = imported.palette_theme;
         self.switch_normal_mode();
 
         if imported.used_generated_positions {
@@ -426,6 +441,7 @@ impl Default for GraphEditorApp {
                 edit_mode: EditMode::default_normal(),
                 selected_color: Colors::Default,
                 selected_pattern: VertexPattern::None,
+                selected_line_style: EdgeLineStyle::Solid,
                 palette_theme: PaletteTheme::default(),
                 zero_indexed: false,
                 show_number: true,
@@ -467,7 +483,9 @@ impl eframe::App for GraphEditorApp {
             is_directed: self.state.graph.is_directed,
             palette_theme: self.state.palette_theme.storage_key().to_string(),
             selected_pattern: self.state.selected_pattern.storage_key().to_string(),
+            selected_line_style: self.state.selected_line_style.storage_key().to_string(),
             export_format: self.export.format().extension().to_string(),
+            bg_color: self.config.bg_color.to_srgba_unmultiplied(),
             ui_font_size: self.config.ui_font_size,
             vertex_font_size: self.config.vertex_font_size,
             vertex_radius: self.config.vertex_radius,

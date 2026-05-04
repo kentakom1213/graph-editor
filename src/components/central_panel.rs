@@ -4,7 +4,7 @@ use itertools::Itertools;
 
 use super::transition_and_scale::{drag_central_panel, scale_central_panel};
 use crate::{
-    components::{default_vertex_text_color, pattern_color, Colors, VertexPattern},
+    components::{default_vertex_text_color, pattern_color, Colors, EdgeLineStyle, VertexPattern},
     config::AppConfig,
     graph::Graph,
     math::{
@@ -207,6 +207,7 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
             } else if ui.input(|i| i.pointer.any_click()) {
                 if app.state.edit_mode.is_colorize() {
                     view.color = app.state.selected_color;
+                    view.line_style = app.state.selected_line_style;
                 } else if app.state.edit_mode.is_delete() {
                     edge.is_deleted = true;
                 }
@@ -268,8 +269,15 @@ fn draw_edge_undirected(
     to_pos: egui::Pos2,
     stroke: f32,
     color: egui::Color32,
+    line_style: EdgeLineStyle,
 ) {
-    painter.line_segment([from_pos, to_pos], egui::Stroke::new(stroke, color));
+    draw_styled_line_segment(
+        painter,
+        from_pos,
+        to_pos,
+        egui::Stroke::new(stroke, color),
+        line_style,
+    );
 }
 
 fn draw_edge_directed(
@@ -280,6 +288,7 @@ fn draw_edge_directed(
     stroke_width: f32,
     target_radius: f32,
     config: &AppConfig,
+    line_style: EdgeLineStyle,
 ) {
     // 矢印の方向を取得
     let dir = (to_pos - from_pos).normalized();
@@ -305,7 +314,13 @@ fn draw_edge_directed(
     ));
 
     // 線を描画
-    painter.line_segment([from_pos, endpoint], egui::Stroke::new(stroke_width, color));
+    draw_styled_line_segment(
+        painter,
+        from_pos,
+        endpoint,
+        egui::Stroke::new(stroke_width, color),
+        line_style,
+    );
 }
 
 /// 曲線付きの矢印を描画する関数
@@ -317,6 +332,7 @@ fn draw_edge_directed_curved(
     stroke_width: f32,
     target_radius: f32,
     config: &AppConfig,
+    line_style: EdgeLineStyle,
 ) -> Option<()> {
     let control = calc_bezier_control_point(from_pos, to_pos, config.edge_bezier_distance, false);
 
@@ -325,13 +341,14 @@ fn draw_edge_directed_curved(
         calc_intersection_of_bezier_and_circle(from_pos, control, to_pos, to_pos, target_radius)?;
 
     // 2次ベジェ曲線を描画
-    let bezier = epaint::QuadraticBezierShape {
-        points: [from_pos, control, to_pos], // 始点・制御点・終点
-        closed: false,
-        fill: egui::Color32::TRANSPARENT,
-        stroke: epaint::PathStroke::new(stroke_width, color),
-    };
-    painter.add(bezier);
+    draw_styled_quadratic_bezier(
+        painter,
+        from_pos,
+        control,
+        to_pos,
+        egui::Stroke::new(stroke_width, color),
+        line_style,
+    );
 
     // 矢印のヘッドに曲線が重ならないよう，マスクを作成
     painter.line_segment(
@@ -535,6 +552,7 @@ fn render_edges(
         } else {
             edge.color.edge(palette_theme)
         };
+        let line_style = edge.line_style;
         let stroke_width = edge.stroke_width.unwrap_or(config.edge_stroke);
         let target_radius = snapshot
             .vertices
@@ -553,6 +571,7 @@ fn render_edges(
                     stroke_width,
                     target_radius,
                     config,
+                    line_style,
                 );
             } else {
                 draw_edge_directed_curved(
@@ -563,10 +582,123 @@ fn render_edges(
                     stroke_width,
                     target_radius,
                     config,
+                    line_style,
                 );
             }
         } else {
-            draw_edge_undirected(painter, from_pos, to_pos, stroke_width, edge_color);
+            draw_edge_undirected(
+                painter,
+                from_pos,
+                to_pos,
+                stroke_width,
+                edge_color,
+                line_style,
+            );
+        }
+    }
+}
+
+fn draw_styled_line_segment(
+    painter: &egui::Painter,
+    from: egui::Pos2,
+    to: egui::Pos2,
+    stroke: egui::Stroke,
+    line_style: EdgeLineStyle,
+) {
+    match line_style {
+        EdgeLineStyle::Solid => {
+            painter.line_segment([from, to], stroke);
+        }
+        EdgeLineStyle::Dashed => draw_dashed_polyline(painter, &[from, to], stroke, 10.0, 7.0),
+        EdgeLineStyle::Dotted => draw_dashed_polyline(painter, &[from, to], stroke, 2.0, 6.0),
+    }
+}
+
+fn draw_styled_quadratic_bezier(
+    painter: &egui::Painter,
+    from: egui::Pos2,
+    control: egui::Pos2,
+    to: egui::Pos2,
+    stroke: egui::Stroke,
+    line_style: EdgeLineStyle,
+) {
+    match line_style {
+        EdgeLineStyle::Solid => {
+            painter.add(epaint::QuadraticBezierShape {
+                points: [from, control, to],
+                closed: false,
+                fill: egui::Color32::TRANSPARENT,
+                stroke: epaint::PathStroke::new(stroke.width, stroke.color),
+            });
+        }
+        EdgeLineStyle::Dashed => {
+            let points = sample_quadratic_bezier(from, control, to, 36);
+            draw_dashed_polyline(painter, &points, stroke, 10.0, 7.0);
+        }
+        EdgeLineStyle::Dotted => {
+            let points = sample_quadratic_bezier(from, control, to, 36);
+            draw_dashed_polyline(painter, &points, stroke, 2.0, 6.0);
+        }
+    }
+}
+
+fn sample_quadratic_bezier(
+    from: egui::Pos2,
+    control: egui::Pos2,
+    to: egui::Pos2,
+    steps: usize,
+) -> Vec<egui::Pos2> {
+    (0..=steps)
+        .map(|step| {
+            let t = step as f32 / steps as f32;
+            bezier_curve(from, control, to, t)
+        })
+        .collect()
+}
+
+fn draw_dashed_polyline(
+    painter: &egui::Painter,
+    points: &[egui::Pos2],
+    stroke: egui::Stroke,
+    dash_length: f32,
+    gap_length: f32,
+) {
+    if points.len() < 2 {
+        return;
+    }
+
+    let cycle = dash_length + gap_length;
+    let mut progress = 0.0;
+
+    for window in points.windows(2) {
+        let from = window[0];
+        let to = window[1];
+        let segment = to - from;
+        let length = segment.length();
+        if length <= f32::EPSILON {
+            continue;
+        }
+        let dir = segment / length;
+        let mut local = 0.0;
+        while local < length {
+            let phase = progress % cycle;
+            let draw_remaining = if phase < dash_length {
+                dash_length - phase
+            } else {
+                0.0
+            };
+            let step = if phase < dash_length {
+                draw_remaining.min(length - local)
+            } else {
+                (cycle - phase).min(length - local)
+            };
+            if phase < dash_length && step > 0.0 {
+                let start = from + dir * local;
+                let end = from + dir * (local + step);
+                painter.line_segment([start, end], stroke);
+            }
+            local += step.max(0.001);
+            progress += step.max(0.001);
         }
     }
 }

@@ -121,6 +121,46 @@ impl VertexPattern {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+pub enum EdgeLineStyle {
+    #[default]
+    Solid,
+    Dashed,
+    Dotted,
+}
+
+pub const EDGE_LINE_STYLES: [EdgeLineStyle; 3] = [
+    EdgeLineStyle::Solid,
+    EdgeLineStyle::Dashed,
+    EdgeLineStyle::Dotted,
+];
+
+impl EdgeLineStyle {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Solid => "Solid",
+            Self::Dashed => "Dashed",
+            Self::Dotted => "Dotted",
+        }
+    }
+
+    pub fn storage_key(self) -> &'static str {
+        match self {
+            Self::Solid => "solid",
+            Self::Dashed => "dashed",
+            Self::Dotted => "dotted",
+        }
+    }
+
+    pub fn from_storage_key(value: &str) -> Self {
+        match value {
+            "dashed" => Self::Dashed,
+            "dotted" => Self::Dotted,
+            _ => Self::Solid,
+        }
+    }
+}
+
 impl Colors {
     fn to_egui_color(self, theme: PaletteTheme) -> Option<egui::Color32> {
         match self {

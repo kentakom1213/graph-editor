@@ -1,6 +1,8 @@
 use eframe::egui;
 
-use crate::components::{Colors, CursorHoverState, InspectorTab, PaletteTheme, VertexPattern};
+use crate::components::{
+    Colors, CursorHoverState, EdgeLineStyle, InspectorTab, PaletteTheme, VertexPattern,
+};
 use crate::graph::Graph;
 use crate::mode::EditMode;
 use crate::view_state::GraphViewState;
@@ -28,6 +30,7 @@ pub struct AppState {
     pub edit_mode: EditMode,
     pub selected_color: Colors,
     pub selected_pattern: VertexPattern,
+    pub selected_line_style: EdgeLineStyle,
     pub palette_theme: PaletteTheme,
     pub zero_indexed: bool,
     pub show_number: bool,

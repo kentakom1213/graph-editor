@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use num_traits::One;
 
 use crate::{
-    components::{Colors, VertexPattern},
+    components::{Colors, EdgeLineStyle, VertexPattern},
     graph::Graph,
     math::affine::Affine2D,
 };
@@ -43,6 +43,7 @@ impl Default for VertexViewState {
 pub struct EdgeViewState {
     pub is_pressed: bool,
     pub color: Colors,
+    pub line_style: EdgeLineStyle,
     pub stroke_width: Option<f32>,
 }
 
@@ -128,6 +129,7 @@ impl GraphViewState {
         }
         for edge in &mut self.edges {
             edge.color = Colors::default();
+            edge.line_style = EdgeLineStyle::default();
         }
     }
 
@@ -184,6 +186,7 @@ impl GraphViewState {
                     to: e.to,
                     is_pressed: view.is_pressed,
                     color: view.color,
+                    line_style: view.line_style,
                     stroke_width: view.stroke_width,
                 })
             })
@@ -218,6 +221,7 @@ pub struct EdgeSnapshot {
     pub to: usize,
     pub is_pressed: bool,
     pub color: Colors,
+    pub line_style: EdgeLineStyle,
     pub stroke_width: Option<f32>,
 }
 

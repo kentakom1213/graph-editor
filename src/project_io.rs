@@ -8,7 +8,7 @@ use std::{
 use num_traits::One;
 
 use crate::{
-    components::{Colors, PaletteTheme, VertexPattern, COLOR_SLOTS},
+    components::{Colors, EdgeLineStyle, PaletteTheme, VertexPattern, COLOR_SLOTS},
     graph::{visualize_methods, Edge, Graph, Vertex, Visualizer},
     math::affine::Affine2D,
     view_state::GraphViewState,
@@ -28,6 +28,8 @@ pub struct GraphFile {
 pub struct GraphData {
     pub directed: bool,
     pub index_origin: u8,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub palette_theme: Option<String>,
     #[serde(default)]
     pub features: GraphFeatures,
     pub vertices: Vec<VertexData>,
@@ -104,6 +106,9 @@ pub struct EdgeStyleData {
     pub text: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub line_style: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub stroke_width: Option<f32>,
 }
 
@@ -174,6 +179,7 @@ impl std::error::Error for ExportError {}
 pub struct ImportedGraph {
     pub graph: Graph,
     pub view: GraphViewState,
+    pub palette_theme: PaletteTheme,
     pub zero_indexed: bool,
     pub used_generated_positions: bool,
 }
@@ -263,6 +269,14 @@ pub fn export_graph_to_file(
                     EdgeStyleData {
                         stroke: Some(color_to_hex(color.edge(palette_theme))),
                         text: Some(color_to_hex(color.edge(palette_theme))),
+                        line_style: Some(
+                            view.edges
+                                .get(edge_index)
+                                .map(|state| state.line_style)
+                                .unwrap_or_default()
+                                .storage_key()
+                                .to_string(),
+                        ),
                         stroke_width: view
                             .edges
                             .get(edge_index)
@@ -280,6 +294,7 @@ pub fn export_graph_to_file(
         graph: GraphData {
             directed: graph.is_directed,
             index_origin: if zero_indexed { 0 } else { 1 },
+            palette_theme: Some(palette_theme.storage_key().to_string()),
             features: GraphFeatures {
                 vertex_position: options.include_vertex_position,
                 vertex_style: options.include_vertex_style,
@@ -304,7 +319,7 @@ pub fn export_graph_to_json(
 
 pub fn import_graph_from_file(
     file: GraphFile,
-    palette_theme: PaletteTheme,
+    fallback_palette_theme: PaletteTheme,
 ) -> Result<ImportedGraph, ImportError> {
     if file.format != GRAPH_FILE_FORMAT {
         return Err(ImportError::InvalidFormat(file.format));
@@ -315,6 +330,13 @@ pub fn import_graph_from_file(
     if file.graph.index_origin != 0 && file.graph.index_origin != 1 {
         return Err(ImportError::InvalidIndexOrigin(file.graph.index_origin));
     }
+
+    let palette_theme = file
+        .graph
+        .palette_theme
+        .as_deref()
+        .map(PaletteTheme::from_storage_key)
+        .unwrap_or(fallback_palette_theme);
 
     let mut vertices = file.graph.vertices;
     let mut seen_vertex_ids = HashSet::new();
@@ -416,6 +438,11 @@ pub fn import_graph_from_file(
     for (index, edge) in edges.iter().enumerate() {
         if let Some(style) = &edge.style {
             view.edges[index].color = color_from_edge_style(style, palette_theme);
+            view.edges[index].line_style = style
+                .line_style
+                .as_deref()
+                .map(EdgeLineStyle::from_storage_key)
+                .unwrap_or_default();
             view.edges[index].stroke_width = style.stroke_width;
         }
     }
@@ -423,6 +450,7 @@ pub fn import_graph_from_file(
     Ok(ImportedGraph {
         graph,
         view,
+        palette_theme,
         zero_indexed: file.graph.index_origin == 0,
         used_generated_positions,
     })
@@ -627,6 +655,7 @@ mod tests {
             graph: GraphData {
                 directed: false,
                 index_origin: 0,
+                palette_theme: None,
                 features: GraphFeatures::default(),
                 vertices: vec![VertexData {
                     id: 0,
@@ -663,6 +692,7 @@ mod tests {
             graph: GraphData {
                 directed: false,
                 index_origin: 0,
+                palette_theme: None,
                 features: GraphFeatures::default(),
                 vertices: vec![
                     VertexData {
@@ -695,6 +725,7 @@ mod tests {
             graph: GraphData {
                 directed: false,
                 index_origin: 0,
+                palette_theme: None,
                 features: GraphFeatures::default(),
                 vertices: vec![],
                 edges: vec![],
@@ -714,6 +745,7 @@ mod tests {
             graph: GraphData {
                 directed: false,
                 index_origin: 2,
+                palette_theme: None,
                 features: GraphFeatures::default(),
                 vertices: vec![],
                 edges: vec![],

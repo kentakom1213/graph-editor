@@ -9,8 +9,8 @@ mod transition_and_scale;
 
 pub use central_panel::draw_central_panel;
 pub use color_panel::{
-    default_vertex_text_color, pattern_color, Colors, PaletteTheme, VertexPattern, COLOR_SLOTS,
-    VERTEX_PATTERNS,
+    default_vertex_text_color, pattern_color, Colors, EdgeLineStyle, PaletteTheme, VertexPattern,
+    COLOR_SLOTS, EDGE_LINE_STYLES, VERTEX_PATTERNS,
 };
 pub use footer::draw_footer;
 pub use inspector_panel::{draw_inspector_panel, InspectorTab};

@@ -1,7 +1,10 @@
 use egui::Context;
 
 use crate::{
-    components::{default_vertex_text_color, Colors, VertexPattern, COLOR_SLOTS, VERTEX_PATTERNS},
+    components::{
+        default_vertex_text_color, Colors, EdgeLineStyle, VertexPattern, COLOR_SLOTS,
+        EDGE_LINE_STYLES, VERTEX_PATTERNS,
+    },
     mode::EditMode,
     state::EditTarget,
     GraphEditorApp,
@@ -258,6 +261,14 @@ fn draw_edge_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize) {
     );
     draw_color_palette(ui, &mut view.color, app.state.palette_theme);
 
+    ui.separator();
+    ui.label(
+        egui::RichText::new("Line")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
+    draw_line_style_palette(ui, &mut view.line_style);
+
     let mut use_default_stroke = view.stroke_width.is_none();
     if ui
         .checkbox(&mut use_default_stroke, "Use default width")
@@ -321,6 +332,28 @@ fn draw_pattern_palette(ui: &mut egui::Ui, pattern: &mut VertexPattern) {
                 .on_hover_text(candidate.label());
             if response.clicked() {
                 *pattern = candidate;
+            }
+        }
+    });
+}
+
+fn draw_line_style_palette(ui: &mut egui::Ui, line_style: &mut EdgeLineStyle) {
+    ui.horizontal_wrapped(|ui| {
+        for candidate in EDGE_LINE_STYLES {
+            let stroke_color = if *line_style == candidate {
+                egui::Color32::BLACK
+            } else {
+                egui::Color32::from_gray(120)
+            };
+            let response = ui
+                .add(
+                    egui::Button::new(candidate.label())
+                        .min_size(egui::vec2(64.0, 24.0))
+                        .stroke(egui::Stroke::new(2.0, stroke_color)),
+                )
+                .on_hover_text(candidate.label());
+            if response.clicked() {
+                *line_style = candidate;
             }
         }
     });

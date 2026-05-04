@@ -4,7 +4,9 @@ use std::path::PathBuf;
 use anyhow::Context;
 use eframe::egui;
 
-use crate::components::{default_vertex_text_color, pattern_color, PaletteTheme, VertexPattern};
+use crate::components::{
+    default_vertex_text_color, pattern_color, EdgeLineStyle, PaletteTheme, VertexPattern,
+};
 use crate::config::AppConfig;
 use crate::graph::Graph;
 use crate::math::bezier::{calc_bezier_control_point, calc_intersection_of_bezier_and_circle};
@@ -200,10 +202,11 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         let to_pos = to_vertex.position;
         let edge_color = edge.color.edge(ctx.palette_theme);
         let (stroke_hex, stroke_alpha) = color_to_svg(edge_color);
+        let dash_style = svg_dasharray(edge.line_style);
         let stroke_style = if let Some(alpha) = stroke_alpha {
-            format!("stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\"")
+            format!("stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\"{dash_style}")
         } else {
-            format!("stroke=\"{stroke_hex}\"")
+            format!("stroke=\"{stroke_hex}\"{dash_style}")
         };
 
         let from_x = from_pos.x - bounds.min.x;
@@ -564,4 +567,12 @@ fn append_svg_vertex_pattern(
         }
     }
     svg.push_str("  </g>\n");
+}
+
+fn svg_dasharray(line_style: EdgeLineStyle) -> &'static str {
+    match line_style {
+        EdgeLineStyle::Solid => "",
+        EdgeLineStyle::Dashed => " stroke-dasharray=\"10 7\"",
+        EdgeLineStyle::Dotted => " stroke-dasharray=\"2 6\"",
+    }
 }
