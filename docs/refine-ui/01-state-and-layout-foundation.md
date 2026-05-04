@@ -22,10 +22,18 @@
 
 ### 2. `UiState` を更新する
 
-- `panel_tab: PanelTabState` を将来的に廃止する
 - `inspector_tab: InspectorTab` を追加する
 - `input_has_focus: bool` を追加する
+- `input_is_dirty: bool` を追加する
+- `show_settings: bool` を追加する
 - `error_message`，`confirm_clear_all`，`input_text` は維持する
+
+責務は次のように分ける．
+
+- `inspector_tab`: 右インスペクタでどのタブを表示するかを管理する
+- `show_settings`: 設定ウィンドウの開閉を管理する
+- `input_has_focus`: 入力欄フォーカス中のショートカット抑止に使う
+- `input_is_dirty`: 手入力の未反映状態を保持し，自動同期による上書きを防ぐ
 
 ### 3. `CursorHoverState` を新レイアウト向けに整理する
 
@@ -36,11 +44,10 @@
 ### 4. コンポーネント export を更新する
 
 - `tool_bar.rs` と `inspector_panel.rs` を追加できるよう `src/components/mod.rs` を更新する
-- 旧 `draw_edit_menu` / `draw_color_settings` / `draw_graph_io` は移行完了まで残してよい
+- 旧 UI コンポーネントは移行完了後に削除する
 
 ## この段階で決めておくこと
 
-- `PanelTabState` を即時削除するか，移行中だけ残すか
 - `CursorHoverState` のフィールド名を全面更新するか，既存 getter/setter を流用するか
 - `footer.rs` を最終的に改名するかどうか
 

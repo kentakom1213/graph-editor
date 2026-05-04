@@ -26,7 +26,7 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &egui::Context)
 ```rust
 egui::SidePanel::left("tool_bar")
     .resizable(false)
-    .exact_width(72.0)
+    .exact_width(182.0)
 ```
 
 ### 2. 編集モード切替を移植する
@@ -76,7 +76,7 @@ if app.state.selected_color != prev_color {
 
 - 既存 `draw_color_settings` の色更新ロジックを流用する
 - ツールバー上にカーソルがある間は `cursor_hover.any()` が `true` になるようにする
-- 横幅が狭いので，見出しや余白は最小限にする
+- モード名とショートカットを同時に見せる前提で，ある程度の横幅を確保する
 
 ## 完了条件
 
