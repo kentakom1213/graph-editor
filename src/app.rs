@@ -10,7 +10,7 @@ use crate::export::{ExportFormat, ExportService};
 use crate::graph::{simulation_methods, BaseGraph, Simulator};
 use crate::math::affine::Affine2D;
 use crate::mode::EditMode;
-use crate::project_io::{ImportedGraph, SaveOptions};
+use crate::project_io::{export_graph_to_file, import_graph_from_file, ImportedGraph, SaveOptions};
 use crate::state::{AppState, IoFormat, UiState};
 use crate::update::request_repaint;
 use crate::view_state::GraphViewState;
@@ -23,6 +23,7 @@ pub struct GraphEditorApp {
 }
 
 const UI_STATE_STORAGE_KEY: &str = "graph-editor:ui-state";
+const GRAPH_STATE_STORAGE_KEY: &str = "graph-editor:graph-state";
 const GRAPH_LAYOUT_SETTLE_STEPS: usize = 120;
 const AUTO_FIT_DIAMETER_THRESHOLD: usize = 12;
 const EDGE_LENGTH_SHRINK_DIAMETER_THRESHOLD: usize = 10;
@@ -96,6 +97,18 @@ impl GraphEditorApp {
             _ => ExportFormat::Png,
         };
         app.export.set_format(format);
+        if let Some(storage) = cc.storage {
+            if let Some(saved_graph) = eframe::get_value(storage, GRAPH_STATE_STORAGE_KEY) {
+                match import_graph_from_file(saved_graph) {
+                    Ok(imported) => app.restore_imported_graph(imported),
+                    Err(err) => {
+                        app.ui.error_message = Some(format!(
+                            "Failed to restore the last graph from local storage: {err}"
+                        ));
+                    }
+                }
+            }
+        }
         app.sync_io_texts_from_graph();
         app
     }
@@ -197,6 +210,16 @@ impl GraphEditorApp {
     pub fn sync_io_texts_from_graph(&mut self) {
         self.sync_input_text_from_graph();
         self.sync_json_text_from_graph();
+    }
+
+    fn restore_imported_graph(&mut self, imported: ImportedGraph) {
+        self.state.graph = imported.graph;
+        self.state.graph_view = imported.view;
+        self.state.zero_indexed = imported.zero_indexed;
+        self.state.next_z_index = self.state.graph.vertices.len() as u32;
+        self.state.selected_color = Colors::Default;
+        self.switch_normal_mode();
+        self.state.simulation_edge_length = self.effective_layout_edge_length();
     }
 
     pub fn set_animation_enabled(&mut self, enabled: bool) {
@@ -410,6 +433,13 @@ impl eframe::App for GraphEditorApp {
             scale_delta: self.config.scale_delta,
         };
         eframe::set_value(storage, UI_STATE_STORAGE_KEY, &state);
+        let graph_state = export_graph_to_file(
+            &self.state.graph,
+            &self.state.graph_view,
+            self.state.zero_indexed,
+            SaveOptions::default(),
+        );
+        eframe::set_value(storage, GRAPH_STATE_STORAGE_KEY, &graph_state);
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
