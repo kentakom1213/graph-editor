@@ -61,6 +61,42 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
             // 頂点の描画
             render_vertices(&snapshot, app, ui, painter);
         });
+
+    draw_canvas_view_controls(app, ctx);
+}
+
+fn draw_canvas_view_controls(app: &mut GraphEditorApp, ctx: &egui::Context) {
+    app.ui.cursor_hover.set_canvas_controls(false);
+
+    let Some(canvas_rect) = app.ui.canvas_rect else {
+        return;
+    };
+
+    let area_pos = egui::pos2(canvas_rect.max.x - 140.0, canvas_rect.max.y - 52.0);
+    egui::Area::new("canvas_view_controls".into())
+        .order(egui::Order::Foreground)
+        .fixed_pos(area_pos)
+        .show(ctx, |ui| {
+            app.ui
+                .cursor_hover
+                .set_canvas_controls(ui.rect_contains_pointer(ui.max_rect()));
+
+            ui.horizontal(|ui| {
+                let show_numbers = ui
+                    .selectable_label(app.state.show_number, "Number")
+                    .on_hover_text("Toggle vertex number labels");
+                if show_numbers.clicked() {
+                    app.state.show_number = !app.state.show_number;
+                }
+
+                let animate = ui
+                    .selectable_label(app.state.is_animated, "Animate")
+                    .on_hover_text("Toggle force-directed layout animation");
+                if animate.clicked() {
+                    app.set_animation_enabled(!app.state.is_animated);
+                }
+            });
+        });
 }
 
 /// モード切替の処理
