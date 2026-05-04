@@ -115,12 +115,18 @@ impl GraphViewState {
         self.edges = next_edges;
     }
 
-    pub fn reset_colors(&mut self) {
+    pub fn remove_color(&mut self) {
         for vertex in &mut self.vertices {
             vertex.color = Colors::default();
         }
         for edge in &mut self.edges {
             edge.color = Colors::default();
+        }
+    }
+
+    pub fn remove_label(&mut self) {
+        for vertex in &mut self.vertices {
+            vertex.label = Some(String::default());
         }
     }
 

@@ -120,10 +120,17 @@ fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
     }
 
     if ui
-        .button(egui::RichText::new("Reset Colors").size(app.config.button_font_size()))
+        .button(egui::RichText::new("Remove Color").size(app.config.button_font_size()))
         .clicked()
     {
-        app.state.graph_view.reset_colors();
+        app.state.graph_view.remove_color();
+    }
+
+    if ui
+        .button(egui::RichText::new("Remove Label").size(app.config.button_font_size()))
+        .clicked()
+    {
+        app.state.graph_view.remove_label();
     }
 
     ui.separator();
