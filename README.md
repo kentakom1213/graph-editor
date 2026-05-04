@@ -2,94 +2,142 @@
 
 [![Build Status](https://github.com/kentakom1213/graph-editor/workflows/CI/badge.svg)](https://github.com/kentakom1213/graph-editor/actions?workflow=CI)
 
-Graph Editor は [eframe](https://github.com/emilk/egui/tree/master/crates/eframe) と [egui](https://github.com/emilk/egui/) によるグラフ編集アプリです．
+Graph Editor は，競技プログラミング用のグラフを直感的に作成・編集できるアプリです．
 
-![demo](./images/graph-editor-demo-v3.gif)
+頂点や辺をマウスで編集し，辺リスト形式でコピーしたり，PNG / SVG 画像として出力したりできます．
 
-## 📌 操作
+![demo](./images/graph-editor-demo-v6.gif)
 
-### Edit Mode
+## 使い方
 
-| モード                       | コマンド | 説明                              |
-| :--------------------------- | :------: | :-------------------------------- |
-| Normal モード                |    N     | 頂点の移動などを行う              |
-| Add Vertex (頂点追加) モード |    V     | クリックした位置に頂点を追加する  |
-| Add Edge (辺追加) モード     |    E     | 選択した 2 つの頂点の間に辺を張る |
-| Colorize (色付け) モード    |    C     | クリックした頂点/辺の色を変更する     |
-| Delete Edge (辺削除) モード  |    D     | クリックした頂点/辺を削除する     |
+画面は大きく次の 4 つに分かれています．
 
-### Indexing
+| 場所           | できること                         |
+| :------------- | :--------------------------------- |
+| 左ツールバー   | 編集モードと色を選ぶ               |
+| 中央キャンバス | グラフを編集する                   |
+| 右パネル       | グラフ設定，入出力，画像出力を行う |
+| 下部バー       | 現在の状態を確認する               |
 
-頂点の表示方法を変更する．
+## 基本操作
 
-| Indexing  |  コマンド  | 説明                        |
-| :-------- | :--------: | :-------------------------- |
-| 0-indexed | 1 (toggle) | 頂点を `0` 始まりで表示する |
-| 1-indexed | 1 (toggle) | 頂点を `1` 始まりで表示する |
+### 頂点を追加する
 
-### Direction
+左ツールバーで `Add Vertex` を選び，キャンバス上をクリックします．
 
-| Direction  |      コマンド      | 説明                     |
-| :--------- | :----------------: | :----------------------- |
-| Undirected | Shift + D (toggle) | 無向グラフとして描画する |
-| Directed   | Shift + D (toggle) | 有向グラフとして描画する |
+ショートカットは `V` です．
 
-### Animation
+### 辺を追加する
 
-| Animation |  コマンド  | 説明             |
-| :-------- | :--------: | :--------------- |
-| On        | A (toggle) | ノードを動かす   |
-| Off       | A (toggle) | ノードを固定する |
+左ツールバーで `Add Edge` を選び，2 つの頂点を順にクリックします．
 
-### 共通
+ショートカットは `E` です．
 
-| 共通 | コマンド | 説明 |
-| :-------- | :--------: | :--------------- |
-| 平行移動 | ドラッグ | グラフ全体を並行移動する |
-| 拡大/縮小 | スクロール | グラフ全体を拡大/縮小する |
-| 左回転 | \[ | グラフ全体を左回転する |
-| 右回転 | ] | グラフ全体を右回転する |
+### 頂点を移動する
 
-## ローカル環境での実行方法
+左ツールバーで `Normal` を選び，頂点をドラッグします．
+
+ショートカットは `N` または `Esc` です．
+
+### 頂点や辺を削除する
+
+左ツールバーで `Delete` を選び，削除したい頂点または辺をクリックします．
+
+ショートカットは `D` です．
+
+### 頂点や辺の色を変える
+
+左ツールバーで色を選び，色を変えたい頂点または辺をクリックします．
+
+ショートカットは `C` です．
+
+## グラフ設定
+
+右パネルの `Graph` から，グラフ全体の設定を変更できます．
+
+| 操作                      | 内容                                |
+| :------------------------ | :---------------------------------- |
+| `0-indexed` / `1-indexed` | 頂点番号の表示を切り替える          |
+| `Undirected` / `Directed` | 無向グラフ / 有向グラフを切り替える |
+| `Complement`              | 補グラフを作成する                  |
+| `Revert Edge`             | 有向辺の向きをすべて反転する        |
+| `Reset Colors`            | 頂点と辺の色を初期状態に戻す        |
+| `Clear All`               | グラフをすべて削除する              |
+
+`Complement` は無向グラフのときのみ使用できます．
+
+`Revert Edge` は有向グラフのときのみ使用できます．
+
+## 入出力
+
+右パネルの `I/O` から，グラフの入出力と画像出力を行えます．
+
+| 操作           | 内容                                        |
+| :------------- | :------------------------------------------ |
+| `Edge List`    | 辺リスト形式でコピー・読み込みする          |
+| `JSON`         | Graph Editor 用の JSON 形式で保存・復元する |
+| `Export Image` | PNG / SVG 形式で画像を出力する              |
+
+`Edge List` は，競技プログラミングで使いやすい形式です．
+
+`JSON` は，頂点位置や色情報も含めて保存したいときに使います．
+
+## ショートカット
+
+|    キー     | 操作                               |
+| :---------: | :--------------------------------- |
+| `N` / `Esc` | Normal                             |
+|     `V`     | Add Vertex                         |
+|     `E`     | Add Edge                           |
+|     `C`     | Colorize                           |
+|     `D`     | Delete                             |
+|     `1`     | 0-indexed / 1-indexed を切り替える |
+| `Shift + D` | Undirected / Directed を切り替える |
+|     `A`     | アニメーションを切り替える         |
+|     `[`     | グラフ全体を左回転する             |
+|     `]`     | グラフ全体を右回転する             |
+
+## キャンバス操作
+
+| 操作       | 内容                        |
+| :--------- | :-------------------------- |
+| ドラッグ   | グラフ全体を平行移動する    |
+| スクロール | グラフ全体を拡大 / 縮小する |
+
+## ローカルで実行する
 
 ```bash
-# リポジトリをクローン
-git clone https://github.com/powell/graph-editor.git
+git clone https://github.com/kentakom1213/graph-editor.git
 cd graph-editor
-
-# アプリケーションをビルドして実行
 cargo run --release
 ```
 
-***
+## Web 版をローカルで確認する
 
-## Web 版をローカルでプレビューする方法
-
-### インストール
-
-* Rust と Trunk のインストールが必要です。
+Rust と Trunk が必要です．
 
 ```bash
-# WebAssemblyターゲットを追加
 rustup target add wasm32-unknown-unknown
-
-# Trunk をインストール
 cargo install --locked trunk
-```
-
-### ローカルサーバーで実行する場合
-
-```bash
-# ローカルサーバーを起動
 trunk serve
 ```
 
-ブラウザで `http://127.0.0.1:8080` を開いて確認してください。
+ブラウザで `http://127.0.0.1:8080` を開いて確認してください．
+
+## 開発用コマンド
+
+```bash
+cargo fmt
+cargo check
+cargo test
+```
 
 ## コントリビューション
 
-バグ報告、機能追加の提案、プルリクエストなど歓迎いたします。
+バグ報告，機能追加の提案，プルリクエストなど歓迎いたします．
 
 ## ライセンス
 
-このプロジェクトは MIT ライセンス、APACHE ライセンスの下で提供されています。詳細は [LICENSE-APACHE](https://github.com/kentakom1213/graph-editor/blob/main/LICENSE-APACHE)、[LICENSE-MIT](https://github.com/kentakom1213/graph-editor/blob/main/LICENSE-MIT) ファイルを参照してください。
+このプロジェクトは MIT ライセンス，Apache License 2.0 のデュアルライセンスで提供されています．
+
+詳細は [LICENSE-MIT](https://github.com/kentakom1213/graph-editor/blob/main/LICENSE-MIT) および [LICENSE-APACHE](https://github.com/kentakom1213/graph-editor/blob/main/LICENSE-APACHE) を参照してください．
