@@ -42,6 +42,7 @@ struct StoredUiState {
     vertex_radius: f32,
     vertex_stroke: f32,
     edge_stroke: f32,
+    edge_length: f32,
     edge_bezier_distance: f32,
     scale_min: f32,
     scale_max: f32,
@@ -52,7 +53,7 @@ impl Default for StoredUiState {
     fn default() -> Self {
         let defaults = AppConfig::default();
         Self {
-            version: 2,
+            version: 3,
             zero_indexed: false,
             show_number: true,
             is_animated: true,
@@ -63,6 +64,7 @@ impl Default for StoredUiState {
             vertex_radius: defaults.vertex_radius,
             vertex_stroke: defaults.vertex_stroke,
             edge_stroke: defaults.edge_stroke,
+            edge_length: defaults.simulator_config.l,
             edge_bezier_distance: defaults.edge_bezier_distance,
             scale_min: defaults.scale_min,
             scale_max: defaults.scale_max,
@@ -72,6 +74,11 @@ impl Default for StoredUiState {
 }
 
 impl GraphEditorApp {
+    pub fn close_entity_editor(&mut self) {
+        self.ui.edit_target = None;
+        self.ui.edit_window_pos = None;
+    }
+
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let mut app = Self::default();
         let state: StoredUiState = cc
@@ -87,6 +94,7 @@ impl GraphEditorApp {
         app.config.vertex_radius = state.vertex_radius;
         app.config.vertex_stroke = state.vertex_stroke;
         app.config.edge_stroke = state.edge_stroke;
+        app.config.simulator_config.l = state.edge_length;
         app.config.edge_bezier_distance = state.edge_bezier_distance;
         app.config.scale_min = state.scale_min;
         app.config.scale_max = state.scale_max;
@@ -123,6 +131,12 @@ impl GraphEditorApp {
         }
     }
 
+    pub fn deselect_all_vertices(&mut self) {
+        for vertex in &mut self.state.graph_view.vertices {
+            vertex.is_selected = false;
+        }
+    }
+
     pub fn switch_normal_mode(&mut self) {
         self.deselect_all_vertices_edges();
         self.state.edit_mode = EditMode::default_normal();
@@ -130,21 +144,25 @@ impl GraphEditorApp {
 
     pub fn switch_add_vertex_mode(&mut self) {
         self.deselect_all_vertices_edges();
+        self.close_entity_editor();
         self.state.edit_mode = EditMode::default_add_vertex();
     }
 
     pub fn switch_add_edge_mode(&mut self) {
         self.deselect_all_vertices_edges();
+        self.close_entity_editor();
         self.state.edit_mode = EditMode::default_add_edge();
     }
 
     pub fn switch_colorize_mode(&mut self) {
         self.deselect_all_vertices_edges();
+        self.close_entity_editor();
         self.state.edit_mode = EditMode::default_colorize();
     }
 
     pub fn switch_delete_mode(&mut self) {
         self.deselect_all_vertices_edges();
+        self.close_entity_editor();
         self.state.edit_mode = EditMode::default_delete();
     }
 
@@ -227,6 +245,18 @@ impl GraphEditorApp {
         if enabled {
             self.state.simulation_edge_length = self.effective_layout_edge_length();
         }
+    }
+
+    pub fn refresh_layout_edge_length_from_config(&mut self, ctx: &egui::Context) {
+        let edge_length = self.effective_layout_edge_length();
+        if self.state.is_animated {
+            self.state.simulation_edge_length = edge_length;
+            return;
+        }
+
+        self.settle_graph_layout(edge_length);
+        let canvas_rect = self.ui.canvas_rect.unwrap_or_else(|| ctx.available_rect());
+        self.auto_fit_graph_to_canvas(canvas_rect);
     }
 
     fn effective_layout_edge_length(&self) -> f32 {
@@ -416,7 +446,7 @@ impl Default for GraphEditorApp {
 impl eframe::App for GraphEditorApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         let state = StoredUiState {
-            version: 2,
+            version: 3,
             zero_indexed: self.state.zero_indexed,
             show_number: self.state.show_number,
             is_animated: self.state.is_animated,
@@ -427,6 +457,7 @@ impl eframe::App for GraphEditorApp {
             vertex_radius: self.config.vertex_radius,
             vertex_stroke: self.config.vertex_stroke,
             edge_stroke: self.config.edge_stroke,
+            edge_length: self.config.simulator_config.l,
             edge_bezier_distance: self.config.edge_bezier_distance,
             scale_min: self.config.scale_min,
             scale_max: self.config.scale_max,

@@ -78,6 +78,9 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
         .default_width(320.0)
         .resizable(true)
         .show(ctx, |ui| {
+            let mut edge_length_changed = false;
+            let mut reset_defaults = false;
+
             app.ui
                 .cursor_hover
                 .set_settings_window(ui.rect_contains_pointer(ui.max_rect()));
@@ -106,6 +109,12 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
                 egui::Slider::new(&mut app.config.vertex_stroke, 1.0..=8.0).text("Vertex stroke"),
             );
             ui.add(egui::Slider::new(&mut app.config.edge_stroke, 1.0..=12.0).text("Edge stroke"));
+            edge_length_changed |= ui
+                .add(
+                    egui::Slider::new(&mut app.config.simulator_config.l, 60.0..=320.0)
+                        .text("Edge length"),
+                )
+                .changed();
             ui.add(
                 egui::Slider::new(&mut app.config.edge_bezier_distance, 0.0..=120.0)
                     .text("Bezier distance"),
@@ -130,6 +139,11 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
             {
                 let defaults = crate::config::AppConfig::default();
                 app.config = defaults;
+                reset_defaults = true;
+            }
+
+            if edge_length_changed || reset_defaults {
+                app.refresh_layout_edge_length_from_config(ctx);
             }
         });
     app.ui.show_settings = open;

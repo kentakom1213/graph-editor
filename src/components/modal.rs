@@ -2,6 +2,7 @@ use egui::Context;
 
 use crate::{
     components::{default_vertex_text_color, Colors},
+    mode::EditMode,
     state::EditTarget,
     GraphEditorApp,
 };
@@ -109,6 +110,11 @@ pub fn draw_clear_all_modal(app: &mut GraphEditorApp, ctx: &Context) {
 
 pub fn draw_entity_editor(app: &mut GraphEditorApp, ctx: &Context) {
     app.ui.cursor_hover.set_editor_window(false);
+
+    if app.state.edit_mode != EditMode::Normal {
+        app.close_entity_editor();
+        return;
+    }
 
     let Some(target) = app.ui.edit_target else {
         return;

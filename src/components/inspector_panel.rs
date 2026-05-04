@@ -325,8 +325,7 @@ fn draw_json_io(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui, edit
     let font_size = app.config.input_font_size();
     let mut layouter = move |ui: &egui::Ui, string: &str, wrap_width: f32| {
         let mut layout_job = json_highlight_layout_job(string, font_size);
-        let _ = wrap_width;
-        layout_job.wrap.max_width = f32::INFINITY;
+        layout_job.wrap.max_width = wrap_width.max(0.0);
         ui.fonts(|fonts| fonts.layout_job(layout_job))
     };
     let editor = egui::TextEdit::multiline(&mut app.ui.json_text)

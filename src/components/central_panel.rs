@@ -131,12 +131,19 @@ fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
 
 /// 辺の操作を更新する
 fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
+    if app.state.edit_mode.is_add_vertex() || app.state.edit_mode.is_add_edge() {
+        for view in &mut app.state.graph_view.edges {
+            view.is_pressed = false;
+        }
+        return;
+    }
+
     let is_directed = app.state.graph.is_directed;
     let mouse_pos = ui.input(|i| i.pointer.hover_pos()).unwrap_or_default();
     let vertex_radius = app
         .config
         .effective_vertex_radius(app.state.graph.vertices.len());
-    let secondary_clicked = ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Secondary));
+    let primary_clicked = ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Primary));
 
     let vertex_positions: HashMap<usize, egui::Pos2> = app
         .state
@@ -194,7 +201,7 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
         if is_on_edge && !is_on_vertex {
             view.is_pressed = true;
 
-            if secondary_clicked {
+            if primary_clicked && app.state.edit_mode == EditMode::Normal {
                 app.ui.edit_target = Some(EditTarget::Edge(index));
                 app.ui.edit_window_pos = Some(mouse_pos);
             } else if ui.input(|i| i.pointer.any_click()) {
@@ -361,7 +368,6 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
     let vertex_radius = app
         .config
         .effective_vertex_radius(app.state.graph.vertices.len());
-    let secondary_clicked = ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Secondary));
     let AppState {
         graph,
         graph_view,
@@ -371,7 +377,6 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
         ..
     } = &mut app.state;
     let is_directed = graph.is_directed;
-
     {
         let mut indices: Vec<usize> = graph
             .vertices
@@ -422,7 +427,12 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
                 view.is_pressed = false;
             }
 
-            if edit_mode.is_add_edge() || edit_mode.is_delete() {
+            if edit_mode == &EditMode::Normal
+                || edit_mode.is_add_vertex()
+                || edit_mode.is_add_edge()
+                || edit_mode.is_colorize()
+                || edit_mode.is_delete()
+            {
                 view.is_pressed = response.hovered();
             }
 
@@ -431,6 +441,15 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
                 *next_z_index += 1;
 
                 match edit_mode {
+                    EditMode::Normal => {
+                        view.is_selected = false;
+                        app.ui.edit_target = Some(EditTarget::Vertex(idx));
+                        app.ui.edit_window_pos =
+                            response.hover_pos().or(Some(vertex.get_position()));
+                    }
+                    EditMode::AddVertex => {
+                        view.is_selected = false;
+                    }
                     EditMode::AddEdge {
                         ref mut from_vertex,
                         ref mut confirmed,
@@ -464,13 +483,7 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
                     EditMode::Delete => {
                         vertex.is_deleted = true;
                     }
-                    _ => {}
                 }
-            }
-
-            if secondary_clicked && response.hovered() {
-                app.ui.edit_target = Some(EditTarget::Vertex(idx));
-                app.ui.edit_window_pos = response.hover_pos().or(Some(vertex.get_position()));
             }
         }
     }
