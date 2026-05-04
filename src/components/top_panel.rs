@@ -8,6 +8,7 @@ pub struct CursorHoverState {
     top_panel: bool,
     tool_bar: bool,
     inspector_panel: bool,
+    footer_panel: bool,
     settings_window: bool,
     canvas_controls: bool,
     editor_window: bool,
@@ -22,6 +23,9 @@ impl CursorHoverState {
     }
     pub fn set_inspector_panel(&mut self, hovered: bool) {
         self.inspector_panel = hovered;
+    }
+    pub fn set_footer_panel(&mut self, hovered: bool) {
+        self.footer_panel = hovered;
     }
     pub fn set_settings_window(&mut self, hovered: bool) {
         self.settings_window = hovered;
@@ -49,6 +53,7 @@ impl CursorHoverState {
         self.top_panel
             || self.tool_bar
             || self.inspector_panel
+            || self.footer_panel
             || self.settings_window
             || self.canvas_controls
             || self.editor_window

@@ -417,10 +417,10 @@ impl eframe::App for GraphEditorApp {
         self.state.graph.apply_deletions();
 
         draw_top_panel(self, ctx);
+        draw_footer(self, ctx);
         draw_tool_bar(self, ctx);
         draw_inspector_panel(self, ctx);
         draw_central_panel(self, ctx);
-        draw_footer(self, ctx);
         draw_entity_editor(self, ctx);
         draw_error_modal(self, ctx);
         draw_clear_all_modal(self, ctx);
