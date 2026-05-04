@@ -281,18 +281,22 @@ fn draw_json_io(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui, edit
             .strong()
             .size(app.config.section_font_size()),
     );
-    ui.checkbox(
-        &mut app.ui.save_vertex_position,
-        egui::RichText::new("Save vertex positions").size(app.config.body_font_size()),
-    );
-    ui.checkbox(
-        &mut app.ui.save_vertex_style,
-        egui::RichText::new("Save vertex colors").size(app.config.body_font_size()),
-    );
-    ui.checkbox(
-        &mut app.ui.save_edge_style,
-        egui::RichText::new("Save edge colors").size(app.config.body_font_size()),
-    );
+    egui::CollapsingHeader::new(egui::RichText::new("Options").size(app.config.body_font_size()))
+        .default_open(false)
+        .show(ui, |ui| {
+            ui.checkbox(
+                &mut app.ui.save_vertex_position,
+                egui::RichText::new("Save vertex positions").size(app.config.body_font_size()),
+            );
+            ui.checkbox(
+                &mut app.ui.save_vertex_style,
+                egui::RichText::new("Save vertex colors").size(app.config.body_font_size()),
+            );
+            ui.checkbox(
+                &mut app.ui.save_edge_style,
+                egui::RichText::new("Save edge colors").size(app.config.body_font_size()),
+            );
+        });
 
     if !app.ui.json_is_dirty {
         app.sync_json_text_from_graph();
