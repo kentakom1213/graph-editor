@@ -35,7 +35,7 @@ pub fn scale_central_panel(app: &mut GraphEditorApp, ui: &mut egui::Ui) {
 
         // 現在のscaleの逆数倍で変化させる
         let cur_affine = app.state.graph.affine.borrow().to_owned();
-        let cur_scale = cur_affine.scale_x();
+        let cur_scale = cur_affine.scale();
 
         if let Some(inv) = cur_affine.inverse() {
             // 中心の調整
