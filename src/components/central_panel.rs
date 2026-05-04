@@ -411,7 +411,7 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
                 view.z_index = *next_z_index;
                 *next_z_index += 1;
                 if let Some(mouse_pos) = response.hover_pos() {
-                    let delta = Affine2D::from_transition(mouse_pos - vertex.get_position());
+                    let delta = Affine2D::from_transition(vertex.get_position() - mouse_pos);
                     view.drag = delta;
                 }
             } else if response.dragged() {
