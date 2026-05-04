@@ -4,7 +4,7 @@
 
 Graph Editor の UI を，現状の「左メニュー + 浮動ウィンドウ複数」から，次のような役割別レイアウトに整理する．
 
-- 左側: 編集ツールを選ぶための細いツールバー
+- 左側: 編集ツールを選ぶための固定幅ツールバー
 - 中央: グラフ編集キャンバス
 - 右側: グラフ設定・表示設定・入出力をまとめた詳細パネル
 - 下部: 現在状態を表示するステータスバー
@@ -16,9 +16,7 @@ Graph Editor の UI を，現状の「左メニュー + 浮動ウィンドウ複
 
 - `src/app.rs`
 - `src/components/top_panel.rs`
-- `src/components/edit_menu.rs`
 - `src/components/color_panel.rs`
-- `src/components/graph_io.rs`
 - `src/components/footer.rs`
 - `src/components/central_panel.rs`
 - `src/components/mod.rs`
@@ -29,7 +27,7 @@ Graph Editor の UI を，現状の「左メニュー + 浮動ウィンドウ複
 
 ```text
 +----------------------------------------------------------------------------------+
-| Graph Editor                                      [Export] [Settings]             |
+| Graph Editor                                               [Settings]             |
 +----------------------------------------------------------------------------------+
 | Tools |                                                     | Inspector           |
 |       |                                                     |---------------------|
@@ -97,7 +95,7 @@ I/O:
 pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &egui::Context)
 ```
 
-左側に細い `SidePanel` を表示する．
+左側に固定幅の `SidePanel` を表示する．
 
 推奨 ID は `"tool_bar"`．
 
@@ -106,7 +104,7 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &egui::Context)
 ```rust
 egui::SidePanel::left("tool_bar")
     .resizable(false)
-    .exact_width(72.0)
+    .exact_width(182.0)
 ```
 
 中身は縦方向に配置する．
@@ -175,9 +173,8 @@ pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &egui::Context)
 
 ```rust
 egui::SidePanel::right("inspector_panel")
-    .resizable(true)
-    .default_width(260.0)
-    .min_width(220.0)
+    .resizable(false)
+    .exact_width(196.0)
 ```
 
 右パネル内部にはタブを置く．
@@ -188,9 +185,9 @@ View
 I/O
 ```
 
-現在の `PanelTabState` は `Menu`，`Color`，`Input` の表示・非表示用なので，これを置き換えるか，新しい状態を追加する．
+現在の UI 状態は `InspectorTab` ベースに整理する．
 
-推奨する状態は次．
+状態は次．
 
 ```rust
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -206,10 +203,17 @@ pub enum InspectorTab {
 
 ```rust
 pub inspector_tab: InspectorTab,
+pub input_has_focus: bool,
+pub input_is_dirty: bool,
+pub show_settings: bool,
 ```
 
-`PanelTabState` は不要になるため，最終的には削除してよい．
-ただし，差分を小さくしたい場合は一時的に残してもよい．
+それぞれの責務は分離して扱う．
+
+- `inspector_tab`: 右インスペクタの表示タブ
+- `show_settings`: 設定ウィンドウの開閉
+- `input_has_focus`: 入力欄フォーカス中のショートカット抑止
+- `input_is_dirty`: 手入力の未反映状態を保持し，自動同期の上書きを防ぐ
 
 ### 3. Graph タブを実装する
 
@@ -292,18 +296,12 @@ Export Image
 現在は `draw_graph_io` 内で，入力ウィンドウにカーソルが乗っていない場合に `input_text` を自動更新している．
 右パネル化後は，`code_editor` にフォーカスがない場合だけ自動更新するようにするのが望ましい．
 
-簡単には次のような条件でよい．
+実装では，未保存の入力を勝手に上書きしないため，次の条件で同期する．
 
 ```rust
-if !app.ui.input_has_focus {
-    app.ui.input_text = app.state.graph.encode(app.state.zero_indexed);
+if !app.ui.input_has_focus && !app.ui.input_is_dirty {
+    app.sync_input_text_from_graph();
 }
-```
-
-必要なら `UiState` に以下を追加する．
-
-```rust
-pub input_has_focus: bool,
 ```
 
 `Copy` は現在と同じく次を呼ぶ．
@@ -329,14 +327,13 @@ app.request_export_image(ctx);
 
 現在は `Menu`，`Color`，`Input` の表示トグルを持っているが，整理後は不要にする．
 
-上部には次だけを置く．
+上部には次を置く．
 
 ```text
-Graph Editor                              [Export] [Settings]
+Graph Editor                                               [Settings]
 ```
 
-まず `Settings` はダミーボタンでよい．
-`Export` は押したら `app.request_export_image(ctx)` を呼ぶ．
+`Settings` は設定ウィンドウを開くボタンとして扱う．
 
 例．
 
@@ -347,14 +344,7 @@ egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui.button("Settings").clicked() {
-                // TODO: settings panel
-            }
-
-            if ui
-                .add_enabled(!app.export.is_busy(), egui::Button::new("Export"))
-                .clicked()
-            {
-                app.request_export_image(ctx);
+                app.ui.show_settings = true;
             }
         });
     });
@@ -392,28 +382,7 @@ app.state.graph.edges().len()
 
 ### 8. `app.rs` の描画順を変更する
 
-現在の描画順は以下の構成になっている．
-
-```rust
-draw_top_panel(self, ctx);
-draw_central_panel(self, ctx);
-
-if self.ui.panel_tab.edit_menu {
-    draw_edit_menu(self, ctx);
-}
-if self.ui.panel_tab.color_settings {
-    draw_color_settings(self, ctx);
-}
-if self.ui.panel_tab.graph_io {
-    draw_graph_io(self, ctx);
-}
-
-draw_footer(self, ctx);
-draw_error_modal(self, ctx);
-draw_clear_all_modal(self, ctx);
-```
-
-これを次の構成に変更する．
+描画順は次の構成にする．
 
 ```rust
 draw_top_panel(self, ctx);
@@ -426,9 +395,8 @@ draw_error_modal(self, ctx);
 draw_clear_all_modal(self, ctx);
 ```
 
-`draw_edit_menu`，`draw_color_settings`，`draw_graph_io` は最終的には呼ばない．
-実装後に不要であれば削除する．
-ただし，移行中は残してもよい．
+旧 UI の `draw_edit_menu` と `draw_graph_io` は呼ばない．
+機能移植が完了したら削除する．
 
 ### 9. `cursor_hover` の扱いを整理する
 
@@ -440,10 +408,10 @@ draw_clear_all_modal(self, ctx);
 top_panel
 tool_bar
 inspector_panel
-input_editor
+settings_window
 ```
 
-既存の `color_window`，`menu_window`，`input_window` は役割が変わるため，次のように置き換える．
+現在の実装は次のように整理する．
 
 ```rust
 #[derive(Default)]
@@ -451,16 +419,8 @@ pub struct CursorHoverState {
     top_panel: bool,
     tool_bar: bool,
     inspector_panel: bool,
+    settings_window: bool,
 }
-```
-
-ただし，差分を小さくするなら既存フィールドを流用してもよい．
-その場合は次の対応にする．
-
-```text
-menu_window  -> tool_bar
-color_window -> inspector_panel
-input_window -> input editor focus
 ```
 
 重要なのは，キャンバス上ではないクリックで頂点が追加されないこと．
@@ -544,9 +504,7 @@ A         Animate 切替
 
 ```text
 draw_edit_menu
-draw_color_settings
 draw_graph_io
-PanelTabState
 ```
 
 ただし，機能移植が完了してから削除すること．
@@ -586,6 +544,7 @@ Revert Edge: Directed のときのみ有効
 - 起動時に，左ツールバー，中央キャンバス，右インスペクタ，下部ステータスバーが表示される
 - `Color` と `Graph Input` の浮動ウィンドウが表示されない
 - 上部の `Menu`，`Color`，`Input` トグルが消えている
+- `Settings` から設定ウィンドウを開ける
 - 既存の主要機能がすべて新 UI 上で操作できる
 - `cargo fmt` が通る
 - `cargo clippy` または既存 CI の `cargo check` が通る

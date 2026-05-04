@@ -34,7 +34,6 @@ draw_clear_all_modal(self, ctx);
 停止対象:
 
 - `draw_edit_menu`
-- `draw_color_settings`
 - `draw_graph_io`
 
 ### 3. 一時的な共存期間を最短にする
@@ -44,7 +43,6 @@ draw_clear_all_modal(self, ctx);
 
 ### 4. 不要コードを整理する
 
-- `PanelTabState` が不要なら削除
 - 旧 hover 名称が残るなら新意味へ揃える
 - 未使用 module / export を片付ける
 

@@ -25,9 +25,8 @@ pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &egui::Context)
 
 ```rust
 egui::SidePanel::right("inspector_panel")
-    .resizable(true)
-    .default_width(260.0)
-    .min_width(220.0)
+    .resizable(false)
+    .exact_width(196.0)
 ```
 
 上部に以下のタブを置く:

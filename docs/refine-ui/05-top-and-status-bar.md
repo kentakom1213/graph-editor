@@ -18,13 +18,12 @@
 表示内容:
 
 ```text
-Graph Editor                              [Export] [Settings]
+Graph Editor                                               [Settings]
 ```
 
 仕様:
 
-- `Export` は `app.request_export_image(ctx)` を呼ぶ
-- `Settings` は当面ダミーボタンでよい
+- `Settings` は設定ウィンドウを開く
 - 旧 `Menu / Color / Input` toggle は削除する
 
 ### 2. 下部をステータスバー化する
