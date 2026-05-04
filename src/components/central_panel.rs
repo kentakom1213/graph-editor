@@ -16,7 +16,7 @@ use crate::{
         newton::newton_method,
     },
     mode::EditMode,
-    state::AppState,
+    state::{AppState, EditTarget},
     view_state::GraphSnapshot,
     GraphEditorApp,
 };
@@ -171,15 +171,12 @@ fn add_vertex(app: &mut GraphEditorApp, ui: &egui::Ui) {
 
 /// 辺の操作を更新する
 fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
-    if !app.state.edit_mode.is_delete() && !app.state.edit_mode.is_colorize() {
-        return;
-    }
-
     let is_directed = app.state.graph.is_directed;
     let mouse_pos = ui.input(|i| i.pointer.hover_pos()).unwrap_or_default();
     let vertex_radius = app
         .config
         .effective_vertex_radius(app.state.graph.vertices.len());
+    let secondary_clicked = ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Secondary));
 
     let vertex_positions: HashMap<usize, egui::Pos2> = app
         .state
@@ -237,7 +234,10 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
         if is_on_edge && !is_on_vertex {
             view.is_pressed = true;
 
-            if ui.input(|i| i.pointer.any_click()) {
+            if secondary_clicked {
+                app.ui.edit_target = Some(EditTarget::Edge(index));
+                app.ui.edit_window_pos = Some(mouse_pos);
+            } else if ui.input(|i| i.pointer.any_click()) {
                 if app.state.edit_mode.is_colorize() {
                     view.color = app.state.selected_color;
                 } else if app.state.edit_mode.is_delete() {
@@ -310,11 +310,13 @@ fn draw_edge_directed(
     from_pos: egui::Pos2,
     to_pos: egui::Pos2,
     color: egui::Color32,
+    stroke_width: f32,
+    target_radius: f32,
     config: &AppConfig,
 ) {
     // 矢印の方向を取得
     let dir = (to_pos - from_pos).normalized();
-    let arrowhead = to_pos - dir * config.vertex_radius;
+    let arrowhead = to_pos - dir * target_radius;
     let endpoint = arrowhead - dir * config.edge_arrow_length;
 
     // 矢印のヘッド（三角形）の3つの頂点を計算
@@ -336,10 +338,7 @@ fn draw_edge_directed(
     ));
 
     // 線を描画
-    painter.line_segment(
-        [from_pos, endpoint],
-        egui::Stroke::new(config.edge_stroke, color),
-    );
+    painter.line_segment([from_pos, endpoint], egui::Stroke::new(stroke_width, color));
 }
 
 /// 曲線付きの矢印を描画する関数
@@ -348,25 +347,22 @@ fn draw_edge_directed_curved(
     from_pos: egui::Pos2,
     to_pos: egui::Pos2,
     color: egui::Color32,
+    stroke_width: f32,
+    target_radius: f32,
     config: &AppConfig,
 ) -> Option<()> {
     let control = calc_bezier_control_point(from_pos, to_pos, config.edge_bezier_distance, false);
 
     // ベジェ曲線と円の交点を計算
-    let (arrowhead, dir) = calc_intersection_of_bezier_and_circle(
-        from_pos,
-        control,
-        to_pos,
-        to_pos,
-        config.vertex_radius,
-    )?;
+    let (arrowhead, dir) =
+        calc_intersection_of_bezier_and_circle(from_pos, control, to_pos, to_pos, target_radius)?;
 
     // 2次ベジェ曲線を描画
     let bezier = epaint::QuadraticBezierShape {
         points: [from_pos, control, to_pos], // 始点・制御点・終点
         closed: false,
         fill: egui::Color32::TRANSPARENT,
-        stroke: epaint::PathStroke::new(config.edge_stroke, color),
+        stroke: epaint::PathStroke::new(stroke_width, color),
     };
     painter.add(bezier);
 
@@ -376,7 +372,7 @@ fn draw_edge_directed_curved(
             arrowhead - dir.normalized() * config.edge_arrow_length / 2.0,
             arrowhead,
         ],
-        egui::Stroke::new(config.edge_stroke, config.bg_color),
+        egui::Stroke::new(stroke_width, config.bg_color),
     );
 
     // 矢印のヘッド（三角形）の3つの頂点を計算
@@ -405,6 +401,7 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
     let vertex_radius = app
         .config
         .effective_vertex_radius(app.state.graph.vertices.len());
+    let secondary_clicked = ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Secondary));
     let AppState {
         graph,
         graph_view,
@@ -438,6 +435,7 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
             let Some(view) = graph_view.vertices.get_mut(idx) else {
                 continue;
             };
+            let vertex_radius = view.radius.unwrap_or(vertex_radius);
             let rect = egui::Rect::from_center_size(
                 vertex.get_position(),
                 egui::vec2(vertex_radius * 2.0, vertex_radius * 2.0),
@@ -509,6 +507,11 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
                     _ => {}
                 }
             }
+
+            if secondary_clicked && response.hovered() {
+                app.ui.edit_target = Some(EditTarget::Vertex(idx));
+                app.ui.edit_window_pos = response.hover_pos().or(Some(vertex.get_position()));
+            }
         }
     }
 
@@ -552,15 +555,38 @@ fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppC
         } else {
             edge.color.edge()
         };
+        let stroke_width = edge.stroke_width.unwrap_or(config.edge_stroke);
+        let target_radius = snapshot
+            .vertices
+            .iter()
+            .find(|vertex| vertex.id == edge.to)
+            .and_then(|vertex| vertex.radius)
+            .unwrap_or(config.effective_vertex_radius(snapshot.vertices.len()));
 
         if snapshot.is_directed {
             if edge_count.get(&(edge.from, edge.to)) == Some(&1) {
-                draw_edge_directed(painter, from_pos, to_pos, edge_color, config);
+                draw_edge_directed(
+                    painter,
+                    from_pos,
+                    to_pos,
+                    edge_color,
+                    stroke_width,
+                    target_radius,
+                    config,
+                );
             } else {
-                draw_edge_directed_curved(painter, from_pos, to_pos, edge_color, config);
+                draw_edge_directed_curved(
+                    painter,
+                    from_pos,
+                    to_pos,
+                    edge_color,
+                    stroke_width,
+                    target_radius,
+                    config,
+                );
             }
         } else {
-            draw_edge_undirected(painter, from_pos, to_pos, config.edge_stroke, edge_color);
+            draw_edge_undirected(painter, from_pos, to_pos, stroke_width, edge_color);
         }
     }
 }
@@ -572,7 +598,6 @@ fn render_vertices(
     ui: &egui::Ui,
     painter: &egui::Painter,
 ) {
-    let vertex_radius = app.config.effective_vertex_radius(snapshot.vertices.len());
     let vertex_font_size = app
         .config
         .effective_vertex_font_size(snapshot.vertices.len());
@@ -598,6 +623,10 @@ fn render_vertices(
     }
 
     for vertex in snapshot.vertices.iter().sorted_by_key(|v| v.z_index) {
+        let vertex_radius = vertex
+            .radius
+            .unwrap_or(app.config.effective_vertex_radius(snapshot.vertices.len()));
+        let vertex_stroke = vertex.stroke_width.unwrap_or(app.config.vertex_stroke);
         let color = if vertex.is_selected {
             app.config.vertex_color_selected
         } else if vertex.is_pressed {
@@ -610,21 +639,23 @@ fn render_vertices(
         painter.circle_stroke(
             vertex.position,
             vertex_radius,
-            egui::Stroke::new(app.config.vertex_stroke, app.config.vertex_color_outline),
+            egui::Stroke::new(vertex_stroke, app.config.vertex_color_outline),
         );
         if app.state.show_number {
-            let vertex_show_id = if app.state.zero_indexed {
-                vertex.id
-            } else {
-                vertex.id + 1
-            }
-            .to_string();
+            let vertex_show_id = vertex.label.clone().unwrap_or_else(|| {
+                if app.state.zero_indexed {
+                    vertex.id
+                } else {
+                    vertex.id + 1
+                }
+                .to_string()
+            });
             painter.text(
                 vertex.position,
                 egui::Align2::CENTER_CENTER,
                 vertex_show_id,
                 egui::FontId::proportional(vertex_font_size),
-                app.config.vertex_font_color,
+                vertex.text_color.unwrap_or(app.config.vertex_font_color),
             );
         }
     }

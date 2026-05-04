@@ -1,6 +1,6 @@
 use egui::Context;
 
-use crate::GraphEditorApp;
+use crate::{components::Colors, state::EditTarget, GraphEditorApp};
 
 fn draw_modal_background(ctx: &Context) {
     let screen_rect = ctx.screen_rect();
@@ -101,4 +101,184 @@ pub fn draw_clear_all_modal(app: &mut GraphEditorApp, ctx: &Context) {
             }
         });
     });
+}
+
+pub fn draw_entity_editor(app: &mut GraphEditorApp, ctx: &Context) {
+    app.ui.cursor_hover.set_editor_window(false);
+
+    let Some(target) = app.ui.edit_target else {
+        return;
+    };
+
+    let mut open = true;
+    let pos = app.ui.edit_window_pos.unwrap_or_else(|| ctx.screen_rect().center());
+    egui::Window::new(match target {
+        EditTarget::Vertex(_) => "Vertex",
+        EditTarget::Edge(_) => "Edge",
+    })
+    .open(&mut open)
+    .default_pos(pos)
+    .resizable(false)
+    .show(ctx, |ui| {
+        app.ui
+            .cursor_hover
+            .set_editor_window(ui.rect_contains_pointer(ui.max_rect()));
+
+        match target {
+            EditTarget::Vertex(index) => draw_vertex_editor(app, ui, index),
+            EditTarget::Edge(index) => draw_edge_editor(app, ui, index),
+        }
+    });
+
+    if !open {
+        app.ui.edit_target = None;
+        app.ui.edit_window_pos = None;
+    }
+}
+
+fn draw_vertex_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize) {
+    let Some(view) = app.state.graph_view.vertices.get_mut(index) else {
+        app.ui.edit_target = None;
+        return;
+    };
+    let Some(vertex) = app.state.graph.vertices.get(index) else {
+        app.ui.edit_target = None;
+        return;
+    };
+
+    ui.label(format!("id: {}", vertex.id));
+    ui.separator();
+
+    ui.label(egui::RichText::new("Label").strong().size(app.config.section_font_size()));
+    let default_label = if app.state.zero_indexed {
+        vertex.id.to_string()
+    } else {
+        (vertex.id + 1).to_string()
+    };
+    let label = view.label.get_or_insert(default_label);
+    ui.text_edit_singleline(label);
+
+    ui.separator();
+    ui.label(egui::RichText::new("Fill").strong().size(app.config.section_font_size()));
+    draw_color_palette(ui, &mut view.color);
+
+    ui.separator();
+    ui.label(egui::RichText::new("Text").strong().size(app.config.section_font_size()));
+    let mut text_color = view.text_color.unwrap_or(app.config.vertex_font_color);
+    if ui.color_edit_button_srgba(&mut text_color).changed() {
+        view.text_color = Some(text_color);
+    }
+
+    ui.separator();
+    ui.label(egui::RichText::new("Geometry").strong().size(app.config.section_font_size()));
+    let mut use_default_radius = view.radius.is_none();
+    if ui.checkbox(&mut use_default_radius, "Use default size").changed() && use_default_radius {
+        view.radius = None;
+    }
+    if !use_default_radius {
+        let radius = view.radius.get_or_insert(app.config.vertex_radius);
+        ui.add(egui::DragValue::new(radius).speed(0.5).prefix("radius: "));
+    }
+
+    let mut use_default_stroke = view.stroke_width.is_none();
+    if ui
+        .checkbox(&mut use_default_stroke, "Use default stroke")
+        .changed()
+        && use_default_stroke
+    {
+        view.stroke_width = None;
+    }
+    if !use_default_stroke {
+        let stroke = view.stroke_width.get_or_insert(app.config.vertex_stroke);
+        ui.add(egui::DragValue::new(stroke).speed(0.25).prefix("stroke: "));
+    }
+}
+
+fn draw_edge_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize) {
+    let Some(edge) = app.state.graph.edges.get(index) else {
+        app.ui.edit_target = None;
+        return;
+    };
+    let Some(view) = app.state.graph_view.edges.get_mut(index) else {
+        app.ui.edit_target = None;
+        return;
+    };
+
+    ui.label(format!("from: {}", edge.from));
+    ui.label(format!("to: {}", edge.to));
+    ui.separator();
+
+    ui.label(egui::RichText::new("Stroke").strong().size(app.config.section_font_size()));
+    draw_color_palette(ui, &mut view.color);
+
+    let mut use_default_stroke = view.stroke_width.is_none();
+    if ui
+        .checkbox(&mut use_default_stroke, "Use default width")
+        .changed()
+        && use_default_stroke
+    {
+        view.stroke_width = None;
+    }
+    if !use_default_stroke {
+        let stroke = view.stroke_width.get_or_insert(app.config.edge_stroke);
+        ui.add(egui::DragValue::new(stroke).speed(0.25).prefix("width: "));
+    }
+}
+
+fn draw_color_palette(ui: &mut egui::Ui, color: &mut Colors) {
+    ui.horizontal_wrapped(|ui| {
+        for candidate in [
+            Colors::Default,
+            Colors::Red,
+            Colors::Green,
+            Colors::Blue,
+            Colors::Yellow,
+            Colors::Orange,
+            Colors::Violet,
+            Colors::Pink,
+            Colors::Brown,
+            Colors::Cyan,
+            Colors::Indigo,
+            Colors::Gray,
+        ] {
+            let fill = if candidate == Colors::Default {
+                egui::Color32::WHITE
+            } else {
+                candidate.vertex()
+            };
+            let stroke_color = if *color == candidate {
+                egui::Color32::BLACK
+            } else {
+                egui::Color32::from_gray(120)
+            };
+            let response = ui
+                .add(
+                    egui::Button::new("")
+                        .min_size(egui::vec2(24.0, 24.0))
+                        .fill(fill)
+                        .stroke(egui::Stroke::new(2.0, stroke_color)),
+                )
+                .on_hover_text(color_name(candidate));
+            if response.clicked() {
+                *color = candidate;
+            }
+        }
+    });
+}
+
+fn color_name(color: Colors) -> &'static str {
+    match color {
+        Colors::Default => "Default",
+        Colors::Red => "Red",
+        Colors::Green => "Green",
+        Colors::Blue => "Blue",
+        Colors::Yellow => "Yellow",
+        Colors::Orange => "Orange",
+        Colors::Violet => "Violet",
+        Colors::Pink => "Pink",
+        Colors::Brown => "Brown",
+        Colors::Cyan => "Cyan",
+        Colors::Indigo => "Indigo",
+        Colors::Gray => "Gray",
+    }
 }

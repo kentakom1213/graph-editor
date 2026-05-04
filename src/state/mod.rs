@@ -12,6 +12,12 @@ pub enum IoFormat {
     Json,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditTarget {
+    Vertex(usize),
+    Edge(usize),
+}
+
 pub struct AppState {
     pub graph: Graph,
     pub graph_view: GraphViewState,
@@ -43,4 +49,6 @@ pub struct UiState {
     pub error_message: Option<String>,
     pub confirm_clear_all: bool,
     pub inspector_tab: InspectorTab,
+    pub edit_target: Option<EditTarget>,
+    pub edit_window_pos: Option<egui::Pos2>,
 }

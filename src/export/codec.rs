@@ -151,7 +151,7 @@ pub fn export_color_image(color_image: &mut egui::ColorImage) -> anyhow::Result<
 
 pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
     let active_vertex_count = ctx.graph.vertices.iter().filter(|v| !v.is_deleted).count();
-    let vertex_radius = ctx.config.effective_vertex_radius(active_vertex_count);
+    let default_vertex_radius = ctx.config.effective_vertex_radius(active_vertex_count);
     let vertex_font_size = ctx.config.effective_vertex_font_size(active_vertex_count);
     let bounds = graph_bounds_rect(ctx).context("missing graph bounds")?;
     let width = bounds.width().max(1.0);
@@ -209,10 +209,15 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         let to_x = to_pos.x - bounds.min.x;
         let to_y = to_pos.y - bounds.min.y;
 
+        let stroke_width = edge.stroke_width.unwrap_or(ctx.config.edge_stroke);
+        let target_radius = vertex_map
+            .get(&edge.to)
+            .and_then(|vertex| vertex.radius)
+            .unwrap_or(default_vertex_radius);
         if snapshot.is_directed {
             if edge_count.get(&(edge.from, edge.to)) == Some(&1) {
                 let dir = (to_pos - from_pos).normalized();
-                let arrowhead = to_pos - dir * vertex_radius;
+                let arrowhead = to_pos - dir * target_radius;
                 let endpoint = arrowhead - dir * ctx.config.edge_arrow_length;
                 let arrow_dir = dir * ctx.config.edge_arrow_length;
                 let left = egui::Pos2::new(
@@ -238,7 +243,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                 let end_y = endpoint.y - bounds.min.y;
                 svg.push_str(&format!(
                     "  <line x1=\"{from_x}\" y1=\"{from_y}\" x2=\"{end_x}\" y2=\"{end_y}\" {stroke_style} stroke-width=\"{}\" fill=\"none\" />\n",
-                    ctx.config.edge_stroke
+                    stroke_width
                 ));
 
                 let (fill_hex, fill_alpha) = color_to_svg(edge_color);
@@ -269,13 +274,13 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                     control,
                     to_pos,
                     to_pos,
-                    vertex_radius,
+                    target_radius,
                 ) {
                     let control_x = control.x - bounds.min.x;
                     let control_y = control.y - bounds.min.y;
                     svg.push_str(&format!(
                         "  <path d=\"M {from_x} {from_y} Q {control_x} {control_y} {to_x} {to_y}\" {stroke_style} stroke-width=\"{}\" fill=\"none\" />\n",
-                        ctx.config.edge_stroke
+                        stroke_width
                     ));
 
                     let mask_start =
@@ -292,7 +297,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                         mask_start.y - bounds.min.y,
                         arrowhead.x - bounds.min.x,
                         arrowhead.y - bounds.min.y,
-                        ctx.config.edge_stroke
+                        stroke_width
                     ));
 
                     let arrow_dir = dir.normalized() * ctx.config.edge_arrow_length;
@@ -335,7 +340,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         } else {
             svg.push_str(&format!(
                 "  <line x1=\"{from_x}\" y1=\"{from_y}\" x2=\"{to_x}\" y2=\"{to_y}\" {stroke_style} stroke-width=\"{}\" fill=\"none\" />\n",
-                ctx.config.edge_stroke
+                stroke_width
             ));
         }
     }
@@ -345,6 +350,8 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         let pos = vertex.position;
         let x = pos.x - bounds.min.x;
         let y = pos.y - bounds.min.y;
+        let vertex_radius = vertex.radius.unwrap_or(default_vertex_radius);
+        let vertex_stroke = vertex.stroke_width.unwrap_or(ctx.config.vertex_stroke);
         let fill_color = vertex.color.vertex();
         let (fill_hex, fill_alpha) = color_to_svg(fill_color);
         if let Some(alpha) = fill_alpha {
@@ -361,22 +368,26 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         if let Some(alpha) = stroke_alpha {
             svg.push_str(&format!(
                 "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\" stroke-width=\"{}\" />\n",
-                ctx.config.vertex_stroke
+                vertex_stroke
             ));
         } else {
             svg.push_str(&format!(
                 "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-width=\"{}\" />\n",
-                ctx.config.vertex_stroke
+                vertex_stroke
             ));
         }
 
         if ctx.show_number {
-            let vertex_show_id = if ctx.zero_indexed {
-                vertex.id
-            } else {
-                vertex.id + 1
-            };
-            let (text_hex, text_alpha) = color_to_svg(ctx.config.vertex_font_color);
+            let vertex_show_id = vertex.label.clone().unwrap_or_else(|| {
+                if ctx.zero_indexed {
+                    vertex.id
+                } else {
+                    vertex.id + 1
+                }
+                .to_string()
+            });
+            let (text_hex, text_alpha) =
+                color_to_svg(vertex.text_color.unwrap_or(ctx.config.vertex_font_color));
             let text_adjust_y = y + 4.5;
             if let Some(alpha) = text_alpha {
                 svg.push_str(&format!(
@@ -395,8 +406,19 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
 }
 
 pub fn graph_bounds_rect(ctx: &ExportContext<'_>) -> Option<egui::Rect> {
-    let active_vertex_count = ctx.graph.vertices.iter().filter(|v| !v.is_deleted).count();
-    let vertex_radius = ctx.config.effective_vertex_radius(active_vertex_count);
+    let snapshot = ctx.view.snapshot(ctx.graph);
+    let active_vertex_count = snapshot.vertices.len();
+    let default_vertex_radius = ctx.config.effective_vertex_radius(active_vertex_count);
+    let max_vertex_radius = snapshot
+        .vertices
+        .iter()
+        .map(|vertex| vertex.radius.unwrap_or(default_vertex_radius))
+        .fold(default_vertex_radius, f32::max);
+    let max_edge_stroke = snapshot
+        .edges
+        .iter()
+        .map(|edge| edge.stroke_width.unwrap_or(ctx.config.edge_stroke))
+        .fold(ctx.config.edge_stroke, f32::max);
     let mut iter = ctx.graph.vertices.iter().filter(|v| !v.is_deleted);
     let first = iter.next()?;
     let mut min = first.get_position();
@@ -410,8 +432,8 @@ pub fn graph_bounds_rect(ctx: &ExportContext<'_>) -> Option<egui::Rect> {
         max.y = max.y.max(pos.y);
     }
 
-    let padding = vertex_radius
-        + ctx.config.edge_stroke
+    let padding = max_vertex_radius
+        + max_edge_stroke
         + ctx
             .config
             .edge_arrow_length
