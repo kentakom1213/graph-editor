@@ -1,7 +1,10 @@
 use egui::Context;
 
 use crate::{
-    components::{default_vertex_text_color, Colors},
+    components::{
+        default_vertex_text_color, Colors, EdgeLineStyle, VertexPattern, COLOR_SLOTS,
+        EDGE_LINE_STYLES, VERTEX_PATTERNS,
+    },
     mode::EditMode,
     state::EditTarget,
     GraphEditorApp,
@@ -181,7 +184,15 @@ fn draw_vertex_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize)
             .strong()
             .size(app.config.section_font_size()),
     );
-    draw_color_palette(ui, &mut view.color);
+    draw_color_palette(ui, &mut view.color, app.state.palette_theme);
+
+    ui.separator();
+    ui.label(
+        egui::RichText::new("Pattern")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
+    draw_pattern_palette(ui, &mut view.pattern);
 
     ui.separator();
     ui.label(
@@ -191,7 +202,7 @@ fn draw_vertex_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize)
     );
     let mut text_color = view
         .text_color
-        .unwrap_or_else(|| default_vertex_text_color(view.color.vertex()));
+        .unwrap_or_else(|| default_vertex_text_color(view.color.vertex(app.state.palette_theme)));
     if ui.color_edit_button_srgba(&mut text_color).changed() {
         view.text_color = Some(text_color);
     }
@@ -248,7 +259,15 @@ fn draw_edge_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize) {
             .strong()
             .size(app.config.section_font_size()),
     );
-    draw_color_palette(ui, &mut view.color);
+    draw_color_palette(ui, &mut view.color, app.state.palette_theme);
+
+    ui.separator();
+    ui.label(
+        egui::RichText::new("Line")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
+    draw_line_style_palette(ui, &mut view.line_style);
 
     let mut use_default_stroke = view.stroke_width.is_none();
     if ui
@@ -264,26 +283,17 @@ fn draw_edge_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize) {
     }
 }
 
-fn draw_color_palette(ui: &mut egui::Ui, color: &mut Colors) {
+fn draw_color_palette(
+    ui: &mut egui::Ui,
+    color: &mut Colors,
+    palette_theme: crate::components::PaletteTheme,
+) {
     ui.horizontal_wrapped(|ui| {
-        for candidate in [
-            Colors::Default,
-            Colors::Red,
-            Colors::Green,
-            Colors::Blue,
-            Colors::Yellow,
-            Colors::Orange,
-            Colors::Violet,
-            Colors::Pink,
-            Colors::Brown,
-            Colors::Cyan,
-            Colors::Indigo,
-            Colors::Gray,
-        ] {
+        for candidate in COLOR_SLOTS {
             let fill = if candidate == Colors::Default {
                 egui::Color32::WHITE
             } else {
-                candidate.vertex()
+                candidate.vertex(palette_theme)
             };
             let stroke_color = if *color == candidate {
                 egui::Color32::BLACK
@@ -297,7 +307,7 @@ fn draw_color_palette(ui: &mut egui::Ui, color: &mut Colors) {
                         .fill(fill)
                         .stroke(egui::Stroke::new(2.0, stroke_color)),
                 )
-                .on_hover_text(color_name(candidate));
+                .on_hover_text(candidate.label());
             if response.clicked() {
                 *color = candidate;
             }
@@ -305,19 +315,46 @@ fn draw_color_palette(ui: &mut egui::Ui, color: &mut Colors) {
     });
 }
 
-fn color_name(color: Colors) -> &'static str {
-    match color {
-        Colors::Default => "Default",
-        Colors::Red => "Red",
-        Colors::Green => "Green",
-        Colors::Blue => "Blue",
-        Colors::Yellow => "Yellow",
-        Colors::Orange => "Orange",
-        Colors::Violet => "Violet",
-        Colors::Pink => "Pink",
-        Colors::Brown => "Brown",
-        Colors::Cyan => "Cyan",
-        Colors::Indigo => "Indigo",
-        Colors::Gray => "Gray",
-    }
+fn draw_pattern_palette(ui: &mut egui::Ui, pattern: &mut VertexPattern) {
+    ui.horizontal_wrapped(|ui| {
+        for candidate in VERTEX_PATTERNS {
+            let stroke_color = if *pattern == candidate {
+                egui::Color32::BLACK
+            } else {
+                egui::Color32::from_gray(120)
+            };
+            let response = ui
+                .add(
+                    egui::Button::new(candidate.label())
+                        .min_size(egui::vec2(64.0, 24.0))
+                        .stroke(egui::Stroke::new(2.0, stroke_color)),
+                )
+                .on_hover_text(candidate.label());
+            if response.clicked() {
+                *pattern = candidate;
+            }
+        }
+    });
+}
+
+fn draw_line_style_palette(ui: &mut egui::Ui, line_style: &mut EdgeLineStyle) {
+    ui.horizontal_wrapped(|ui| {
+        for candidate in EDGE_LINE_STYLES {
+            let stroke_color = if *line_style == candidate {
+                egui::Color32::BLACK
+            } else {
+                egui::Color32::from_gray(120)
+            };
+            let response = ui
+                .add(
+                    egui::Button::new(candidate.label())
+                        .min_size(egui::vec2(64.0, 24.0))
+                        .stroke(egui::Stroke::new(2.0, stroke_color)),
+                )
+                .on_hover_text(candidate.label());
+            if response.clicked() {
+                *line_style = candidate;
+            }
+        }
+    });
 }

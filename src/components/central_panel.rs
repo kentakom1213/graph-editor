@@ -4,7 +4,7 @@ use itertools::Itertools;
 
 use super::transition_and_scale::{drag_central_panel, scale_central_panel};
 use crate::{
-    components::{default_vertex_text_color, Colors},
+    components::{default_vertex_text_color, pattern_color, Colors, EdgeLineStyle, VertexPattern},
     config::AppConfig,
     graph::Graph,
     math::{
@@ -56,7 +56,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
             let painter = ui.painter();
 
             // 辺の描画
-            render_edges(&snapshot, painter, &app.config);
+            render_edges(&snapshot, painter, &app.config, app.state.palette_theme);
 
             // 頂点の描画
             render_vertices(&snapshot, app, ui, painter);
@@ -207,6 +207,7 @@ fn update_edge_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
             } else if ui.input(|i| i.pointer.any_click()) {
                 if app.state.edit_mode.is_colorize() {
                     view.color = app.state.selected_color;
+                    view.line_style = app.state.selected_line_style;
                 } else if app.state.edit_mode.is_delete() {
                     edge.is_deleted = true;
                 }
@@ -268,8 +269,15 @@ fn draw_edge_undirected(
     to_pos: egui::Pos2,
     stroke: f32,
     color: egui::Color32,
+    line_style: EdgeLineStyle,
 ) {
-    painter.line_segment([from_pos, to_pos], egui::Stroke::new(stroke, color));
+    draw_styled_line_segment(
+        painter,
+        from_pos,
+        to_pos,
+        egui::Stroke::new(stroke, color),
+        line_style,
+    );
 }
 
 fn draw_edge_directed(
@@ -280,6 +288,7 @@ fn draw_edge_directed(
     stroke_width: f32,
     target_radius: f32,
     config: &AppConfig,
+    line_style: EdgeLineStyle,
 ) {
     // 矢印の方向を取得
     let dir = (to_pos - from_pos).normalized();
@@ -305,7 +314,13 @@ fn draw_edge_directed(
     ));
 
     // 線を描画
-    painter.line_segment([from_pos, endpoint], egui::Stroke::new(stroke_width, color));
+    draw_styled_line_segment(
+        painter,
+        from_pos,
+        endpoint,
+        egui::Stroke::new(stroke_width, color),
+        line_style,
+    );
 }
 
 /// 曲線付きの矢印を描画する関数
@@ -317,6 +332,7 @@ fn draw_edge_directed_curved(
     stroke_width: f32,
     target_radius: f32,
     config: &AppConfig,
+    line_style: EdgeLineStyle,
 ) -> Option<()> {
     let control = calc_bezier_control_point(from_pos, to_pos, config.edge_bezier_distance, false);
 
@@ -325,13 +341,14 @@ fn draw_edge_directed_curved(
         calc_intersection_of_bezier_and_circle(from_pos, control, to_pos, to_pos, target_radius)?;
 
     // 2次ベジェ曲線を描画
-    let bezier = epaint::QuadraticBezierShape {
-        points: [from_pos, control, to_pos], // 始点・制御点・終点
-        closed: false,
-        fill: egui::Color32::TRANSPARENT,
-        stroke: epaint::PathStroke::new(stroke_width, color),
-    };
-    painter.add(bezier);
+    draw_styled_quadratic_bezier(
+        painter,
+        from_pos,
+        control,
+        to_pos,
+        egui::Stroke::new(stroke_width, color),
+        line_style,
+    );
 
     // 矢印のヘッドに曲線が重ならないよう，マスクを作成
     painter.line_segment(
@@ -373,6 +390,7 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
         graph_view,
         edit_mode,
         selected_color,
+        selected_pattern,
         next_z_index,
         ..
     } = &mut app.state;
@@ -479,6 +497,7 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
                     }
                     EditMode::Colorize => {
                         view.color = *selected_color;
+                        view.pattern = *selected_pattern;
                     }
                     EditMode::Delete => {
                         vertex.is_deleted = true;
@@ -502,7 +521,12 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
 }
 
 /// central_panel に辺を描画する
-fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppConfig) {
+fn render_edges(
+    snapshot: &GraphSnapshot,
+    painter: &egui::Painter,
+    config: &AppConfig,
+    palette_theme: crate::components::PaletteTheme,
+) {
     let vertex_positions: HashMap<usize, egui::Pos2> = snapshot
         .vertices
         .iter()
@@ -526,8 +550,9 @@ fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppC
         let edge_color = if edge.is_pressed {
             config.edge_color_hover
         } else {
-            edge.color.edge()
+            edge.color.edge(palette_theme)
         };
+        let line_style = edge.line_style;
         let stroke_width = edge.stroke_width.unwrap_or(config.edge_stroke);
         let target_radius = snapshot
             .vertices
@@ -546,6 +571,7 @@ fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppC
                     stroke_width,
                     target_radius,
                     config,
+                    line_style,
                 );
             } else {
                 draw_edge_directed_curved(
@@ -556,10 +582,123 @@ fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppC
                     stroke_width,
                     target_radius,
                     config,
+                    line_style,
                 );
             }
         } else {
-            draw_edge_undirected(painter, from_pos, to_pos, stroke_width, edge_color);
+            draw_edge_undirected(
+                painter,
+                from_pos,
+                to_pos,
+                stroke_width,
+                edge_color,
+                line_style,
+            );
+        }
+    }
+}
+
+fn draw_styled_line_segment(
+    painter: &egui::Painter,
+    from: egui::Pos2,
+    to: egui::Pos2,
+    stroke: egui::Stroke,
+    line_style: EdgeLineStyle,
+) {
+    match line_style {
+        EdgeLineStyle::Solid => {
+            painter.line_segment([from, to], stroke);
+        }
+        EdgeLineStyle::Dashed => draw_dashed_polyline(painter, &[from, to], stroke, 10.0, 7.0),
+        EdgeLineStyle::Dotted => draw_dashed_polyline(painter, &[from, to], stroke, 2.0, 6.0),
+    }
+}
+
+fn draw_styled_quadratic_bezier(
+    painter: &egui::Painter,
+    from: egui::Pos2,
+    control: egui::Pos2,
+    to: egui::Pos2,
+    stroke: egui::Stroke,
+    line_style: EdgeLineStyle,
+) {
+    match line_style {
+        EdgeLineStyle::Solid => {
+            painter.add(epaint::QuadraticBezierShape {
+                points: [from, control, to],
+                closed: false,
+                fill: egui::Color32::TRANSPARENT,
+                stroke: epaint::PathStroke::new(stroke.width, stroke.color),
+            });
+        }
+        EdgeLineStyle::Dashed => {
+            let points = sample_quadratic_bezier(from, control, to, 36);
+            draw_dashed_polyline(painter, &points, stroke, 10.0, 7.0);
+        }
+        EdgeLineStyle::Dotted => {
+            let points = sample_quadratic_bezier(from, control, to, 36);
+            draw_dashed_polyline(painter, &points, stroke, 2.0, 6.0);
+        }
+    }
+}
+
+fn sample_quadratic_bezier(
+    from: egui::Pos2,
+    control: egui::Pos2,
+    to: egui::Pos2,
+    steps: usize,
+) -> Vec<egui::Pos2> {
+    (0..=steps)
+        .map(|step| {
+            let t = step as f32 / steps as f32;
+            bezier_curve(from, control, to, t)
+        })
+        .collect()
+}
+
+fn draw_dashed_polyline(
+    painter: &egui::Painter,
+    points: &[egui::Pos2],
+    stroke: egui::Stroke,
+    dash_length: f32,
+    gap_length: f32,
+) {
+    if points.len() < 2 {
+        return;
+    }
+
+    let cycle = dash_length + gap_length;
+    let mut progress = 0.0;
+
+    for window in points.windows(2) {
+        let from = window[0];
+        let to = window[1];
+        let segment = to - from;
+        let length = segment.length();
+        if length <= f32::EPSILON {
+            continue;
+        }
+        let dir = segment / length;
+        let mut local = 0.0;
+        while local < length {
+            let phase = progress % cycle;
+            let draw_remaining = if phase < dash_length {
+                dash_length - phase
+            } else {
+                0.0
+            };
+            let step = if phase < dash_length {
+                draw_remaining.min(length - local)
+            } else {
+                (cycle - phase).min(length - local)
+            };
+            if phase < dash_length && step > 0.0 {
+                let start = from + dir * local;
+                let end = from + dir * (local + step);
+                painter.line_segment([start, end], stroke);
+            }
+            local += step.max(0.001);
+            progress += step.max(0.001);
         }
     }
 }
@@ -590,7 +729,10 @@ fn render_vertices(
         if let (Some(from_pos), Some(mouse_pos)) = (from_pos, ui.input(|i| i.pointer.hover_pos())) {
             painter.line_segment(
                 [from_pos, mouse_pos],
-                egui::Stroke::new(app.config.edge_stroke, Colors::Default.edge()),
+                egui::Stroke::new(
+                    app.config.edge_stroke,
+                    Colors::Default.edge(app.state.palette_theme),
+                ),
             );
         }
     }
@@ -605,10 +747,17 @@ fn render_vertices(
         } else if vertex.is_pressed {
             app.config.vertex_color_dragged
         } else {
-            vertex.color.vertex()
+            vertex.color.vertex(app.state.palette_theme)
         };
 
         painter.circle_filled(vertex.position, vertex_radius, color);
+        draw_vertex_pattern(
+            painter,
+            vertex.position,
+            vertex_radius,
+            vertex.pattern,
+            pattern_color(color),
+        );
         painter.circle_stroke(
             vertex.position,
             vertex_radius,
@@ -634,4 +783,139 @@ fn render_vertices(
             );
         }
     }
+}
+
+fn draw_vertex_pattern(
+    painter: &egui::Painter,
+    center: egui::Pos2,
+    radius: f32,
+    pattern: VertexPattern,
+    color: egui::Color32,
+) {
+    if pattern == VertexPattern::None || radius <= 6.0 {
+        return;
+    }
+    let stroke = egui::Stroke::new((radius * 0.08).clamp(1.0, 2.0), color);
+
+    match pattern {
+        VertexPattern::None => {}
+        VertexPattern::Diagonal => {
+            let spacing = (radius * 0.45).clamp(6.0, 12.0);
+            draw_parallel_line_pattern(
+                painter,
+                center,
+                radius,
+                spacing,
+                egui::vec2(1.0, 1.0).normalized(),
+                stroke,
+            );
+        }
+        VertexPattern::Dots => {
+            let spacing = (radius * 0.55).clamp(7.0, 13.0);
+            let dot_radius = (radius * 0.08).clamp(1.4, 2.8);
+            let max_distance_sq = (radius - dot_radius).powi(2);
+            let row_count = (radius / spacing).ceil() as i32 + 1;
+            for row in -row_count..=row_count {
+                let y = center.y + row as f32 * spacing;
+                let x_shift = if row.rem_euclid(2) == 0 {
+                    0.0
+                } else {
+                    spacing * 0.5
+                };
+                let col_count = (radius / spacing).ceil() as i32 + 1;
+                for col in -col_count..=col_count {
+                    let x = center.x + col as f32 * spacing + x_shift;
+                    if (egui::pos2(x, y) - center).length_sq() <= max_distance_sq {
+                        painter.circle_filled(egui::pos2(x, y), dot_radius, color);
+                    }
+                }
+            }
+        }
+        VertexPattern::Cross => {
+            let spacing = (radius * 0.52).clamp(6.0, 12.0);
+            draw_parallel_line_pattern(
+                painter,
+                center,
+                radius,
+                spacing,
+                egui::vec2(1.0, 1.0).normalized(),
+                stroke,
+            );
+            draw_parallel_line_pattern(
+                painter,
+                center,
+                radius,
+                spacing,
+                egui::vec2(1.0, -1.0).normalized(),
+                stroke,
+            );
+        }
+    }
+}
+
+fn draw_parallel_line_pattern(
+    painter: &egui::Painter,
+    center: egui::Pos2,
+    radius: f32,
+    spacing: f32,
+    direction: egui::Vec2,
+    stroke: egui::Stroke,
+) {
+    let normal = egui::vec2(-direction.y, direction.x);
+    let extent = radius * 1.6;
+    let line_count = (radius / spacing).ceil() as i32 + 1;
+    for index in -line_count..=line_count {
+        let offset = index as f32 * spacing;
+        let line_center = center + normal * offset;
+        let from = line_center - direction * extent;
+        let to = line_center + direction * extent;
+        draw_line_pattern_clipped(painter, center, radius, from, to, stroke);
+    }
+}
+
+fn draw_line_pattern_clipped(
+    painter: &egui::Painter,
+    center: egui::Pos2,
+    radius: f32,
+    from: egui::Pos2,
+    to: egui::Pos2,
+    stroke: egui::Stroke,
+) {
+    let segment = to - from;
+    let origin = from - center;
+    let a = segment.length_sq();
+    if a <= f32::EPSILON {
+        return;
+    }
+
+    let b = 2.0 * origin.dot(segment);
+    let c = origin.length_sq() - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+
+    if discriminant < 0.0 {
+        if origin.length_sq() <= radius * radius {
+            painter.line_segment([from, to], stroke);
+        }
+        return;
+    }
+
+    let sqrt_discriminant = discriminant.sqrt();
+    let mut t0 = (-b - sqrt_discriminant) / (2.0 * a);
+    let mut t1 = (-b + sqrt_discriminant) / (2.0 * a);
+    if t0 > t1 {
+        std::mem::swap(&mut t0, &mut t1);
+    }
+
+    let clip_from = t0.clamp(0.0, 1.0);
+    let clip_to = t1.clamp(0.0, 1.0);
+    if clip_from >= clip_to {
+        let inside_from = origin.length_sq() <= radius * radius;
+        let inside_to = (to - center).length_sq() <= radius * radius;
+        if inside_from && inside_to {
+            painter.line_segment([from, to], stroke);
+        }
+        return;
+    }
+
+    painter.line_segment([from.lerp(to, clip_from), from.lerp(to, clip_to)], stroke);
 }

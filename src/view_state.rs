@@ -2,7 +2,11 @@ use std::collections::HashSet;
 
 use num_traits::One;
 
-use crate::{components::Colors, graph::Graph, math::affine::Affine2D};
+use crate::{
+    components::{Colors, EdgeLineStyle, VertexPattern},
+    graph::Graph,
+    math::affine::Affine2D,
+};
 
 #[derive(Debug, Clone)]
 pub struct VertexViewState {
@@ -11,6 +15,7 @@ pub struct VertexViewState {
     pub z_index: u32,
     pub drag: Affine2D,
     pub color: Colors,
+    pub pattern: VertexPattern,
     pub label: Option<String>,
     pub text_color: Option<egui::Color32>,
     pub radius: Option<f32>,
@@ -25,6 +30,7 @@ impl Default for VertexViewState {
             z_index: 0,
             drag: Affine2D::one(),
             color: Colors::default(),
+            pattern: VertexPattern::default(),
             label: None,
             text_color: None,
             radius: None,
@@ -37,6 +43,7 @@ impl Default for VertexViewState {
 pub struct EdgeViewState {
     pub is_pressed: bool,
     pub color: Colors,
+    pub line_style: EdgeLineStyle,
     pub stroke_width: Option<f32>,
 }
 
@@ -118,15 +125,23 @@ impl GraphViewState {
     pub fn remove_color(&mut self) {
         for vertex in &mut self.vertices {
             vertex.color = Colors::default();
+            vertex.pattern = VertexPattern::default();
         }
         for edge in &mut self.edges {
             edge.color = Colors::default();
+            edge.line_style = EdgeLineStyle::default();
         }
     }
 
     pub fn remove_label(&mut self) {
         for vertex in &mut self.vertices {
             vertex.label = Some(String::default());
+        }
+    }
+
+    pub fn remove_pattern(&mut self) {
+        for vertex in &mut self.vertices {
+            vertex.pattern = VertexPattern::None;
         }
     }
 
@@ -145,6 +160,7 @@ impl GraphViewState {
                     is_selected: view.is_selected,
                     z_index: view.z_index,
                     color: view.color,
+                    pattern: view.pattern,
                     label: view.label.clone(),
                     text_color: view.text_color,
                     radius: view.radius,
@@ -170,6 +186,7 @@ impl GraphViewState {
                     to: e.to,
                     is_pressed: view.is_pressed,
                     color: view.color,
+                    line_style: view.line_style,
                     stroke_width: view.stroke_width,
                 })
             })
@@ -191,6 +208,7 @@ pub struct VertexSnapshot {
     pub is_selected: bool,
     pub z_index: u32,
     pub color: Colors,
+    pub pattern: VertexPattern,
     pub label: Option<String>,
     pub text_color: Option<egui::Color32>,
     pub radius: Option<f32>,
@@ -203,6 +221,7 @@ pub struct EdgeSnapshot {
     pub to: usize,
     pub is_pressed: bool,
     pub color: Colors,
+    pub line_style: EdgeLineStyle,
     pub stroke_width: Option<f32>,
 }
 

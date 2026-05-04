@@ -133,6 +133,13 @@ fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
         app.state.graph_view.remove_label();
     }
 
+    if ui
+        .button(egui::RichText::new("Remove Pattern").size(app.config.button_font_size()))
+        .clicked()
+    {
+        app.state.graph_view.remove_pattern();
+    }
+
     ui.separator();
     ui.label(
         egui::RichText::new("Danger Zone")
@@ -321,7 +328,7 @@ fn draw_json_io(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui, edit
             .button(egui::RichText::new("Apply").size(app.config.button_font_size()))
             .clicked()
         {
-            match import_graph_from_json(&app.ui.json_text) {
+            match import_graph_from_json(&app.ui.json_text, app.state.palette_theme) {
                 Ok(imported) => app.apply_imported_graph(ctx, imported),
                 Err(err) => app.ui.error_message = Some(err.to_string()),
             }

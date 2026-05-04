@@ -8,7 +8,7 @@ use std::{
 use num_traits::One;
 
 use crate::{
-    components::Colors,
+    components::{Colors, EdgeLineStyle, PaletteTheme, VertexPattern, COLOR_SLOTS},
     graph::{visualize_methods, Edge, Graph, Vertex, Visualizer},
     math::affine::Affine2D,
     view_state::GraphViewState,
@@ -28,6 +28,8 @@ pub struct GraphFile {
 pub struct GraphData {
     pub directed: bool,
     pub index_origin: u8,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub palette_theme: Option<String>,
     #[serde(default)]
     pub features: GraphFeatures,
     pub vertices: Vec<VertexData>,
@@ -86,6 +88,9 @@ pub struct VertexStyleData {
     pub text: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub pattern: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub radius: Option<f32>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -99,6 +104,9 @@ pub struct EdgeStyleData {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line_style: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stroke_width: Option<f32>,
@@ -171,6 +179,7 @@ impl std::error::Error for ExportError {}
 pub struct ImportedGraph {
     pub graph: Graph,
     pub view: GraphViewState,
+    pub palette_theme: PaletteTheme,
     pub zero_indexed: bool,
     pub used_generated_positions: bool,
 }
@@ -179,6 +188,7 @@ pub fn export_graph_to_file(
     graph: &Graph,
     view: &GraphViewState,
     zero_indexed: bool,
+    palette_theme: PaletteTheme,
     options: SaveOptions,
 ) -> GraphFile {
     let active_vertices: Vec<_> = graph
@@ -211,13 +221,20 @@ pub fn export_graph_to_file(
                 let vertex_state = view.vertices.get(vertex.id);
                 let color = vertex_state.map(|state| state.color).unwrap_or_default();
                 VertexStyleData {
-                    fill: Some(color_to_hex(color.vertex())),
-                    stroke: Some(color_to_hex(color.vertex())),
+                    fill: Some(color_to_hex(color.vertex(palette_theme))),
+                    stroke: Some(color_to_hex(color.vertex(palette_theme))),
                     text: Some(color_to_hex(
                         vertex_state
                             .and_then(|state| state.text_color)
                             .unwrap_or(egui::Color32::BLACK),
                     )),
+                    pattern: Some(
+                        vertex_state
+                            .map(|state| state.pattern)
+                            .unwrap_or_default()
+                            .storage_key()
+                            .to_string(),
+                    ),
                     radius: vertex_state
                         .and_then(|state| state.radius)
                         .filter(|radius| (*radius - defaults.vertex_radius).abs() > f32::EPSILON),
@@ -250,8 +267,16 @@ pub fn export_graph_to_file(
                         .map(|state| state.color)
                         .unwrap_or_default();
                     EdgeStyleData {
-                        stroke: Some(color_to_hex(color.edge())),
-                        text: Some(color_to_hex(color.edge())),
+                        stroke: Some(color_to_hex(color.edge(palette_theme))),
+                        text: Some(color_to_hex(color.edge(palette_theme))),
+                        line_style: Some(
+                            view.edges
+                                .get(edge_index)
+                                .map(|state| state.line_style)
+                                .unwrap_or_default()
+                                .storage_key()
+                                .to_string(),
+                        ),
                         stroke_width: view
                             .edges
                             .get(edge_index)
@@ -269,6 +294,7 @@ pub fn export_graph_to_file(
         graph: GraphData {
             directed: graph.is_directed,
             index_origin: if zero_indexed { 0 } else { 1 },
+            palette_theme: Some(palette_theme.storage_key().to_string()),
             features: GraphFeatures {
                 vertex_position: options.include_vertex_position,
                 vertex_style: options.include_vertex_style,
@@ -284,13 +310,17 @@ pub fn export_graph_to_json(
     graph: &Graph,
     view: &GraphViewState,
     zero_indexed: bool,
+    palette_theme: PaletteTheme,
     options: SaveOptions,
 ) -> Result<String, ExportError> {
-    let file = export_graph_to_file(graph, view, zero_indexed, options);
+    let file = export_graph_to_file(graph, view, zero_indexed, palette_theme, options);
     serde_json::to_string_pretty(&file).map_err(|err| ExportError::SerializeFailed(err.to_string()))
 }
 
-pub fn import_graph_from_file(file: GraphFile) -> Result<ImportedGraph, ImportError> {
+pub fn import_graph_from_file(
+    file: GraphFile,
+    fallback_palette_theme: PaletteTheme,
+) -> Result<ImportedGraph, ImportError> {
     if file.format != GRAPH_FILE_FORMAT {
         return Err(ImportError::InvalidFormat(file.format));
     }
@@ -300,6 +330,13 @@ pub fn import_graph_from_file(file: GraphFile) -> Result<ImportedGraph, ImportEr
     if file.graph.index_origin != 0 && file.graph.index_origin != 1 {
         return Err(ImportError::InvalidIndexOrigin(file.graph.index_origin));
     }
+
+    let palette_theme = file
+        .graph
+        .palette_theme
+        .as_deref()
+        .map(PaletteTheme::from_storage_key)
+        .unwrap_or(fallback_palette_theme);
 
     let mut vertices = file.graph.vertices;
     let mut seen_vertex_ids = HashSet::new();
@@ -387,7 +424,12 @@ pub fn import_graph_from_file(file: GraphFile) -> Result<ImportedGraph, ImportEr
     for (index, vertex) in vertices.iter().enumerate() {
         view.vertices[index].label = vertex.label.clone();
         if let Some(style) = &vertex.style {
-            view.vertices[index].color = color_from_vertex_style(style);
+            view.vertices[index].color = color_from_vertex_style(style, palette_theme);
+            view.vertices[index].pattern = style
+                .pattern
+                .as_deref()
+                .map(VertexPattern::from_storage_key)
+                .unwrap_or_default();
             view.vertices[index].text_color = style.text.as_deref().and_then(parse_hex_color);
             view.vertices[index].radius = style.radius;
             view.vertices[index].stroke_width = style.stroke_width;
@@ -395,7 +437,12 @@ pub fn import_graph_from_file(file: GraphFile) -> Result<ImportedGraph, ImportEr
     }
     for (index, edge) in edges.iter().enumerate() {
         if let Some(style) = &edge.style {
-            view.edges[index].color = color_from_edge_style(style);
+            view.edges[index].color = color_from_edge_style(style, palette_theme);
+            view.edges[index].line_style = style
+                .line_style
+                .as_deref()
+                .map(EdgeLineStyle::from_storage_key)
+                .unwrap_or_default();
             view.edges[index].stroke_width = style.stroke_width;
         }
     }
@@ -403,15 +450,19 @@ pub fn import_graph_from_file(file: GraphFile) -> Result<ImportedGraph, ImportEr
     Ok(ImportedGraph {
         graph,
         view,
+        palette_theme,
         zero_indexed: file.graph.index_origin == 0,
         used_generated_positions,
     })
 }
 
-pub fn import_graph_from_json(json: &str) -> Result<ImportedGraph, ImportError> {
+pub fn import_graph_from_json(
+    json: &str,
+    palette_theme: PaletteTheme,
+) -> Result<ImportedGraph, ImportError> {
     let file = serde_json::from_str::<GraphFile>(json)
         .map_err(|err| ImportError::InvalidJson(err.to_string()))?;
-    import_graph_from_file(file)
+    import_graph_from_file(file, palette_theme)
 }
 
 fn display_vertex_id(id: usize, zero_indexed: bool) -> usize {
@@ -449,55 +500,48 @@ fn parse_hex_color(hex: &str) -> Option<egui::Color32> {
     Some(egui::Color32::from_rgb(r, g, b))
 }
 
-fn color_from_vertex_style(style: &VertexStyleData) -> Colors {
+fn color_from_vertex_style(style: &VertexStyleData, palette_theme: PaletteTheme) -> Colors {
     let color = style
         .fill
         .as_deref()
         .or(style.stroke.as_deref())
         .or(style.text.as_deref())
         .and_then(parse_hex_color);
-    match_color(color, true)
+    match_color(color, true, palette_theme)
 }
 
-fn color_from_edge_style(style: &EdgeStyleData) -> Colors {
+fn color_from_edge_style(style: &EdgeStyleData, palette_theme: PaletteTheme) -> Colors {
     let color = style
         .stroke
         .as_deref()
         .or(style.text.as_deref())
         .and_then(parse_hex_color);
-    match_color(color, false)
+    match_color(color, false, palette_theme)
 }
 
-fn match_color(color: Option<egui::Color32>, vertex: bool) -> Colors {
+fn match_color(color: Option<egui::Color32>, vertex: bool, palette_theme: PaletteTheme) -> Colors {
     let Some(color) = color else {
         return Colors::Default;
     };
 
-    for candidate in [
-        Colors::Default,
-        Colors::Red,
-        Colors::Green,
-        Colors::Blue,
-        Colors::Yellow,
-        Colors::Orange,
-        Colors::Violet,
-        Colors::Pink,
-        Colors::Brown,
-        Colors::Cyan,
-        Colors::Indigo,
-        Colors::Gray,
-    ] {
-        let expected = if vertex {
-            candidate.vertex()
-        } else {
-            candidate.edge()
-        };
-        if expected == color {
-            return candidate;
-        }
-    }
+    COLOR_SLOTS
+        .into_iter()
+        .min_by_key(|candidate| {
+            let expected = if vertex {
+                candidate.vertex(palette_theme)
+            } else {
+                candidate.edge(palette_theme)
+            };
+            color_distance_sq(expected, color)
+        })
+        .unwrap_or(Colors::Default)
+}
 
-    Colors::Default
+fn color_distance_sq(a: egui::Color32, b: egui::Color32) -> u32 {
+    let dr = a.r() as i32 - b.r() as i32;
+    let dg = a.g() as i32 - b.g() as i32;
+    let db = a.b() as i32 - b.b() as i32;
+    (dr * dr + dg * dg + db * db) as u32
 }
 
 #[cfg(test)]
@@ -507,7 +551,7 @@ mod tests {
     use num_traits::One;
 
     use crate::{
-        components::Colors,
+        components::{Colors, PaletteTheme},
         graph::{Edge, Graph, Vertex},
         math::affine::Affine2D,
         view_state::GraphViewState,
@@ -554,6 +598,7 @@ mod tests {
             &graph,
             &view,
             true,
+            PaletteTheme::default(),
             SaveOptions {
                 include_vertex_position: false,
                 include_vertex_style: false,
@@ -569,7 +614,14 @@ mod tests {
     #[test]
     fn exports_position_and_style_fields_when_enabled() {
         let (graph, view) = sample_graph();
-        let json = export_graph_to_json(&graph, &view, true, SaveOptions::default()).unwrap();
+        let json = export_graph_to_json(
+            &graph,
+            &view,
+            true,
+            PaletteTheme::default(),
+            SaveOptions::default(),
+        )
+        .unwrap();
 
         assert!(json.contains("\"position\""));
         assert!(json.contains("\"style\""));
@@ -580,8 +632,15 @@ mod tests {
     #[test]
     fn imports_preserve_edge_connections() {
         let (graph, view) = sample_graph();
-        let json = export_graph_to_json(&graph, &view, true, SaveOptions::default()).unwrap();
-        let imported = import_graph_from_json(&json).unwrap();
+        let json = export_graph_to_json(
+            &graph,
+            &view,
+            true,
+            PaletteTheme::default(),
+            SaveOptions::default(),
+        )
+        .unwrap();
+        let imported = import_graph_from_json(&json, PaletteTheme::default()).unwrap();
 
         assert_eq!(imported.graph.edges[0].from, 0);
         assert_eq!(imported.graph.edges[0].to, 1);
@@ -596,6 +655,7 @@ mod tests {
             graph: GraphData {
                 directed: false,
                 index_origin: 0,
+                palette_theme: None,
                 features: GraphFeatures::default(),
                 vertices: vec![VertexData {
                     id: 0,
@@ -614,7 +674,7 @@ mod tests {
         };
 
         let json = serde_json::to_string(&file).unwrap();
-        let err = import_graph_from_json(&json).unwrap_err();
+        let err = import_graph_from_json(&json, PaletteTheme::default()).unwrap_err();
         assert!(matches!(
             err,
             ImportError::MissingVertex {
@@ -632,6 +692,7 @@ mod tests {
             graph: GraphData {
                 directed: false,
                 index_origin: 0,
+                palette_theme: None,
                 features: GraphFeatures::default(),
                 vertices: vec![
                     VertexData {
@@ -652,7 +713,7 @@ mod tests {
         };
 
         let json = serde_json::to_string(&file).unwrap();
-        let err = import_graph_from_json(&json).unwrap_err();
+        let err = import_graph_from_json(&json, PaletteTheme::default()).unwrap_err();
         assert!(matches!(err, ImportError::DuplicateVertexId(0)));
     }
 
@@ -664,6 +725,7 @@ mod tests {
             graph: GraphData {
                 directed: false,
                 index_origin: 0,
+                palette_theme: None,
                 features: GraphFeatures::default(),
                 vertices: vec![],
                 edges: vec![],
@@ -671,7 +733,7 @@ mod tests {
         };
 
         let json = serde_json::to_string(&file).unwrap();
-        let err = import_graph_from_json(&json).unwrap_err();
+        let err = import_graph_from_json(&json, PaletteTheme::default()).unwrap_err();
         assert!(matches!(err, ImportError::UnsupportedVersion(999)));
     }
 
@@ -683,6 +745,7 @@ mod tests {
             graph: GraphData {
                 directed: false,
                 index_origin: 2,
+                palette_theme: None,
                 features: GraphFeatures::default(),
                 vertices: vec![],
                 edges: vec![],
@@ -690,7 +753,7 @@ mod tests {
         };
 
         let json = serde_json::to_string(&file).unwrap();
-        let err = import_graph_from_json(&json).unwrap_err();
+        let err = import_graph_from_json(&json, PaletteTheme::default()).unwrap_err();
         assert!(matches!(err, ImportError::InvalidIndexOrigin(2)));
     }
 }

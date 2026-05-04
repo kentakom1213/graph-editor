@@ -4,7 +4,9 @@ use std::path::PathBuf;
 use anyhow::Context;
 use eframe::egui;
 
-use crate::components::default_vertex_text_color;
+use crate::components::{
+    default_vertex_text_color, pattern_color, EdgeLineStyle, PaletteTheme, VertexPattern,
+};
 use crate::config::AppConfig;
 use crate::graph::Graph;
 use crate::math::bezier::{calc_bezier_control_point, calc_intersection_of_bezier_and_circle};
@@ -36,6 +38,7 @@ pub struct ExportContext<'a> {
     pub graph: &'a Graph,
     pub view: &'a GraphViewState,
     pub config: &'a AppConfig,
+    pub palette_theme: PaletteTheme,
     pub show_number: bool,
     pub zero_indexed: bool,
 }
@@ -197,12 +200,13 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
 
         let from_pos = from_vertex.position;
         let to_pos = to_vertex.position;
-        let edge_color = edge.color.edge();
+        let edge_color = edge.color.edge(ctx.palette_theme);
         let (stroke_hex, stroke_alpha) = color_to_svg(edge_color);
+        let dash_style = svg_dasharray(edge.line_style);
         let stroke_style = if let Some(alpha) = stroke_alpha {
-            format!("stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\"")
+            format!("stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\"{dash_style}")
         } else {
-            format!("stroke=\"{stroke_hex}\"")
+            format!("stroke=\"{stroke_hex}\"{dash_style}")
         };
 
         let from_x = from_pos.x - bounds.min.x;
@@ -349,7 +353,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         let y = pos.y - bounds.min.y;
         let vertex_radius = vertex.radius.unwrap_or(default_vertex_radius);
         let vertex_stroke = vertex.stroke_width.unwrap_or(ctx.config.vertex_stroke);
-        let fill_color = vertex.color.vertex();
+        let fill_color = vertex.color.vertex(ctx.palette_theme);
         let (fill_hex, fill_alpha) = color_to_svg(fill_color);
         if let Some(alpha) = fill_alpha {
             svg.push_str(&format!(
@@ -360,6 +364,16 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                 "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"{fill_hex}\" />\n",
             ));
         }
+
+        append_svg_vertex_pattern(
+            &mut svg,
+            vertex.id,
+            x,
+            y,
+            vertex_radius,
+            vertex.pattern,
+            pattern_color(fill_color),
+        );
 
         let (stroke_hex, stroke_alpha) = color_to_svg(ctx.config.vertex_color_outline);
         if let Some(alpha) = stroke_alpha {
@@ -384,7 +398,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
             let (text_hex, text_alpha) = color_to_svg(
                 vertex
                     .text_color
-                    .unwrap_or_else(|| default_vertex_text_color(vertex.color.vertex())),
+                    .unwrap_or_else(|| default_vertex_text_color(fill_color)),
             );
             let text_adjust_y = y + 4.5;
             if let Some(alpha) = text_alpha {
@@ -458,4 +472,107 @@ fn color_to_svg(color: egui::Color32) -> (String, Option<f32>) {
         None
     };
     (hex, alpha)
+}
+
+fn append_svg_vertex_pattern(
+    svg: &mut String,
+    vertex_id: usize,
+    x: f32,
+    y: f32,
+    radius: f32,
+    pattern: VertexPattern,
+    color: egui::Color32,
+) {
+    if pattern == VertexPattern::None || radius <= 6.0 {
+        return;
+    }
+
+    let clip_id = format!("vertex-pattern-clip-{vertex_id}");
+    svg.push_str(&format!(
+        "  <clipPath id=\"{clip_id}\"><circle cx=\"{x}\" cy=\"{y}\" r=\"{radius}\" /></clipPath>\n"
+    ));
+
+    let (pattern_hex, pattern_alpha) = color_to_svg(color);
+    let stroke_attr = if let Some(alpha) = pattern_alpha {
+        format!("stroke=\"{pattern_hex}\" stroke-opacity=\"{alpha}\"")
+    } else {
+        format!("stroke=\"{pattern_hex}\"")
+    };
+    let fill_attr = if let Some(alpha) = pattern_alpha {
+        format!("fill=\"{pattern_hex}\" fill-opacity=\"{alpha}\"")
+    } else {
+        format!("fill=\"{pattern_hex}\"")
+    };
+    let stroke_width = (radius * 0.08).clamp(1.0, 2.0);
+
+    svg.push_str(&format!("  <g clip-path=\"url(#{clip_id})\">\n"));
+    match pattern {
+        VertexPattern::None => {}
+        VertexPattern::Diagonal => {
+            let spacing = (radius * 0.45).clamp(6.0, 12.0);
+            let mut offset = -radius * 2.0;
+            while offset <= radius * 2.0 {
+                let x1 = x + offset;
+                let y1 = y - radius * 1.4;
+                let x2 = x + offset + radius * 1.6;
+                let y2 = y + radius * 1.4;
+                svg.push_str(&format!(
+                    "    <line x1=\"{x1}\" y1=\"{y1}\" x2=\"{x2}\" y2=\"{y2}\" {stroke_attr} stroke-width=\"{stroke_width}\" />\n"
+                ));
+                offset += spacing;
+            }
+        }
+        VertexPattern::Dots => {
+            let spacing = (radius * 0.55).clamp(7.0, 13.0);
+            let dot_radius = (radius * 0.08).clamp(1.4, 2.8);
+            let mut y_pos = y - radius + spacing * 0.5;
+            let mut row = 0;
+            while y_pos < y + radius {
+                let x_shift = if row % 2 == 0 { 0.0 } else { spacing * 0.5 };
+                let mut x_pos = x - radius + spacing * 0.5 + x_shift;
+                while x_pos < x + radius {
+                    let dx = x_pos - x;
+                    let dy = y_pos - y;
+                    if dx * dx + dy * dy <= (radius - dot_radius) * (radius - dot_radius) {
+                        svg.push_str(&format!(
+                            "    <circle cx=\"{x_pos}\" cy=\"{y_pos}\" r=\"{dot_radius}\" {fill_attr} />\n"
+                        ));
+                    }
+                    x_pos += spacing;
+                }
+                y_pos += spacing;
+                row += 1;
+            }
+        }
+        VertexPattern::Cross => {
+            let spacing = (radius * 0.52).clamp(6.0, 12.0);
+            let mut offset = -radius * 2.0;
+            while offset <= radius * 2.0 {
+                let x1 = x + offset;
+                let y1 = y - radius * 1.4;
+                let x2 = x + offset + radius * 1.6;
+                let y2 = y + radius * 1.4;
+                svg.push_str(&format!(
+                    "    <line x1=\"{x1}\" y1=\"{y1}\" x2=\"{x2}\" y2=\"{y2}\" {stroke_attr} stroke-width=\"{stroke_width}\" />\n"
+                ));
+                let x1 = x + offset;
+                let y1 = y + radius * 1.4;
+                let x2 = x + offset + radius * 1.6;
+                let y2 = y - radius * 1.4;
+                svg.push_str(&format!(
+                    "    <line x1=\"{x1}\" y1=\"{y1}\" x2=\"{x2}\" y2=\"{y2}\" {stroke_attr} stroke-width=\"{stroke_width}\" />\n"
+                ));
+                offset += spacing;
+            }
+        }
+    }
+    svg.push_str("  </g>\n");
+}
+
+fn svg_dasharray(line_style: EdgeLineStyle) -> &'static str {
+    match line_style {
+        EdgeLineStyle::Solid => "",
+        EdgeLineStyle::Dashed => " stroke-dasharray=\"10 7\"",
+        EdgeLineStyle::Dotted => " stroke-dasharray=\"2 6\"",
+    }
 }
