@@ -2,8 +2,8 @@ use eframe::egui;
 use serde::{Deserialize, Serialize};
 
 use crate::components::{
-    draw_central_panel, draw_clear_all_modal, draw_error_modal, draw_footer, draw_inspector_panel,
-    draw_tool_bar, draw_top_panel, Colors, CursorHoverState, InspectorTab,
+    draw_central_panel, draw_clear_all_modal, draw_entity_editor, draw_error_modal, draw_footer,
+    draw_inspector_panel, draw_tool_bar, draw_top_panel, Colors, CursorHoverState, InspectorTab,
 };
 use crate::config::{AppConfig, SimulatorKind};
 use crate::export::{ExportFormat, ExportService};
@@ -381,6 +381,8 @@ impl Default for GraphEditorApp {
                 error_message: None,
                 confirm_clear_all: false,
                 inspector_tab: InspectorTab::default(),
+                edit_target: None,
+                edit_window_pos: None,
             },
             export: ExportService::default(),
             config,
@@ -419,6 +421,7 @@ impl eframe::App for GraphEditorApp {
         draw_inspector_panel(self, ctx);
         draw_central_panel(self, ctx);
         draw_footer(self, ctx);
+        draw_entity_editor(self, ctx);
         draw_error_modal(self, ctx);
         draw_clear_all_modal(self, ctx);
 

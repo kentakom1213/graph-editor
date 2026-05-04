@@ -11,6 +11,10 @@ pub struct VertexViewState {
     pub z_index: u32,
     pub drag: Affine2D,
     pub color: Colors,
+    pub label: Option<String>,
+    pub text_color: Option<egui::Color32>,
+    pub radius: Option<f32>,
+    pub stroke_width: Option<f32>,
 }
 
 impl Default for VertexViewState {
@@ -21,6 +25,10 @@ impl Default for VertexViewState {
             z_index: 0,
             drag: Affine2D::one(),
             color: Colors::default(),
+            label: None,
+            text_color: None,
+            radius: None,
+            stroke_width: None,
         }
     }
 }
@@ -29,6 +37,7 @@ impl Default for VertexViewState {
 pub struct EdgeViewState {
     pub is_pressed: bool,
     pub color: Colors,
+    pub stroke_width: Option<f32>,
 }
 
 #[derive(Debug, Clone)]
@@ -130,6 +139,10 @@ impl GraphViewState {
                     is_selected: view.is_selected,
                     z_index: view.z_index,
                     color: view.color,
+                    label: view.label.clone(),
+                    text_color: view.text_color,
+                    radius: view.radius,
+                    stroke_width: view.stroke_width,
                 })
             })
             .collect();
@@ -151,6 +164,7 @@ impl GraphViewState {
                     to: e.to,
                     is_pressed: view.is_pressed,
                     color: view.color,
+                    stroke_width: view.stroke_width,
                 })
             })
             .collect();
@@ -171,6 +185,10 @@ pub struct VertexSnapshot {
     pub is_selected: bool,
     pub z_index: u32,
     pub color: Colors,
+    pub label: Option<String>,
+    pub text_color: Option<egui::Color32>,
+    pub radius: Option<f32>,
+    pub stroke_width: Option<f32>,
 }
 
 #[derive(Debug, Clone)]
@@ -179,6 +197,7 @@ pub struct EdgeSnapshot {
     pub to: usize,
     pub is_pressed: bool,
     pub color: Colors,
+    pub stroke_width: Option<f32>,
 }
 
 #[derive(Debug, Clone)]

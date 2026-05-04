@@ -84,6 +84,12 @@ pub struct VertexStyleData {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub radius: Option<f32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stroke_width: Option<f32>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -93,6 +99,9 @@ pub struct EdgeStyleData {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stroke_width: Option<f32>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -187,21 +196,34 @@ pub fn export_graph_to_file(
         .enumerate()
         .map(|(index, vertex)| VertexData {
             id: index,
-            label: Some(display_vertex_id(index, zero_indexed).to_string()),
+            label: Some(
+                view.vertices
+                    .get(vertex.id)
+                    .and_then(|state| state.label.clone())
+                    .unwrap_or_else(|| display_vertex_id(index, zero_indexed).to_string()),
+            ),
             position: options.include_vertex_position.then(|| PositionData {
                 x: vertex.get_position().x,
                 y: vertex.get_position().y,
             }),
             style: options.include_vertex_style.then(|| {
-                let color = view
-                    .vertices
-                    .get(vertex.id)
-                    .map(|state| state.color)
-                    .unwrap_or_default();
+                let defaults = crate::config::AppConfig::default();
+                let vertex_state = view.vertices.get(vertex.id);
+                let color = vertex_state.map(|state| state.color).unwrap_or_default();
                 VertexStyleData {
                     fill: Some(color_to_hex(color.vertex())),
                     stroke: Some(color_to_hex(color.vertex())),
-                    text: Some(color_to_hex(color.vertex())),
+                    text: Some(color_to_hex(
+                        vertex_state
+                            .and_then(|state| state.text_color)
+                            .unwrap_or(egui::Color32::BLACK),
+                    )),
+                    radius: vertex_state
+                        .and_then(|state| state.radius)
+                        .filter(|radius| (*radius - defaults.vertex_radius).abs() > f32::EPSILON),
+                    stroke_width: vertex_state
+                        .and_then(|state| state.stroke_width)
+                        .filter(|width| (*width - defaults.vertex_stroke).abs() > f32::EPSILON),
                 }
             }),
         })
@@ -221,6 +243,7 @@ pub fn export_graph_to_file(
                 to,
                 label: Some(String::new()),
                 style: options.include_edge_style.then(|| {
+                    let defaults = crate::config::AppConfig::default();
                     let color = view
                         .edges
                         .get(edge_index)
@@ -229,6 +252,11 @@ pub fn export_graph_to_file(
                     EdgeStyleData {
                         stroke: Some(color_to_hex(color.edge())),
                         text: Some(color_to_hex(color.edge())),
+                        stroke_width: view
+                            .edges
+                            .get(edge_index)
+                            .and_then(|state| state.stroke_width)
+                            .filter(|width| (*width - defaults.edge_stroke).abs() > f32::EPSILON),
                     }
                 }),
             })
@@ -357,13 +385,18 @@ pub fn import_graph_from_file(file: GraphFile) -> Result<ImportedGraph, ImportEr
 
     let mut view = GraphViewState::new_for_graph(&graph);
     for (index, vertex) in vertices.iter().enumerate() {
+        view.vertices[index].label = vertex.label.clone();
         if let Some(style) = &vertex.style {
             view.vertices[index].color = color_from_vertex_style(style);
+            view.vertices[index].text_color = style.text.as_deref().and_then(parse_hex_color);
+            view.vertices[index].radius = style.radius;
+            view.vertices[index].stroke_width = style.stroke_width;
         }
     }
     for (index, edge) in edges.iter().enumerate() {
         if let Some(style) = &edge.style {
             view.edges[index].color = color_from_edge_style(style);
+            view.edges[index].stroke_width = style.stroke_width;
         }
     }
 
@@ -540,6 +573,8 @@ mod tests {
 
         assert!(json.contains("\"position\""));
         assert!(json.contains("\"style\""));
+        assert!(!json.contains("\"radius\""));
+        assert!(!json.contains("\"stroke_width\""));
     }
 
     #[test]

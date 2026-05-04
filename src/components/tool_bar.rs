@@ -56,19 +56,19 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
             let prev_color = app.state.selected_color;
             ui.horizontal_wrapped(|ui| {
                 for (label, color) in [
-                ("Default", Colors::Default),
-                ("Red", Colors::Red),
-                ("Green", Colors::Green),
-                ("Blue", Colors::Blue),
-                ("Yellow", Colors::Yellow),
-                ("Orange", Colors::Orange),
-                ("Violet", Colors::Violet),
-                ("Pink", Colors::Pink),
-                ("Brown", Colors::Brown),
-                ("Cyan", Colors::Cyan),
-                ("Indigo", Colors::Indigo),
-                ("Gray", Colors::Gray),
-            ] {
+                    ("Default", Colors::Default),
+                    ("Red", Colors::Red),
+                    ("Green", Colors::Green),
+                    ("Blue", Colors::Blue),
+                    ("Yellow", Colors::Yellow),
+                    ("Orange", Colors::Orange),
+                    ("Violet", Colors::Violet),
+                    ("Pink", Colors::Pink),
+                    ("Brown", Colors::Brown),
+                    ("Cyan", Colors::Cyan),
+                    ("Indigo", Colors::Indigo),
+                    ("Gray", Colors::Gray),
+                ] {
                     let fill = if color == Colors::Default {
                         egui::Color32::WHITE
                     } else {
