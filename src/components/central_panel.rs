@@ -669,46 +669,75 @@ fn draw_vertex_pattern(
         VertexPattern::None => {}
         VertexPattern::Diagonal => {
             let spacing = (radius * 0.45).clamp(6.0, 12.0);
-            let mut offset = -radius * 2.0;
-            while offset <= radius * 2.0 {
-                let from = egui::pos2(center.x + offset, center.y - radius * 1.4);
-                let to = egui::pos2(center.x + offset + radius * 1.6, center.y + radius * 1.4);
-                draw_line_pattern_clipped(painter, center, radius, from, to, stroke);
-                offset += spacing;
-            }
+            draw_parallel_line_pattern(
+                painter,
+                center,
+                radius,
+                spacing,
+                egui::vec2(1.0, 1.0).normalized(),
+                stroke,
+            );
         }
         VertexPattern::Dots => {
             let spacing = (radius * 0.55).clamp(7.0, 13.0);
             let dot_radius = (radius * 0.08).clamp(1.4, 2.8);
-            let mut y = center.y - radius + spacing * 0.5;
-            let mut row = 0;
-            while y < center.y + radius {
-                let x_shift = if row % 2 == 0 { 0.0 } else { spacing * 0.5 };
-                let mut x = center.x - radius + spacing * 0.5 + x_shift;
-                while x < center.x + radius {
-                    if (egui::pos2(x, y) - center).length() <= radius - dot_radius {
+            let max_distance_sq = (radius - dot_radius).powi(2);
+            let row_count = (radius / spacing).ceil() as i32 + 1;
+            for row in -row_count..=row_count {
+                let y = center.y + row as f32 * spacing;
+                let x_shift = if row.rem_euclid(2) == 0 {
+                    0.0
+                } else {
+                    spacing * 0.5
+                };
+                let col_count = (radius / spacing).ceil() as i32 + 1;
+                for col in -col_count..=col_count {
+                    let x = center.x + col as f32 * spacing + x_shift;
+                    if (egui::pos2(x, y) - center).length_sq() <= max_distance_sq {
                         painter.circle_filled(egui::pos2(x, y), dot_radius, color);
                     }
-                    x += spacing;
                 }
-                y += spacing;
-                row += 1;
             }
         }
         VertexPattern::Cross => {
             let spacing = (radius * 0.52).clamp(6.0, 12.0);
-            let mut offset = -radius * 2.0;
-            while offset <= radius * 2.0 {
-                let from = egui::pos2(center.x + offset, center.y - radius * 1.4);
-                let to = egui::pos2(center.x + offset + radius * 1.6, center.y + radius * 1.4);
-                draw_line_pattern_clipped(painter, center, radius, from, to, stroke);
-
-                let from = egui::pos2(center.x + offset, center.y + radius * 1.4);
-                let to = egui::pos2(center.x + offset + radius * 1.6, center.y - radius * 1.4);
-                draw_line_pattern_clipped(painter, center, radius, from, to, stroke);
-                offset += spacing;
-            }
+            draw_parallel_line_pattern(
+                painter,
+                center,
+                radius,
+                spacing,
+                egui::vec2(1.0, 1.0).normalized(),
+                stroke,
+            );
+            draw_parallel_line_pattern(
+                painter,
+                center,
+                radius,
+                spacing,
+                egui::vec2(1.0, -1.0).normalized(),
+                stroke,
+            );
         }
+    }
+}
+
+fn draw_parallel_line_pattern(
+    painter: &egui::Painter,
+    center: egui::Pos2,
+    radius: f32,
+    spacing: f32,
+    direction: egui::Vec2,
+    stroke: egui::Stroke,
+) {
+    let normal = egui::vec2(-direction.y, direction.x);
+    let extent = radius * 1.6;
+    let line_count = (radius / spacing).ceil() as i32 + 1;
+    for index in -line_count..=line_count {
+        let offset = index as f32 * spacing;
+        let line_center = center + normal * offset;
+        let from = line_center - direction * extent;
+        let to = line_center + direction * extent;
+        draw_line_pattern_clipped(painter, center, radius, from, to, stroke);
     }
 }
 
@@ -720,17 +749,41 @@ fn draw_line_pattern_clipped(
     to: egui::Pos2,
     stroke: egui::Stroke,
 ) {
-    let steps = 16;
-    let radius_sq = radius * radius;
-    for step in 0..steps {
-        let t0 = step as f32 / steps as f32;
-        let t1 = (step + 1) as f32 / steps as f32;
-        let p0 = from.lerp(to, t0);
-        let p1 = from.lerp(to, t1);
-        let inside0 = (p0 - center).length_sq() <= radius_sq;
-        let inside1 = (p1 - center).length_sq() <= radius_sq;
-        if inside0 && inside1 {
-            painter.line_segment([p0, p1], stroke);
-        }
+    let segment = to - from;
+    let origin = from - center;
+    let a = segment.length_sq();
+    if a <= f32::EPSILON {
+        return;
     }
+
+    let b = 2.0 * origin.dot(segment);
+    let c = origin.length_sq() - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+
+    if discriminant < 0.0 {
+        if origin.length_sq() <= radius * radius {
+            painter.line_segment([from, to], stroke);
+        }
+        return;
+    }
+
+    let sqrt_discriminant = discriminant.sqrt();
+    let mut t0 = (-b - sqrt_discriminant) / (2.0 * a);
+    let mut t1 = (-b + sqrt_discriminant) / (2.0 * a);
+    if t0 > t1 {
+        std::mem::swap(&mut t0, &mut t1);
+    }
+
+    let clip_from = t0.clamp(0.0, 1.0);
+    let clip_to = t1.clamp(0.0, 1.0);
+    if clip_from >= clip_to {
+        let inside_from = origin.length_sq() <= radius * radius;
+        let inside_to = (to - center).length_sq() <= radius * radius;
+        if inside_from && inside_to {
+            painter.line_segment([from, to], stroke);
+        }
+        return;
+    }
+
+    painter.line_segment([from.lerp(to, clip_from), from.lerp(to, clip_to)], stroke);
 }
