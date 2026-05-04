@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use anyhow::Context;
 use eframe::egui;
 
+use crate::components::default_vertex_text_color;
 use crate::config::AppConfig;
 use crate::graph::Graph;
 use crate::math::bezier::{calc_bezier_control_point, calc_intersection_of_bezier_and_circle};
@@ -242,8 +243,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                 let end_x = endpoint.x - bounds.min.x;
                 let end_y = endpoint.y - bounds.min.y;
                 svg.push_str(&format!(
-                    "  <line x1=\"{from_x}\" y1=\"{from_y}\" x2=\"{end_x}\" y2=\"{end_y}\" {stroke_style} stroke-width=\"{}\" fill=\"none\" />\n",
-                    stroke_width
+                    "  <line x1=\"{from_x}\" y1=\"{from_y}\" x2=\"{end_x}\" y2=\"{end_y}\" {stroke_style} stroke-width=\"{stroke_width}\" fill=\"none\" />\n",
                 ));
 
                 let (fill_hex, fill_alpha) = color_to_svg(edge_color);
@@ -279,8 +279,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                     let control_x = control.x - bounds.min.x;
                     let control_y = control.y - bounds.min.y;
                     svg.push_str(&format!(
-                        "  <path d=\"M {from_x} {from_y} Q {control_x} {control_y} {to_x} {to_y}\" {stroke_style} stroke-width=\"{}\" fill=\"none\" />\n",
-                        stroke_width
+                        "  <path d=\"M {from_x} {from_y} Q {control_x} {control_y} {to_x} {to_y}\" {stroke_style} stroke-width=\"{stroke_width}\" fill=\"none\" />\n",
                     ));
 
                     let mask_start =
@@ -292,12 +291,11 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                         format!("stroke=\"{mask_hex}\"")
                     };
                     svg.push_str(&format!(
-                        "  <line x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\" {mask_style} stroke-width=\"{}\" fill=\"none\" />\n",
+                        "  <line x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\" {mask_style} stroke-width=\"{stroke_width}\" fill=\"none\" />\n",
                         mask_start.x - bounds.min.x,
                         mask_start.y - bounds.min.y,
                         arrowhead.x - bounds.min.x,
                         arrowhead.y - bounds.min.y,
-                        stroke_width
                     ));
 
                     let arrow_dir = dir.normalized() * ctx.config.edge_arrow_length;
@@ -339,8 +337,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
             }
         } else {
             svg.push_str(&format!(
-                "  <line x1=\"{from_x}\" y1=\"{from_y}\" x2=\"{to_x}\" y2=\"{to_y}\" {stroke_style} stroke-width=\"{}\" fill=\"none\" />\n",
-                stroke_width
+                "  <line x1=\"{from_x}\" y1=\"{from_y}\" x2=\"{to_x}\" y2=\"{to_y}\" {stroke_style} stroke-width=\"{stroke_width}\" fill=\"none\" />\n",
             ));
         }
     }
@@ -367,13 +364,11 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
         let (stroke_hex, stroke_alpha) = color_to_svg(ctx.config.vertex_color_outline);
         if let Some(alpha) = stroke_alpha {
             svg.push_str(&format!(
-                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\" stroke-width=\"{}\" />\n",
-                vertex_stroke
+                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-opacity=\"{alpha}\" stroke-width=\"{vertex_stroke}\" />\n",
             ));
         } else {
             svg.push_str(&format!(
-                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-width=\"{}\" />\n",
-                vertex_stroke
+                "  <circle cx=\"{x}\" cy=\"{y}\" r=\"{vertex_radius}\" fill=\"none\" stroke=\"{stroke_hex}\" stroke-width=\"{vertex_stroke}\" />\n",
             ));
         }
 
@@ -386,8 +381,11 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                 }
                 .to_string()
             });
-            let (text_hex, text_alpha) =
-                color_to_svg(vertex.text_color.unwrap_or(ctx.config.vertex_font_color));
+            let (text_hex, text_alpha) = color_to_svg(
+                vertex
+                    .text_color
+                    .unwrap_or_else(|| default_vertex_text_color(vertex.color.vertex())),
+            );
             let text_adjust_y = y + 4.5;
             if let Some(alpha) = text_alpha {
                 svg.push_str(&format!(
