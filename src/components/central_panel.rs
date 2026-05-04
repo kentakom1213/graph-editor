@@ -4,7 +4,7 @@ use itertools::Itertools;
 
 use super::transition_and_scale::{drag_central_panel, scale_central_panel};
 use crate::{
-    components::{default_vertex_text_color, Colors},
+    components::{default_vertex_text_color, pattern_color, Colors, VertexPattern},
     config::AppConfig,
     graph::Graph,
     math::{
@@ -56,7 +56,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
             let painter = ui.painter();
 
             // 辺の描画
-            render_edges(&snapshot, painter, &app.config);
+            render_edges(&snapshot, painter, &app.config, app.state.palette_theme);
 
             // 頂点の描画
             render_vertices(&snapshot, app, ui, painter);
@@ -373,6 +373,7 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
         graph_view,
         edit_mode,
         selected_color,
+        selected_pattern,
         next_z_index,
         ..
     } = &mut app.state;
@@ -479,6 +480,7 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
                     }
                     EditMode::Colorize => {
                         view.color = *selected_color;
+                        view.pattern = *selected_pattern;
                     }
                     EditMode::Delete => {
                         vertex.is_deleted = true;
@@ -502,7 +504,12 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
 }
 
 /// central_panel に辺を描画する
-fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppConfig) {
+fn render_edges(
+    snapshot: &GraphSnapshot,
+    painter: &egui::Painter,
+    config: &AppConfig,
+    palette_theme: crate::components::PaletteTheme,
+) {
     let vertex_positions: HashMap<usize, egui::Pos2> = snapshot
         .vertices
         .iter()
@@ -526,7 +533,7 @@ fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppC
         let edge_color = if edge.is_pressed {
             config.edge_color_hover
         } else {
-            edge.color.edge()
+            edge.color.edge(palette_theme)
         };
         let stroke_width = edge.stroke_width.unwrap_or(config.edge_stroke);
         let target_radius = snapshot
@@ -590,7 +597,10 @@ fn render_vertices(
         if let (Some(from_pos), Some(mouse_pos)) = (from_pos, ui.input(|i| i.pointer.hover_pos())) {
             painter.line_segment(
                 [from_pos, mouse_pos],
-                egui::Stroke::new(app.config.edge_stroke, Colors::Default.edge()),
+                egui::Stroke::new(
+                    app.config.edge_stroke,
+                    Colors::Default.edge(app.state.palette_theme),
+                ),
             );
         }
     }
@@ -605,10 +615,17 @@ fn render_vertices(
         } else if vertex.is_pressed {
             app.config.vertex_color_dragged
         } else {
-            vertex.color.vertex()
+            vertex.color.vertex(app.state.palette_theme)
         };
 
         painter.circle_filled(vertex.position, vertex_radius, color);
+        draw_vertex_pattern(
+            painter,
+            vertex.position,
+            vertex_radius,
+            vertex.pattern,
+            pattern_color(color),
+        );
         painter.circle_stroke(
             vertex.position,
             vertex_radius,
@@ -632,6 +649,88 @@ fn render_vertices(
                     .text_color
                     .unwrap_or_else(|| default_vertex_text_color(color)),
             );
+        }
+    }
+}
+
+fn draw_vertex_pattern(
+    painter: &egui::Painter,
+    center: egui::Pos2,
+    radius: f32,
+    pattern: VertexPattern,
+    color: egui::Color32,
+) {
+    if pattern == VertexPattern::None || radius <= 6.0 {
+        return;
+    }
+    let stroke = egui::Stroke::new((radius * 0.08).clamp(1.0, 2.0), color);
+
+    match pattern {
+        VertexPattern::None => {}
+        VertexPattern::Diagonal => {
+            let spacing = (radius * 0.45).clamp(6.0, 12.0);
+            let mut offset = -radius * 2.0;
+            while offset <= radius * 2.0 {
+                let from = egui::pos2(center.x + offset, center.y - radius * 1.4);
+                let to = egui::pos2(center.x + offset + radius * 1.6, center.y + radius * 1.4);
+                draw_line_pattern_clipped(painter, center, radius, from, to, stroke);
+                offset += spacing;
+            }
+        }
+        VertexPattern::Dots => {
+            let spacing = (radius * 0.55).clamp(7.0, 13.0);
+            let dot_radius = (radius * 0.08).clamp(1.4, 2.8);
+            let mut y = center.y - radius + spacing * 0.5;
+            let mut row = 0;
+            while y < center.y + radius {
+                let x_shift = if row % 2 == 0 { 0.0 } else { spacing * 0.5 };
+                let mut x = center.x - radius + spacing * 0.5 + x_shift;
+                while x < center.x + radius {
+                    if (egui::pos2(x, y) - center).length() <= radius - dot_radius {
+                        painter.circle_filled(egui::pos2(x, y), dot_radius, color);
+                    }
+                    x += spacing;
+                }
+                y += spacing;
+                row += 1;
+            }
+        }
+        VertexPattern::Cross => {
+            let spacing = (radius * 0.52).clamp(6.0, 12.0);
+            let mut offset = -radius * 2.0;
+            while offset <= radius * 2.0 {
+                let from = egui::pos2(center.x + offset, center.y - radius * 1.4);
+                let to = egui::pos2(center.x + offset + radius * 1.6, center.y + radius * 1.4);
+                draw_line_pattern_clipped(painter, center, radius, from, to, stroke);
+
+                let from = egui::pos2(center.x + offset, center.y + radius * 1.4);
+                let to = egui::pos2(center.x + offset + radius * 1.6, center.y - radius * 1.4);
+                draw_line_pattern_clipped(painter, center, radius, from, to, stroke);
+                offset += spacing;
+            }
+        }
+    }
+}
+
+fn draw_line_pattern_clipped(
+    painter: &egui::Painter,
+    center: egui::Pos2,
+    radius: f32,
+    from: egui::Pos2,
+    to: egui::Pos2,
+    stroke: egui::Stroke,
+) {
+    let steps = 16;
+    let radius_sq = radius * radius;
+    for step in 0..steps {
+        let t0 = step as f32 / steps as f32;
+        let t1 = (step + 1) as f32 / steps as f32;
+        let p0 = from.lerp(to, t0);
+        let p1 = from.lerp(to, t1);
+        let inside0 = (p0 - center).length_sq() <= radius_sq;
+        let inside1 = (p1 - center).length_sq() <= radius_sq;
+        if inside0 && inside1 {
+            painter.line_segment([p0, p1], stroke);
         }
     }
 }

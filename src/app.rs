@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::components::{
     draw_central_panel, draw_clear_all_modal, draw_entity_editor, draw_error_modal, draw_footer,
     draw_inspector_panel, draw_tool_bar, draw_top_panel, Colors, CursorHoverState, InspectorTab,
+    PaletteTheme, VertexPattern,
 };
 use crate::config::{AppConfig, SimulatorKind};
 use crate::export::{ExportFormat, ExportService};
@@ -36,6 +37,8 @@ struct StoredUiState {
     show_number: bool,
     is_animated: bool,
     is_directed: bool,
+    palette_theme: String,
+    selected_pattern: String,
     export_format: String,
     ui_font_size: f32,
     vertex_font_size: f32,
@@ -53,11 +56,13 @@ impl Default for StoredUiState {
     fn default() -> Self {
         let defaults = AppConfig::default();
         Self {
-            version: 3,
+            version: 4,
             zero_indexed: false,
             show_number: true,
             is_animated: true,
             is_directed: false,
+            palette_theme: PaletteTheme::default().storage_key().to_string(),
+            selected_pattern: VertexPattern::default().storage_key().to_string(),
             export_format: ExportFormat::Png.extension().to_string(),
             ui_font_size: defaults.ui_font_size,
             vertex_font_size: defaults.vertex_font_size,
@@ -89,6 +94,8 @@ impl GraphEditorApp {
         app.state.show_number = state.show_number;
         app.state.is_animated = state.is_animated;
         app.state.graph.is_directed = state.is_directed;
+        app.state.palette_theme = PaletteTheme::from_storage_key(&state.palette_theme);
+        app.state.selected_pattern = VertexPattern::from_storage_key(&state.selected_pattern);
         app.config.ui_font_size = state.ui_font_size;
         app.config.vertex_font_size = state.vertex_font_size;
         app.config.vertex_radius = state.vertex_radius;
@@ -107,7 +114,7 @@ impl GraphEditorApp {
         app.export.set_format(format);
         if let Some(storage) = cc.storage {
             if let Some(saved_graph) = eframe::get_value(storage, GRAPH_STATE_STORAGE_KEY) {
-                match import_graph_from_file(saved_graph) {
+                match import_graph_from_file(saved_graph, app.state.palette_theme) {
                     Ok(imported) => app.restore_imported_graph(imported),
                     Err(err) => {
                         app.ui.error_message = Some(format!(
@@ -171,6 +178,7 @@ impl GraphEditorApp {
             graph: &self.state.graph,
             view: &self.state.graph_view,
             config: &self.config,
+            palette_theme: self.state.palette_theme,
             show_number: self.state.show_number,
             zero_indexed: self.state.zero_indexed,
         };
@@ -184,6 +192,7 @@ impl GraphEditorApp {
             graph: &self.state.graph,
             view: &self.state.graph_view,
             config: &self.config,
+            palette_theme: self.state.palette_theme,
             show_number: self.state.show_number,
             zero_indexed: self.state.zero_indexed,
         };
@@ -212,6 +221,7 @@ impl GraphEditorApp {
             &self.state.graph,
             &self.state.graph_view,
             self.state.zero_indexed,
+            self.state.palette_theme,
             self.json_save_options(),
         ) {
             Ok(json) => {
@@ -236,6 +246,7 @@ impl GraphEditorApp {
         self.state.zero_indexed = imported.zero_indexed;
         self.state.next_z_index = self.state.graph.vertices.len() as u32;
         self.state.selected_color = Colors::Default;
+        self.state.selected_pattern = VertexPattern::None;
         self.switch_normal_mode();
         self.state.simulation_edge_length = self.effective_layout_edge_length();
     }
@@ -378,6 +389,7 @@ impl GraphEditorApp {
         self.state.zero_indexed = imported.zero_indexed;
         self.state.next_z_index = self.state.graph.vertices.len() as u32;
         self.state.selected_color = Colors::Default;
+        self.state.selected_pattern = VertexPattern::None;
         self.switch_normal_mode();
 
         if imported.used_generated_positions {
@@ -413,6 +425,8 @@ impl Default for GraphEditorApp {
                 next_z_index: 2,
                 edit_mode: EditMode::default_normal(),
                 selected_color: Colors::Default,
+                selected_pattern: VertexPattern::None,
+                palette_theme: PaletteTheme::default(),
                 zero_indexed: false,
                 show_number: true,
             },
@@ -446,11 +460,13 @@ impl Default for GraphEditorApp {
 impl eframe::App for GraphEditorApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         let state = StoredUiState {
-            version: 3,
+            version: 4,
             zero_indexed: self.state.zero_indexed,
             show_number: self.state.show_number,
             is_animated: self.state.is_animated,
             is_directed: self.state.graph.is_directed,
+            palette_theme: self.state.palette_theme.storage_key().to_string(),
+            selected_pattern: self.state.selected_pattern.storage_key().to_string(),
             export_format: self.export.format().extension().to_string(),
             ui_font_size: self.config.ui_font_size,
             vertex_font_size: self.config.vertex_font_size,
@@ -468,6 +484,7 @@ impl eframe::App for GraphEditorApp {
             &self.state.graph,
             &self.state.graph_view,
             self.state.zero_indexed,
+            self.state.palette_theme,
             SaveOptions::default(),
         );
         eframe::set_value(storage, GRAPH_STATE_STORAGE_KEY, &graph_state);
