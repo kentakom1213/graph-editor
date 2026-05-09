@@ -230,6 +230,21 @@ impl GraphEditorApp {
         self.sync_json_text_from_graph();
     }
 
+    pub fn set_zero_indexed(&mut self, zero_indexed: bool) {
+        if self.state.zero_indexed == zero_indexed {
+            return;
+        }
+
+        self.state.zero_indexed = zero_indexed;
+
+        if !self.ui.input_has_focus && !self.ui.input_is_dirty {
+            self.sync_input_text_from_graph();
+        }
+        if !self.ui.input_has_focus && !self.ui.json_is_dirty {
+            self.sync_json_text_from_graph();
+        }
+    }
+
     fn restore_imported_graph(&mut self, imported: ImportedGraph) {
         self.state.graph = imported.graph;
         self.state.graph_view = imported.view;
