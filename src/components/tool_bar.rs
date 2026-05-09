@@ -1,6 +1,10 @@
 use egui::Context;
 
-use crate::{components::Colors, mode::EditMode, GraphEditorApp};
+use crate::{
+    components::{draw_graph_section, Colors},
+    mode::EditMode,
+    GraphEditorApp,
+};
 
 pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
     egui::SidePanel::left("tool_bar")
@@ -96,6 +100,9 @@ pub fn draw_tool_bar(app: &mut GraphEditorApp, ctx: &Context) {
             if app.state.selected_color != prev_color {
                 app.state.edit_mode = EditMode::default_colorize();
             }
+
+            ui.separator();
+            draw_graph_section(app, ctx, ui);
         });
 }
 

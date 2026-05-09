@@ -21,32 +21,24 @@ pub fn draw_inspector_panel(app: &mut GraphEditorApp, ctx: &Context) {
                 .cursor_hover
                 .set_inspector_panel(ui.rect_contains_pointer(ui.max_rect()));
 
-            ui.columns(2, |columns| {
-                draw_tab_button(
-                    &mut columns[0],
-                    app.ui.inspector_tab == InspectorTab::Graph,
-                    "Graph",
-                    app.config.tab_font_size(),
-                    || app.ui.inspector_tab = InspectorTab::Graph,
-                );
-                draw_tab_button(
-                    &mut columns[1],
-                    app.ui.inspector_tab == InspectorTab::Io,
-                    "I/O",
-                    app.config.tab_font_size(),
-                    || app.ui.inspector_tab = InspectorTab::Io,
-                );
-            });
+            ui.label(
+                egui::RichText::new("I/O")
+                    .strong()
+                    .size(app.config.section_font_size()),
+            );
             ui.separator();
-
-            match app.ui.inspector_tab {
-                InspectorTab::Graph => draw_graph_tab(app, ctx, ui),
-                InspectorTab::Io => draw_io_tab(app, ctx, ui),
-            }
+            draw_io_tab(app, ctx, ui);
         });
 }
 
-fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
+pub fn draw_graph_section(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
+    ui.label(
+        egui::RichText::new("Graph")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
+
+    ui.separator();
     ui.label(
         egui::RichText::new("Indexing")
             .strong()
@@ -57,14 +49,14 @@ fn draw_graph_tab(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui::Ui) {
         app.state.zero_indexed,
         "0-indexed",
         app.config.button_font_size(),
-        || app.state.zero_indexed = true,
+        || app.set_zero_indexed(true),
     );
     draw_toggle_button(
         ui,
         !app.state.zero_indexed,
         "1-indexed",
         app.config.button_font_size(),
-        || app.state.zero_indexed = false,
+        || app.set_zero_indexed(false),
     );
 
     ui.separator();
@@ -360,25 +352,7 @@ fn draw_toggle_button(
 ) {
     if ui
         .add_sized(
-            [170.0, 32.0],
-            egui::SelectableLabel::new(selected, egui::RichText::new(label).size(font_size)),
-        )
-        .clicked()
-    {
-        on_click();
-    }
-}
-
-fn draw_tab_button(
-    ui: &mut egui::Ui,
-    selected: bool,
-    label: &str,
-    font_size: f32,
-    on_click: impl FnOnce(),
-) {
-    if ui
-        .add_sized(
-            [ui.available_width(), 30.0],
+            [150.0, 32.0],
             egui::SelectableLabel::new(selected, egui::RichText::new(label).size(font_size)),
         )
         .clicked()

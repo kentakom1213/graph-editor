@@ -103,7 +103,7 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
         }
     }
     if ui.input(|i| i.key_pressed(egui::Key::Num1)) {
-        app.state.zero_indexed ^= true;
+        app.set_zero_indexed(!app.state.zero_indexed);
     }
 }
 
