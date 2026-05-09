@@ -172,8 +172,12 @@ fn draw_vertex_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize)
     } else {
         (vertex.id + 1).to_string()
     };
-    let label = view.label.get_or_insert(default_label);
-    ui.text_edit_singleline(label);
+    let mut label = view.label.clone().unwrap_or_default();
+    let response =
+        ui.add(egui::TextEdit::singleline(&mut label).hint_text(format!("e.g. {default_label}")));
+    if response.changed() {
+        view.label = Some(label);
+    }
 
     ui.separator();
     ui.label(
