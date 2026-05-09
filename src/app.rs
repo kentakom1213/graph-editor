@@ -11,7 +11,7 @@ use crate::graph::{simulation_methods, BaseGraph, Simulator};
 use crate::math::affine::Affine2D;
 use crate::mode::EditMode;
 use crate::project_io::{export_graph_to_file, import_graph_from_file, ImportedGraph, SaveOptions};
-use crate::state::{AppState, IoFormat, UiState};
+use crate::state::{AppState, IoFormat, UiState, VertexLabelMode};
 use crate::update::request_repaint;
 use crate::view_state::GraphViewState;
 
@@ -33,7 +33,8 @@ const EDGE_LENGTH_SHRINK_DIAMETER_THRESHOLD: usize = 10;
 struct StoredUiState {
     version: u32,
     zero_indexed: bool,
-    show_number: bool,
+    label_mode: Option<String>,
+    show_number: Option<bool>,
     is_animated: bool,
     is_directed: bool,
     export_format: String,
@@ -55,7 +56,8 @@ impl Default for StoredUiState {
         Self {
             version: 3,
             zero_indexed: false,
-            show_number: true,
+            label_mode: Some(VertexLabelMode::Id.storage_key().to_string()),
+            show_number: Some(true),
             is_animated: true,
             is_directed: false,
             export_format: ExportFormat::Png.extension().to_string(),
@@ -86,7 +88,17 @@ impl GraphEditorApp {
             .and_then(|storage| eframe::get_value(storage, UI_STATE_STORAGE_KEY))
             .unwrap_or_default();
         app.state.zero_indexed = state.zero_indexed;
-        app.state.show_number = state.show_number;
+        app.state.vertex_label_mode = state
+            .label_mode
+            .as_deref()
+            .map(VertexLabelMode::from_storage_key)
+            .unwrap_or_else(|| {
+                if state.show_number.unwrap_or(true) {
+                    VertexLabelMode::Id
+                } else {
+                    VertexLabelMode::Hidden
+                }
+            });
         app.state.is_animated = state.is_animated;
         app.state.graph.is_directed = state.is_directed;
         app.config.ui_font_size = state.ui_font_size;
@@ -171,7 +183,7 @@ impl GraphEditorApp {
             graph: &self.state.graph,
             view: &self.state.graph_view,
             config: &self.config,
-            show_number: self.state.show_number,
+            label_mode: self.state.vertex_label_mode,
             zero_indexed: self.state.zero_indexed,
         };
         if let Some(err) = self.export.request_export(ctx, &export_ctx) {
@@ -184,7 +196,7 @@ impl GraphEditorApp {
             graph: &self.state.graph,
             view: &self.state.graph_view,
             config: &self.config,
-            show_number: self.state.show_number,
+            label_mode: self.state.vertex_label_mode,
             zero_indexed: self.state.zero_indexed,
         };
         if let Some(err) = self.export.handle_events(ctx, &export_ctx) {
@@ -243,6 +255,10 @@ impl GraphEditorApp {
         if !self.ui.input_has_focus && !self.ui.json_is_dirty {
             self.sync_json_text_from_graph();
         }
+    }
+
+    pub fn set_vertex_label_mode(&mut self, mode: VertexLabelMode) {
+        self.state.vertex_label_mode = mode;
     }
 
     fn restore_imported_graph(&mut self, imported: ImportedGraph) {
@@ -429,7 +445,7 @@ impl Default for GraphEditorApp {
                 edit_mode: EditMode::default_normal(),
                 selected_color: Colors::Default,
                 zero_indexed: false,
-                show_number: true,
+                vertex_label_mode: VertexLabelMode::Id,
             },
             ui: UiState {
                 cursor_hover: CursorHoverState::default(),
@@ -463,7 +479,8 @@ impl eframe::App for GraphEditorApp {
         let state = StoredUiState {
             version: 3,
             zero_indexed: self.state.zero_indexed,
-            show_number: self.state.show_number,
+            label_mode: Some(self.state.vertex_label_mode.storage_key().to_string()),
+            show_number: None,
             is_animated: self.state.is_animated,
             is_directed: self.state.graph.is_directed,
             export_format: self.export.format().extension().to_string(),

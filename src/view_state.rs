@@ -25,7 +25,7 @@ impl Default for VertexViewState {
             z_index: 0,
             drag: Affine2D::one(),
             color: Colors::default(),
-            label: None,
+            label: Some(String::new()),
             text_color: None,
             radius: None,
             stroke_width: None,
@@ -121,12 +121,6 @@ impl GraphViewState {
         }
         for edge in &mut self.edges {
             edge.color = Colors::default();
-        }
-    }
-
-    pub fn remove_label(&mut self) {
-        for vertex in &mut self.vertices {
-            vertex.label = Some(String::default());
         }
     }
 

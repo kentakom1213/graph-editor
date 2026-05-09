@@ -72,14 +72,14 @@ pub fn draw_footer(app: &mut GraphEditorApp, ctx: &Context) {
                 if animate.clicked() {
                     app.set_animation_enabled(!app.state.is_animated);
                 }
-                let show_numbers = ui
-                    .selectable_label(
-                        app.state.show_number,
-                        egui::RichText::new("Number").size(app.config.footer_font_size()),
+                let label_mode = ui
+                    .button(
+                        egui::RichText::new(app.state.vertex_label_mode.footer_label())
+                            .size(app.config.footer_font_size()),
                     )
-                    .on_hover_text("Toggle vertex number labels");
-                if show_numbers.clicked() {
-                    app.state.show_number = !app.state.show_number;
+                    .on_hover_text("Cycle vertex text display mode");
+                if label_mode.clicked() {
+                    app.set_vertex_label_mode(app.state.vertex_label_mode.next());
                 }
             });
         });

@@ -12,6 +12,56 @@ pub enum IoFormat {
     Json,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum VertexLabelMode {
+    #[default]
+    Id,
+    Label,
+    Hidden,
+}
+
+impl VertexLabelMode {
+    pub fn storage_key(self) -> &'static str {
+        match self {
+            Self::Id => "id",
+            Self::Label => "label",
+            Self::Hidden => "hidden",
+        }
+    }
+
+    pub fn from_storage_key(value: &str) -> Self {
+        match value {
+            "label" => Self::Label,
+            "hidden" => Self::Hidden,
+            _ => Self::Id,
+        }
+    }
+
+    pub fn button_label(self) -> &'static str {
+        match self {
+            Self::Id => "Vertex ID",
+            Self::Label => "Label",
+            Self::Hidden => "Hidden",
+        }
+    }
+
+    pub fn footer_label(self) -> &'static str {
+        match self {
+            Self::Id => "Text: ID",
+            Self::Label => "Text: Label",
+            Self::Hidden => "Text: Hidden",
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Id => Self::Label,
+            Self::Label => Self::Hidden,
+            Self::Hidden => Self::Id,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EditTarget {
     Vertex(usize),
@@ -28,7 +78,7 @@ pub struct AppState {
     pub edit_mode: EditMode,
     pub selected_color: Colors,
     pub zero_indexed: bool,
-    pub show_number: bool,
+    pub vertex_label_mode: VertexLabelMode,
 }
 
 pub struct UiState {

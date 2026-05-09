@@ -1,7 +1,10 @@
 use egui::{text::LayoutJob, Color32, Context, FontId, TextFormat};
 
 use crate::{
-    graph::BaseGraph, project_io::import_graph_from_json, state::IoFormat, GraphEditorApp,
+    graph::BaseGraph,
+    project_io::import_graph_from_json,
+    state::IoFormat,
+    GraphEditorApp,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -116,13 +119,6 @@ pub fn draw_graph_section(app: &mut GraphEditorApp, ctx: &Context, ui: &mut egui
         .clicked()
     {
         app.state.graph_view.remove_color();
-    }
-
-    if ui
-        .button(egui::RichText::new("Remove Label").size(app.config.button_font_size()))
-        .clicked()
-    {
-        app.state.graph_view.remove_label();
     }
 
     ui.separator();

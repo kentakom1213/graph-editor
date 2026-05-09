@@ -8,6 +8,7 @@ use crate::components::default_vertex_text_color;
 use crate::config::AppConfig;
 use crate::graph::Graph;
 use crate::math::bezier::{calc_bezier_control_point, calc_intersection_of_bezier_and_circle};
+use crate::state::VertexLabelMode;
 use crate::view_state::GraphViewState;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,7 +37,7 @@ pub struct ExportContext<'a> {
     pub graph: &'a Graph,
     pub view: &'a GraphViewState,
     pub config: &'a AppConfig,
-    pub show_number: bool,
+    pub label_mode: VertexLabelMode,
     pub zero_indexed: bool,
 }
 
@@ -372,15 +373,22 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
             ));
         }
 
-        if ctx.show_number {
-            let vertex_show_id = vertex.label.clone().unwrap_or_else(|| {
+        let vertex_text = match ctx.label_mode {
+            VertexLabelMode::Id => Some(
                 if ctx.zero_indexed {
                     vertex.id
                 } else {
                     vertex.id + 1
                 }
-                .to_string()
-            });
+                .to_string(),
+            ),
+            VertexLabelMode::Label => vertex
+                .label
+                .clone()
+                .filter(|label| !label.trim().is_empty()),
+            VertexLabelMode::Hidden => None,
+        };
+        if let Some(vertex_text) = vertex_text {
             let (text_hex, text_alpha) = color_to_svg(
                 vertex
                     .text_color
@@ -389,11 +397,11 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
             let text_adjust_y = y + 4.5;
             if let Some(alpha) = text_alpha {
                 svg.push_str(&format!(
-                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\" fill-opacity=\"{alpha}\">{vertex_show_id}</text>\n",
+                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\" fill-opacity=\"{alpha}\">{vertex_text}</text>\n",
                 ));
             } else {
                 svg.push_str(&format!(
-                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\">{vertex_show_id}</text>\n",
+                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\">{vertex_text}</text>\n",
                 ));
             }
         }

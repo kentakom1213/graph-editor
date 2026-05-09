@@ -614,19 +614,26 @@ fn render_vertices(
             vertex_radius,
             egui::Stroke::new(vertex_stroke, app.config.vertex_color_outline),
         );
-        if app.state.show_number {
-            let vertex_show_id = vertex.label.clone().unwrap_or_else(|| {
+        let vertex_text = match app.state.vertex_label_mode {
+            crate::state::VertexLabelMode::Id => Some(
                 if app.state.zero_indexed {
                     vertex.id
                 } else {
                     vertex.id + 1
                 }
-                .to_string()
-            });
+                .to_string(),
+            ),
+            crate::state::VertexLabelMode::Label => vertex
+                .label
+                .clone()
+                .filter(|label| !label.trim().is_empty()),
+            crate::state::VertexLabelMode::Hidden => None,
+        };
+        if let Some(vertex_text) = vertex_text {
             painter.text(
                 vertex.position,
                 egui::Align2::CENTER_CENTER,
-                vertex_show_id,
+                vertex_text,
                 egui::FontId::proportional(vertex_font_size),
                 vertex
                     .text_color
