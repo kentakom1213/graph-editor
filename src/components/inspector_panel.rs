@@ -1,10 +1,7 @@
 use egui::{text::LayoutJob, Color32, Context, FontId, TextFormat};
 
 use crate::{
-    graph::BaseGraph,
-    project_io::import_graph_from_json,
-    state::IoFormat,
-    GraphEditorApp,
+    graph::BaseGraph, project_io::import_graph_from_json, state::IoFormat, GraphEditorApp,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
