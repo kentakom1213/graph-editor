@@ -37,6 +37,8 @@ impl Default for VertexViewState {
 pub struct EdgeViewState {
     pub is_pressed: bool,
     pub color: Colors,
+    pub label: Option<String>,
+    pub show_label: bool,
     pub stroke_width: Option<f32>,
 }
 
@@ -164,6 +166,8 @@ impl GraphViewState {
                     to: e.to,
                     is_pressed: view.is_pressed,
                     color: view.color,
+                    label: view.label.clone(),
+                    show_label: view.show_label,
                     stroke_width: view.stroke_width,
                 })
             })
@@ -197,6 +201,8 @@ pub struct EdgeSnapshot {
     pub to: usize,
     pub is_pressed: bool,
     pub color: Colors,
+    pub label: Option<String>,
+    pub show_label: bool,
     pub stroke_width: Option<f32>,
 }
 

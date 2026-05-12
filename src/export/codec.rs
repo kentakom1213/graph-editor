@@ -7,7 +7,9 @@ use eframe::egui;
 use crate::components::default_vertex_text_color;
 use crate::config::AppConfig;
 use crate::graph::Graph;
-use crate::math::bezier::{calc_bezier_control_point, calc_intersection_of_bezier_and_circle};
+use crate::math::bezier::{
+    bezier_curve, calc_bezier_control_point, calc_intersection_of_bezier_and_circle, d_bezier_dt,
+};
 use crate::state::VertexLabelMode;
 use crate::view_state::GraphViewState;
 
@@ -155,6 +157,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
     let active_vertex_count = ctx.graph.vertices.iter().filter(|v| !v.is_deleted).count();
     let default_vertex_radius = ctx.config.effective_vertex_radius(active_vertex_count);
     let vertex_font_size = ctx.config.effective_vertex_font_size(active_vertex_count);
+    let edge_font_size = ctx.config.effective_edge_font_size(active_vertex_count);
     let bounds = graph_bounds_rect(ctx).context("missing graph bounds")?;
     let width = bounds.width().max(1.0);
     let height = bounds.height().max(1.0);
@@ -216,6 +219,31 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
             .get(&edge.to)
             .and_then(|vertex| vertex.radius)
             .unwrap_or(default_vertex_radius);
+        let label_position = edge
+            .label
+            .as_deref()
+            .filter(|label| {
+                ctx.label_mode == VertexLabelMode::Label
+                    && edge.show_label
+                    && !label.trim().is_empty()
+            })
+            .map(|_| {
+                let offset_distance = (edge_font_size * 0.8).max(10.0);
+                if snapshot.is_directed && edge_count.get(&(edge.from, edge.to)) != Some(&1) {
+                    let control = calc_bezier_control_point(
+                        from_pos,
+                        to_pos,
+                        ctx.config.edge_bezier_distance,
+                        false,
+                    );
+                    let position = bezier_curve(from_pos, control, to_pos, 0.5);
+                    let tangent = d_bezier_dt(from_pos, control, to_pos, 0.5);
+                    position + svg_label_normal(tangent) * offset_distance
+                } else {
+                    let position = from_pos + (to_pos - from_pos) * 0.5;
+                    position + svg_label_normal(to_pos - from_pos) * offset_distance
+                }
+            });
         if snapshot.is_directed {
             if edge_count.get(&(edge.from, edge.to)) == Some(&1) {
                 let dir = (to_pos - from_pos).normalized();
@@ -341,6 +369,28 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                 "  <line x1=\"{from_x}\" y1=\"{from_y}\" x2=\"{to_x}\" y2=\"{to_y}\" {stroke_style} stroke-width=\"{stroke_width}\" fill=\"none\" />\n",
             ));
         }
+
+        if let (Some(label), Some(label_position)) = (
+            edge.label.as_deref().filter(|label| {
+                ctx.label_mode == VertexLabelMode::Label
+                    && edge.show_label
+                    && !label.trim().is_empty()
+            }),
+            label_position,
+        ) {
+            let label_x = label_position.x - bounds.min.x;
+            let label_y = label_position.y - bounds.min.y;
+            let escaped_label = escape_svg_text(label);
+            let text_style = if let Some(alpha) = stroke_alpha {
+                format!("fill=\"{stroke_hex}\" fill-opacity=\"{alpha}\"")
+            } else {
+                format!("fill=\"{stroke_hex}\"")
+            };
+            svg.push_str(&format!(
+                "  <text x=\"{label_x}\" y=\"{label_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" {text_style}>{escaped_label}</text>\n",
+                edge_font_size,
+            ));
+        }
     }
 
     vertices.sort_by_key(|v| v.z_index);
@@ -395,13 +445,14 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                     .unwrap_or_else(|| default_vertex_text_color(vertex.color.vertex())),
             );
             let text_adjust_y = y + 4.5;
+            let escaped_text = escape_svg_text(&vertex_text);
             if let Some(alpha) = text_alpha {
                 svg.push_str(&format!(
-                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\" fill-opacity=\"{alpha}\">{vertex_text}</text>\n",
+                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\" fill-opacity=\"{alpha}\">{escaped_text}</text>\n",
                 ));
             } else {
                 svg.push_str(&format!(
-                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\">{vertex_text}</text>\n",
+                    "  <text x=\"{x}\" y=\"{text_adjust_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{vertex_font_size}\" fill=\"{text_hex}\">{escaped_text}</text>\n",
                 ));
             }
         }
@@ -466,4 +517,91 @@ fn color_to_svg(color: egui::Color32) -> (String, Option<f32>) {
         None
     };
     (hex, alpha)
+}
+
+fn escape_svg_text(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
+fn svg_label_normal(direction: egui::Vec2) -> egui::Vec2 {
+    if direction.length_sq() <= f32::EPSILON {
+        egui::vec2(0.0, -1.0)
+    } else {
+        direction.normalized().rot90()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{cell::RefCell, rc::Rc};
+
+    use num_traits::One;
+
+    use crate::{
+        config::AppConfig,
+        graph::{Edge, Graph, Vertex},
+        math::affine::Affine2D,
+        state::VertexLabelMode,
+        view_state::GraphViewState,
+    };
+
+    use super::{export_svg_bytes, ExportContext};
+
+    fn sample_export_context(label_mode: VertexLabelMode) -> ExportContext<'static> {
+        let affine = Rc::new(RefCell::new(Affine2D::one()));
+        let graph = Graph {
+            is_directed: false,
+            affine: affine.clone(),
+            vertices: vec![
+                Vertex {
+                    id: 0,
+                    position: egui::pos2(100.0, 100.0),
+                    velocity: egui::Vec2::ZERO,
+                    is_deleted: false,
+                    affine: affine.clone(),
+                },
+                Vertex {
+                    id: 1,
+                    position: egui::pos2(220.0, 100.0),
+                    velocity: egui::Vec2::ZERO,
+                    is_deleted: false,
+                    affine: affine.clone(),
+                },
+            ],
+            edges: vec![Edge::new(0, 1)],
+        };
+        let mut view = GraphViewState::new_for_graph(&graph);
+        view.edges[0].label = Some("w=7".to_string());
+        view.edges[0].show_label = true;
+
+        ExportContext {
+            graph: Box::leak(Box::new(graph)),
+            view: Box::leak(Box::new(view)),
+            config: Box::leak(Box::new(AppConfig::default())),
+            label_mode,
+            zero_indexed: true,
+        }
+    }
+
+    #[test]
+    fn svg_export_shows_edge_label_only_in_label_mode() {
+        let label_svg = String::from_utf8(
+            export_svg_bytes(&sample_export_context(VertexLabelMode::Label)).unwrap(),
+        )
+        .unwrap();
+        let id_svg = String::from_utf8(
+            export_svg_bytes(&sample_export_context(VertexLabelMode::Id)).unwrap(),
+        )
+        .unwrap();
+        let hidden_svg = String::from_utf8(
+            export_svg_bytes(&sample_export_context(VertexLabelMode::Hidden)).unwrap(),
+        )
+        .unwrap();
+
+        assert!(label_svg.contains(">w=7</text>"));
+        assert!(!id_svg.contains(">w=7</text>"));
+        assert!(!hidden_svg.contains(">w=7</text>"));
+    }
 }
