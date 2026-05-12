@@ -613,6 +613,7 @@ fn render_edges(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn edge_label_position(
     edge_count: &HashMap<(usize, usize), usize>,
     is_directed: bool,

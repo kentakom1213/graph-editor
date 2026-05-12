@@ -387,8 +387,7 @@ pub fn export_svg_bytes(ctx: &ExportContext<'_>) -> anyhow::Result<Vec<u8>> {
                 format!("fill=\"{stroke_hex}\"")
             };
             svg.push_str(&format!(
-                "  <text x=\"{label_x}\" y=\"{label_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{}\" {text_style}>{escaped_label}</text>\n",
-                edge_font_size,
+                "  <text x=\"{label_x}\" y=\"{label_y}\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"{edge_font_size}\" {text_style}>{escaped_label}</text>\n",
             ));
         }
     }
