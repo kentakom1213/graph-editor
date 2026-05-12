@@ -241,20 +241,22 @@ pub fn export_graph_to_file(
                 id: edge_index,
                 from,
                 to,
-                label: Some(String::new()),
+                label: Some(
+                    view.edges
+                        .get(edge_index)
+                        .and_then(|state| state.label.clone())
+                        .unwrap_or_default(),
+                ),
                 style: options.include_edge_style.then(|| {
                     let defaults = crate::config::AppConfig::default();
-                    let color = view
-                        .edges
-                        .get(edge_index)
-                        .map(|state| state.color)
-                        .unwrap_or_default();
+                    let edge_state = view.edges.get(edge_index);
+                    let color = edge_state.map(|state| state.color).unwrap_or_default();
                     EdgeStyleData {
                         stroke: Some(color_to_hex(color.edge())),
-                        text: Some(color_to_hex(color.edge())),
-                        stroke_width: view
-                            .edges
-                            .get(edge_index)
+                        text: edge_state
+                            .filter(|state| state.show_label)
+                            .map(|_| "label".to_string()),
+                        stroke_width: edge_state
                             .and_then(|state| state.stroke_width)
                             .filter(|width| (*width - defaults.edge_stroke).abs() > f32::EPSILON),
                     }
@@ -394,6 +396,9 @@ pub fn import_graph_from_file(file: GraphFile) -> Result<ImportedGraph, ImportEr
         }
     }
     for (index, edge) in edges.iter().enumerate() {
+        view.edges[index].label = edge.label.clone();
+        view.edges[index].show_label =
+            edge.style.as_ref().and_then(|style| style.text.as_deref()) == Some("label");
         if let Some(style) = &edge.style {
             view.edges[index].color = color_from_edge_style(style);
             view.edges[index].stroke_width = style.stroke_width;
@@ -460,11 +465,7 @@ fn color_from_vertex_style(style: &VertexStyleData) -> Colors {
 }
 
 fn color_from_edge_style(style: &EdgeStyleData) -> Colors {
-    let color = style
-        .stroke
-        .as_deref()
-        .or(style.text.as_deref())
-        .and_then(parse_hex_color);
+    let color = style.stroke.as_deref().and_then(parse_hex_color);
     match_color(color, false)
 }
 
@@ -544,6 +545,8 @@ mod tests {
         let mut view = GraphViewState::new_for_graph(&graph);
         view.vertices[0].color = Colors::Red;
         view.edges[0].color = Colors::Blue;
+        view.edges[0].label = Some("w=5".to_string());
+        view.edges[0].show_label = true;
         (graph, view)
     }
 
@@ -573,6 +576,7 @@ mod tests {
 
         assert!(json.contains("\"position\""));
         assert!(json.contains("\"style\""));
+        assert!(json.contains("\"text\": \"label\""));
         assert!(!json.contains("\"radius\""));
         assert!(!json.contains("\"stroke_width\""));
     }
@@ -585,7 +589,55 @@ mod tests {
 
         assert_eq!(imported.graph.edges[0].from, 0);
         assert_eq!(imported.graph.edges[0].to, 1);
+        assert_eq!(imported.view.edges[0].label.as_deref(), Some("w=5"));
+        assert!(imported.view.edges[0].show_label);
         assert!(imported.zero_indexed);
+    }
+
+    #[test]
+    fn imports_edge_labels_hidden_without_text_label_style() {
+        let file = GraphFile {
+            format: "graph-editor".to_string(),
+            version: 1,
+            graph: GraphData {
+                directed: true,
+                index_origin: 0,
+                features: GraphFeatures {
+                    edge_style: true,
+                    ..GraphFeatures::default()
+                },
+                vertices: vec![
+                    VertexData {
+                        id: 0,
+                        label: None,
+                        position: None,
+                        style: None,
+                    },
+                    VertexData {
+                        id: 1,
+                        label: None,
+                        position: None,
+                        style: None,
+                    },
+                ],
+                edges: vec![super::EdgeData {
+                    id: 0,
+                    from: 0,
+                    to: 1,
+                    label: Some("hidden".to_string()),
+                    style: Some(super::EdgeStyleData {
+                        stroke: None,
+                        text: None,
+                        stroke_width: None,
+                    }),
+                }],
+            },
+        };
+
+        let json = serde_json::to_string(&file).unwrap();
+        let imported = import_graph_from_json(&json).unwrap();
+        assert_eq!(imported.view.edges[0].label.as_deref(), Some("hidden"));
+        assert!(!imported.view.edges[0].show_label);
     }
 
     #[test]

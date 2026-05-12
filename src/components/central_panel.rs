@@ -56,7 +56,7 @@ pub fn draw_central_panel(app: &mut GraphEditorApp, ctx: &egui::Context) {
             let painter = ui.painter();
 
             // 辺の描画
-            render_edges(&snapshot, painter, &app.config);
+            render_edges(&snapshot, painter, &app.config, app.state.vertex_label_mode);
 
             // 頂点の描画
             render_vertices(&snapshot, app, ui, painter);
@@ -88,8 +88,14 @@ fn change_edit_mode(app: &mut GraphEditorApp, ui: &egui::Ui) {
     if ui.input(|i| i.key_pressed(egui::Key::V)) {
         app.switch_add_vertex_mode();
     }
+    if ui.input(|i| i.key_pressed(egui::Key::A)) {
+        app.set_animation_enabled(!app.state.is_animated);
+    }
     if ui.input(|i| i.key_pressed(egui::Key::E)) {
         app.switch_add_edge_mode();
+    }
+    if ui.input(|i| i.key_pressed(egui::Key::T)) {
+        app.set_vertex_label_mode(app.state.vertex_label_mode.next());
     }
     if ui.input(|i| i.key_pressed(egui::Key::C)) {
         app.switch_colorize_mode();
@@ -502,12 +508,18 @@ fn update_vertex_interactions(app: &mut GraphEditorApp, ui: &egui::Ui) {
 }
 
 /// central_panel に辺を描画する
-fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppConfig) {
+fn render_edges(
+    snapshot: &GraphSnapshot,
+    painter: &egui::Painter,
+    config: &AppConfig,
+    label_mode: crate::state::VertexLabelMode,
+) {
     let vertex_positions: HashMap<usize, egui::Pos2> = snapshot
         .vertices
         .iter()
         .map(|v| (v.id, v.position))
         .collect();
+    let edge_font_size = config.effective_edge_font_size(snapshot.vertices.len());
 
     let edge_count = snapshot.edges.iter().fold(HashMap::new(), |mut map, edge| {
         *map.entry((edge.from, edge.to)).or_insert(0) += 1;
@@ -535,6 +547,26 @@ fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppC
             .find(|vertex| vertex.id == edge.to)
             .and_then(|vertex| vertex.radius)
             .unwrap_or(config.effective_vertex_radius(snapshot.vertices.len()));
+        let label_position = edge
+            .label
+            .as_deref()
+            .filter(|label| {
+                label_mode == crate::state::VertexLabelMode::Label
+                    && edge.show_label
+                    && !label.trim().is_empty()
+            })
+            .map(|_| {
+                edge_label_position(
+                    &edge_count,
+                    snapshot.is_directed,
+                    edge.from,
+                    edge.to,
+                    from_pos,
+                    to_pos,
+                    edge_font_size,
+                    config,
+                )
+            });
 
         if snapshot.is_directed {
             if edge_count.get(&(edge.from, edge.to)) == Some(&1) {
@@ -561,6 +593,56 @@ fn render_edges(snapshot: &GraphSnapshot, painter: &egui::Painter, config: &AppC
         } else {
             draw_edge_undirected(painter, from_pos, to_pos, stroke_width, edge_color);
         }
+
+        if let (Some(label), Some(label_position)) = (
+            edge.label.as_deref().filter(|label| {
+                label_mode == crate::state::VertexLabelMode::Label
+                    && edge.show_label
+                    && !label.trim().is_empty()
+            }),
+            label_position,
+        ) {
+            painter.text(
+                label_position,
+                egui::Align2::CENTER_CENTER,
+                label,
+                egui::FontId::proportional(edge_font_size),
+                edge.color.edge(),
+            );
+        }
+    }
+}
+
+fn edge_label_position(
+    edge_count: &HashMap<(usize, usize), usize>,
+    is_directed: bool,
+    from: usize,
+    to: usize,
+    from_pos: egui::Pos2,
+    to_pos: egui::Pos2,
+    edge_font_size: f32,
+    config: &AppConfig,
+) -> egui::Pos2 {
+    let offset_distance = (edge_font_size * 0.8).max(10.0);
+    if is_directed && edge_count.get(&(from, to)) != Some(&1) {
+        let control =
+            calc_bezier_control_point(from_pos, to_pos, config.edge_bezier_distance, false);
+        let position = bezier_curve(from_pos, control, to_pos, 0.5);
+        let tangent = d_bezier_dt(from_pos, control, to_pos, 0.5);
+        let normal = normalized_label_normal(tangent);
+        position + normal * offset_distance
+    } else {
+        let position = from_pos + (to_pos - from_pos) * 0.5;
+        let normal = normalized_label_normal(to_pos - from_pos);
+        position + normal * offset_distance
+    }
+}
+
+fn normalized_label_normal(direction: egui::Vec2) -> egui::Vec2 {
+    if direction.length_sq() <= f32::EPSILON {
+        egui::vec2(0.0, -1.0)
+    } else {
+        direction.normalized().rot90()
     }
 }
 

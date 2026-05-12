@@ -95,6 +95,9 @@ fn draw_settings_window(app: &mut GraphEditorApp, ctx: &Context) {
                 egui::Slider::new(&mut app.config.vertex_font_size, 16.0..=64.0)
                     .text("Vertex font"),
             );
+            ui.add(
+                egui::Slider::new(&mut app.config.edge_font_size, 10.0..=40.0).text("Edge font"),
+            );
 
             ui.separator();
             ui.label(

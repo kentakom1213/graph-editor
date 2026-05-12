@@ -120,6 +120,11 @@ pub fn draw_entity_editor(app: &mut GraphEditorApp, ctx: &Context) {
         return;
     };
 
+    if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+        app.close_entity_editor();
+        return;
+    }
+
     let mut open = true;
     let pos = app
         .ui
@@ -247,6 +252,19 @@ fn draw_edge_editor(app: &mut GraphEditorApp, ui: &mut egui::Ui, index: usize) {
     ui.label(format!("to: {}", edge.to));
     ui.separator();
 
+    ui.label(
+        egui::RichText::new("Label")
+            .strong()
+            .size(app.config.section_font_size()),
+    );
+    let mut label = view.label.clone().unwrap_or_default();
+    let response = ui.add(egui::TextEdit::singleline(&mut label).hint_text("e.g. weight"));
+    if response.changed() {
+        view.show_label = !label.trim().is_empty();
+        view.label = Some(label);
+    }
+
+    ui.separator();
     ui.label(
         egui::RichText::new("Stroke")
             .strong()

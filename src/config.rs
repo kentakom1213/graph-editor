@@ -14,6 +14,7 @@ pub struct AppConfig {
     pub vertex_color_dragged: Color32,
     pub vertex_color_selected: Color32,
     pub vertex_font_size: f32,
+    pub edge_font_size: f32,
     pub vertex_font_color: Color32,
     pub edge_color_hover: Color32,
     pub edge_arrow_length: f32,
@@ -51,6 +52,7 @@ impl Default for AppConfig {
             vertex_color_dragged: Color32::from_rgb(200, 100, 100),
             vertex_color_selected: Color32::from_rgb(100, 200, 100),
             vertex_font_size: 40.0,
+            edge_font_size: 20.0,
             vertex_font_color: Color32::BLACK,
             edge_color_hover: Color32::from_rgb(200, 100, 100),
             edge_stroke: 6.0,
@@ -116,6 +118,15 @@ impl AppConfig {
 
         let scale = (16.0 / vertex_count as f32).powf(0.65).clamp(0.18, 1.0);
         (self.vertex_font_size * scale).max(6.0)
+    }
+
+    pub fn effective_edge_font_size(&self, vertex_count: usize) -> f32 {
+        if vertex_count <= 16 {
+            return self.edge_font_size;
+        }
+
+        let scale = (16.0 / vertex_count as f32).powf(0.4).clamp(0.4, 1.0);
+        (self.edge_font_size * scale).max(6.0)
     }
 
     pub fn visualizer(&self) -> Box<dyn Visualizer> {
