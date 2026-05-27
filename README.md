@@ -2,9 +2,11 @@
 
 [![Build Status](https://github.com/kentakom1213/graph-editor/workflows/CI/badge.svg)](https://github.com/kentakom1213/graph-editor/actions?workflow=CI)
 
-Graph Editor is a graph creation and visualization tool for competitive programming and AtCoder.
+Graph Editor is a graph creation and visualization tool for competitive programming.
 
 Demo: https://kentakom1213.github.io/graph-editor/
+
+Useful for creating graphs for AtCoder and programming contests.
 
 Graph Editor は，競技プログラミング用のグラフを直感的に作成・編集できるグラフエディタです．
 
