@@ -1,32 +1,34 @@
 <!DOCTYPE html>
-<html>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-  <!-- Disable zooming: -->
-  <!-- <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, user-scalable=no"
-  /> -->
-
+<html lang="en">
   <head>
-    <!-- change this to your project name -->
-    <title>Graph Editor</title>
+    <meta charset="utf-8" />
+    <!-- Disable zooming: -->
+    <!-- <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    /> -->
+
+    <title>Graph Editor - Competitive Programming Graph Tool</title>
     <meta
       name="description"
-      content="A graph creation and visualization tool for competitive programming. Create directed/undirected graphs with ease.｜競技プログラミング向けのグラフ作成・可視化ツール。直感的な操作で有向・無向グラフを作成できます。"
+      content="Graph Editor is a graph creation and visualization tool for competitive programming. Create, edit, and export graphs for AtCoder and programming contests."
     />
     <meta
       name="keywords"
       content="graph editor, competitive programming, algorithm, visualization, test case generator, directed graph, undirected graph, グラフエディタ, 競技プログラミング, 競プロ, アルゴリズム, 可視化, テストケース, 有向グラフ, 無向グラフ"
     />
+    <link rel="canonical" href="https://kentakom1213.github.io/graph-editor/" />
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
 
     <!-- OGP設定 -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Graph Editor" />
+    <meta
+      property="og:title"
+      content="Graph Editor - Competitive Programming Graph Tool"
+    />
     <meta
       property="og:description"
-      content="Simple graph generation application"
+      content="Create, edit, and visualize graphs for competitive programming and AtCoder."
     />
     <meta
       property="og:url"
@@ -38,11 +40,14 @@
     />
 
     <!-- Twitter用のmetaタグ (X) -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Graph Editor" />
+    <meta name="twitter:card" content="summary" />
+    <meta
+      name="twitter:title"
+      content="Graph Editor - Competitive Programming Graph Tool"
+    />
     <meta
       name="twitter:description"
-      content="Simple graph generation application"
+      content="Create, edit, and visualize graphs for competitive programming and AtCoder."
     />
     <meta
       name="twitter:image"
@@ -67,6 +72,8 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 
     <link rel="icon" href="https://kentakom1213.github.io/graph-editor/favicon.ico" integrity="sha384-ns63wF6ote0PLgUASyE1r8u5euJ+qk0UTGpEEq3daFYsQrHweVjED+3PhzkHMk9y"/>
 
+    
+    
     
     
     
@@ -182,6 +189,33 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
   <link rel="modulepreload" href="https://kentakom1213.github.io/graph-editor/graph-editor.js" crossorigin="anonymous" integrity="sha384-I/OsUtNL6i2k/dnHXCPniBMkFUHIKuzgYgHz4C0BmikB/X6Cpv82CGmgBYH/VKwi"><link rel="preload" href="https://kentakom1213.github.io/graph-editor/graph-editor_bg.wasm" crossorigin="anonymous" integrity="sha384-TNwsN9uccqm/wZMxYEq+YPC3QYj99sCHGbLUfNO+Kgu2HE3LJn/CiXCDTrpm0EWj" as="fetch" type="application/wasm"></head>
 
   <body>
+    <main id="seo-content">
+      <section class="seo-description">
+        <h1>Graph Editor</h1>
+        <p>
+          Graph Editor is a graph creation and visualization tool for
+          competitive programming. It helps users create directed and
+          undirected graphs, edit vertices and edges, and export graphs in
+          programming-contest input formats.
+        </p>
+        <p>
+          競技プログラミング向けのグラフ作成・可視化ツールです．頂点や辺を直感的に編集し，AtCoder
+          などで使いやすい入力形式に変換できます．
+        </p>
+        <p>
+          Source code is available on
+          <a href="https://github.com/kentakom1213/graph-editor">GitHub</a>.
+        </p>
+      </section>
+    </main>
+
+    <noscript>
+      <p>
+        Please enable JavaScript to use Graph Editor. JavaScript を有効にすると
+        Graph Editor を利用できます．
+      </p>
+    </noscript>
+
     <!-- The WASM code will resize the canvas dynamically -->
     <!-- the id is hardcoded in main.rs . so, make sure both match. -->
     <canvas id="the_canvas_id"></canvas>
