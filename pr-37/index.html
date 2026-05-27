@@ -40,7 +40,7 @@
     />
 
     <!-- Twitter用のmetaタグ (X) -->
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
     <meta
       name="twitter:title"
       content="Graph Editor - Competitive Programming Graph Tool"
@@ -190,7 +190,7 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 
   <body>
     <main id="seo-content">
-      <section>
+      <section class="seo-description">
         <h1>Graph Editor</h1>
         <p>
           Graph Editor is a graph creation and visualization tool for
@@ -210,18 +210,10 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
     </main>
 
     <noscript>
-      <section>
-        <h1>Graph Editor</h1>
-        <p>
-          Graph Editor is a graph creation and visualization tool for
-          competitive programming. Please enable JavaScript to use the
-          interactive editor.
-        </p>
-        <p>
-          競技プログラミング向けのグラフ作成・可視化ツールです．インタラクティブなエディタを利用するには
-          JavaScript を有効にしてください．
-        </p>
-      </section>
+      <p>
+        Please enable JavaScript to use Graph Editor. JavaScript を有効にすると
+        Graph Editor を利用できます．
+      </p>
     </noscript>
 
     <!-- The WASM code will resize the canvas dynamically -->
