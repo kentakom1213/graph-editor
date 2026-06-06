@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8" />
     <!-- Disable zooming: -->
@@ -8,15 +8,16 @@
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     /> -->
 
-    <title>Graph Editor - Competitive Programming Graph Tool</title>
+    <title>Graph Editor - AtCoder・競プロ向けグラフ作成ツール</title>
     <meta
       name="description"
-      content="Graph Editor is a graph creation and visualization tool for competitive programming. Create, edit, and export graphs for AtCoder and programming contests."
+      content="Graph Editor は，AtCoder などの競技プログラミング用に，無向グラフ・有向グラフをブラウザ上で作成し，辺リスト・JSON・PNG・SVG に出力できる無料の Web アプリです．"
     />
     <meta
       name="keywords"
-      content="graph editor, competitive programming, algorithm, visualization, test case generator, directed graph, undirected graph, グラフエディタ, 競技プログラミング, 競プロ, アルゴリズム, 可視化, テストケース, 有向グラフ, 無向グラフ"
+      content="Graph Editor, AtCoder, 競技プログラミング, 競プロ, グラフ作成, グラフエディタ, 辺リスト, 有向グラフ, 無向グラフ, graph editor, competitive programming, edge list, directed graph, undirected graph, graph visualization"
     />
+    <meta name="robots" content="index,follow" />
     <link rel="canonical" href="https://kentakom1213.github.io/graph-editor/" />
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
 
@@ -24,11 +25,11 @@
     <meta property="og:type" content="website" />
     <meta
       property="og:title"
-      content="Graph Editor - Competitive Programming Graph Tool"
+      content="Graph Editor - AtCoder・競プロ向けグラフ作成ツール"
     />
     <meta
       property="og:description"
-      content="Create, edit, and visualize graphs for competitive programming and AtCoder."
+      content="競技プログラミング用のグラフをブラウザ上で作成・編集し，辺リスト・JSON・PNG・SVG に出力できる Web アプリです．"
     />
     <meta
       property="og:url"
@@ -38,21 +39,42 @@
       property="og:image"
       content="https://kentakom1213.github.io/graph-editor/assets/card.png"
     />
+    <meta property="og:site_name" content="Graph Editor" />
+    <meta property="og:locale" content="ja_JP" />
 
     <!-- Twitter用のmetaタグ (X) -->
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="Graph Editor - Competitive Programming Graph Tool"
+      content="Graph Editor - AtCoder・競プロ向けグラフ作成ツール"
     />
     <meta
       name="twitter:description"
-      content="Create, edit, and visualize graphs for competitive programming and AtCoder."
+      content="AtCoder などの競技プログラミング用に，グラフを作成・編集して辺リスト形式で出力できます．"
     />
     <meta
       name="twitter:image"
       content="https://kentakom1213.github.io/graph-editor/assets/card.png"
     />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Graph Editor",
+        "url": "https://kentakom1213.github.io/graph-editor/",
+        "description": "AtCoder などの競技プログラミング向けに，無向グラフ・有向グラフをブラウザ上で作成・編集し，辺リスト・JSON・PNG・SVG に出力できる無料の Web アプリです．",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web",
+        "isAccessibleForFree": true,
+        "inLanguage": ["ja", "en"],
+        "author": {
+          "@type": "Person",
+          "name": "KOMOTO Kenta",
+          "url": "https://github.com/kentakom1213"
+        }
+      }
+    </script>
 
     <!-- config for our rust wasm binary. go to https://trunkrs.dev/assets/#rust for more customization -->
     <link data-trunk rel="rust" data-wasm-opt="2" />
@@ -151,6 +173,24 @@
         height: 100%;
       }
 
+      #seo-content {
+        max-width: 960px;
+        padding: 24px;
+        color: #222;
+        font-family: Ubuntu-Light, Helvetica, sans-serif;
+        line-height: 1.7;
+      }
+
+      #seo-content h1,
+      #seo-content h2 {
+        margin: 0.8em 0 0.4em;
+      }
+
+      #seo-content ul,
+      #seo-content ol {
+        padding-left: 1.5em;
+      }
+
       .centered {
         margin-right: auto;
         margin-left: auto;
@@ -207,15 +247,53 @@
       <section class="seo-description">
         <h1>Graph Editor</h1>
         <p>
-          Graph Editor is a graph creation and visualization tool for
-          competitive programming. It helps users create directed and
-          undirected graphs, edit vertices and edges, and export graphs in
-          programming-contest input formats.
+          Graph Editor は，AtCoder などの競技プログラミングで使うグラフを，
+          ブラウザ上で直感的に作成・編集できる無料の Web アプリです．
+          無向グラフ・有向グラフの作成，頂点・辺の編集，辺リスト形式でのコピー，
+          JSON 保存，PNG / SVG 出力に対応しています．
         </p>
         <p>
-          競技プログラミング向けのグラフ作成・可視化ツールです．頂点や辺を直感的に編集し，AtCoder
-          などで使いやすい入力形式に変換できます．
+          Graph Editor is a browser-based graph editor for competitive
+          programming. You can create directed and undirected graphs, edit
+          vertices and edges, and export graphs as edge lists, JSON, PNG, or
+          SVG.
         </p>
+      </section>
+
+      <section>
+        <h2>競技プログラミング向けのグラフ作成</h2>
+        <p>
+          頂点をクリックで追加し，辺をドラッグで接続できます．作成したグラフは，
+          AtCoder などの問題で使いやすい辺リスト形式に変換できます．
+          0-indexed / 1-indexed の切り替えにも対応しているため，問題の入力形式に合わせて出力できます．
+        </p>
+      </section>
+
+      <section>
+        <h2>主な機能</h2>
+        <ul>
+          <li>無向グラフ・有向グラフの切り替え</li>
+          <li>頂点・辺の追加，削除，移動，色変更</li>
+          <li>0-indexed / 1-indexed の切り替え</li>
+          <li>辺リスト形式でのコピー・読み込み</li>
+          <li>JSON 形式での保存・復元</li>
+          <li>PNG / SVG 形式での画像出力</li>
+          <li>ブラウザ上で動作する WASM アプリ</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>使い方</h2>
+        <ol>
+          <li>頂点追加モードでキャンバスをクリックして頂点を追加します．</li>
+          <li>辺追加モードで頂点同士を接続します．</li>
+          <li>I/O パネルから Edge List をコピーします．</li>
+          <li>必要に応じて JSON，PNG，SVG 形式で保存します．</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Links</h2>
         <p>
           Source code is available on
           <a href="https://github.com/kentakom1213/graph-editor">GitHub</a>.
