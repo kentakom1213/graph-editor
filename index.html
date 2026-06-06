@@ -8,14 +8,14 @@
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     /> -->
 
-    <title>Graph Editor - Competitive Programming Graph Tool</title>
+    <title>Graph Editor - AtCoder・競プロ向けグラフ作成ツール</title>
     <meta
       name="description"
-      content="Graph Editor is a graph creation and visualization tool for competitive programming. Create, edit, and export graphs for AtCoder and programming contests."
+      content="Graph Editor is a browser-based graph editor for AtCoder and competitive programming. Create directed and undirected graphs, edit vertices and edges, and export edge lists, JSON, PNG, and SVG."
     />
     <meta
       name="keywords"
-      content="graph editor, competitive programming, algorithm, visualization, test case generator, directed graph, undirected graph, グラフエディタ, 競技プログラミング, 競プロ, アルゴリズム, 可視化, テストケース, 有向グラフ, 無向グラフ"
+      content="graph editor, competitive programming, AtCoder, graph tool, edge list, directed graph, undirected graph, graph visualization, test case generator, グラフエディタ, 競技プログラミング, 競プロ, グラフ作成, 辺リスト, 有向グラフ, 無向グラフ, 可視化, テストケース"
     />
     <link rel="canonical" href="https://kentakom1213.github.io/graph-editor/" />
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
@@ -24,11 +24,11 @@
     <meta property="og:type" content="website" />
     <meta
       property="og:title"
-      content="Graph Editor - Competitive Programming Graph Tool"
+      content="Graph Editor - AtCoder・競プロ向けグラフ作成ツール"
     />
     <meta
       property="og:description"
-      content="Create, edit, and visualize graphs for competitive programming and AtCoder."
+      content="Create directed and undirected graphs in your browser for AtCoder and competitive programming, then export edge lists, JSON, PNG, and SVG."
     />
     <meta
       property="og:url"
@@ -43,16 +43,33 @@
     <meta name="twitter:card" content="summary" />
     <meta
       name="twitter:title"
-      content="Graph Editor - Competitive Programming Graph Tool"
+      content="Graph Editor - AtCoder・競プロ向けグラフ作成ツール"
     />
     <meta
       name="twitter:description"
-      content="Create, edit, and visualize graphs for competitive programming and AtCoder."
+      content="Create directed and undirected graphs in your browser for AtCoder and competitive programming."
     />
     <meta
       name="twitter:image"
       content="https://kentakom1213.github.io/graph-editor/assets/card.png"
     />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Graph Editor",
+        "url": "https://kentakom1213.github.io/graph-editor/",
+        "description": "A browser-based graph editor for AtCoder and competitive programming. It supports directed and undirected graph editing, edge-list export, JSON save and load, and PNG or SVG image export.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web",
+        "isAccessibleForFree": true,
+        "author": {
+          "@type": "Person",
+          "name": "KOMOTO Kenta"
+        }
+      }
+    </script>
 
     <!-- config for our rust wasm binary. go to https://trunkrs.dev/assets/#rust for more customization -->
     <link data-trunk rel="rust" data-wasm-opt="2" />
@@ -151,6 +168,15 @@
         height: 100%;
       }
 
+      #seo-content {
+        position: absolute;
+        left: -10000px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+      }
+
       .centered {
         margin-right: auto;
         margin-left: auto;
@@ -203,19 +229,48 @@
   </head>
 
   <body>
-    <main id="seo-content">
+    <main id="seo-content" aria-hidden="true">
       <section class="seo-description">
         <h1>Graph Editor</h1>
         <p>
-          Graph Editor is a graph creation and visualization tool for
-          competitive programming. It helps users create directed and
-          undirected graphs, edit vertices and edges, and export graphs in
-          programming-contest input formats.
+          Graph Editor is a browser-based graph editor for AtCoder and
+          competitive programming. It helps you create directed graphs and
+          undirected graphs, edit vertices and edges, arrange graph drawings,
+          and export data for programming-contest input formats.
         </p>
         <p>
-          競技プログラミング向けのグラフ作成・可視化ツールです．頂点や辺を直感的に編集し，AtCoder
-          などで使いやすい入力形式に変換できます．
+          競技プログラミング向けのグラフ作成・可視化ツールです．ブラウザ上で頂点や辺を直感的に編集し，AtCoder
+          などの問題で使いやすい辺リスト形式に変換できます．
         </p>
+      </section>
+
+      <section>
+        <h2>Features</h2>
+        <ul>
+          <li>Create and edit directed and undirected graphs.</li>
+          <li>Move vertices and adjust graph layouts in the browser.</li>
+          <li>Switch between 0-indexed and 1-indexed vertex labels.</li>
+          <li>Export graphs as edge lists for competitive programming.</li>
+          <li>Save and restore graphs with JSON.</li>
+          <li>Export graph drawings as PNG or SVG images.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>競プロ用グラフ作成ツールとしての使い方</h2>
+        <ol>
+          <li>キャンバス上に頂点を追加します．</li>
+          <li>頂点同士を辺で接続し，有向グラフまたは無向グラフを作成します．</li>
+          <li>必要に応じて 0-indexed / 1-indexed を切り替えます．</li>
+          <li>作成したグラフを辺リスト，JSON，PNG，SVG として出力します．</li>
+        </ol>
+        <p>
+          グラフ理論のメモ，アルゴリズムの説明図，AtCoder などの入力例作成，テストケース作成の補助に利用できます．
+        </p>
+      </section>
+
+      <section>
+        <h2>Links</h2>
         <p>
           Source code is available on
           <a href="https://github.com/kentakom1213/graph-editor">GitHub</a>.
