@@ -2,20 +2,12 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <!-- Disable zooming: -->
-    <!-- <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no"
-    /> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Graph Editor - AtCoder・競プロ向けグラフ作成ツール</title>
     <meta
       name="description"
       content="Graph Editor は，AtCoder などの競技プログラミング用に，無向グラフ・有向グラフをブラウザ上で作成し，辺リスト・JSON・PNG・SVG に出力できる無料の Web アプリです．"
-    />
-    <meta
-      name="keywords"
-      content="Graph Editor, AtCoder, 競技プログラミング, 競プロ, グラフ作成, グラフエディタ, 辺リスト, 有向グラフ, 無向グラフ, graph editor, competitive programming, edge list, directed graph, undirected graph, graph visualization"
     />
     <meta name="robots" content="index,follow" />
     <link rel="canonical" href="https://kentakom1213.github.io/graph-editor/" />
@@ -141,6 +133,7 @@
         /* Light mode background color for what is not covered by the egui canvas,
             or where the egui canvas is translucent. */
         background: #909090;
+        color: #222;
       }
 
       @media (prefers-color-scheme: dark) {
@@ -148,6 +141,7 @@
           /* Dark mode background color for what is not covered by the egui canvas,
                 or where the egui canvas is translucent. */
           background: #404040;
+          color: #f0f0f0;
         }
       }
 
@@ -161,22 +155,12 @@
         width: 100%;
       }
 
-      /* Make canvas fill entire document: */
-      canvas {
-        margin-right: auto;
-        margin-left: auto;
-        display: block;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-      }
-
+      /* Static fallback content shown before the WASM canvas renders. */
       #seo-content {
+        box-sizing: border-box;
         max-width: 960px;
         padding: 24px;
-        color: #222;
+        color: inherit;
         font-family: Ubuntu-Light, Helvetica, sans-serif;
         line-height: 1.7;
       }
@@ -191,6 +175,22 @@
         padding-left: 1.5em;
       }
 
+      #seo-content a {
+        color: inherit;
+      }
+
+      /* Make canvas fill entire viewport: */
+      canvas {
+        margin-right: auto;
+        margin-left: auto;
+        display: block;
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      }
+
       .centered {
         margin-right: auto;
         margin-left: auto;
@@ -203,6 +203,15 @@
         font-size: 24px;
         font-family: Ubuntu-Light, Helvetica, sans-serif;
         text-align: center;
+        z-index: 2;
+      }
+
+      noscript p {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 24px 24px;
+        font-family: Ubuntu-Light, Helvetica, sans-serif;
+        line-height: 1.7;
       }
 
       /* ---------------------------------------------- */
@@ -302,6 +311,18 @@
     </main>
 
     <noscript>
+      <style>
+        html,
+        body {
+          overflow: auto;
+          height: auto;
+        }
+
+        canvas,
+        #loading_text {
+          display: none;
+        }
+      </style>
       <p>
         Please enable JavaScript to use Graph Editor. JavaScript を有効にすると
         Graph Editor を利用できます．
@@ -310,7 +331,7 @@
 
     <!-- The WASM code will resize the canvas dynamically -->
     <!-- the id is hardcoded in main.rs . so, make sure both match. -->
-    <canvas id="the_canvas_id"></canvas>
+    <canvas id="the_canvas_id" aria-label="Graph Editor interactive canvas"></canvas>
 
     <!-- the loading spinner will be removed in main.rs -->
     <div class="centered" id="loading_text">
