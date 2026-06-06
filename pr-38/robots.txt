@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kentakom1213.github.io/graph-editor/sitemap.xml
